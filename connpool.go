@@ -72,7 +72,7 @@ func New(name string, dialFunc DialFunc) (ConnPool, error) {
 		driver:       dialFunc,
 		name:         name,
 		openerCh:     make(chan struct{}, connectionRequestQueueSize),
-		lastPut:      make(map[*driverConn]string),
+		lastPut:      make(map[*Conn]string),
 		connRequests: make(map[uint64]chan connRequest),
 	}
 	go connPool.connectionOpener()
@@ -98,7 +98,7 @@ type pool struct {
 	numClosed uint64
 
 	mu           sync.Mutex // protects following fields
-	freeConn     []*driverConn
+	freeConn     []*Conn
 	connRequests map[uint64]chan connRequest
 	nextRequest  uint64 // Next key to use in connRequests.
 	numOpen      int    // number of opened and pending open connections
@@ -110,10 +110,10 @@ type pool struct {
 	openerCh    chan struct{}
 	closed      bool
 	dep         map[finalCloser]depSet
-	lastPut     map[*driverConn]string // stacktrace of last conn's put; debug only
-	maxIdle     int                    // zero means defaultMaxIdleConns; negative means 0
-	maxOpen     int                    // <= 0 means unlimited
-	maxLifetime time.Duration          // maximum amount of time a connection may be reused
+	lastPut     map[*Conn]string // stacktrace of last conn's put; debug only
+	maxIdle     int              // zero means defaultMaxIdleConns; negative means 0
+	maxOpen     int              // <= 0 means unlimited
+	maxLifetime time.Duration    // maximum amount of time a connection may be reused
 	cleanerCh   chan struct{}
 }
 
@@ -129,11 +129,11 @@ const (
 	cachedOrNewConn
 )
 
-// driverConn wraps a driver.Conn with a mutex, to
+// Conn wraps a driver.Conn with a mutex, to
 // be held during all calls into the Conn. (including any calls onto
 // interfaces returned via that Conn, such as calls on Tx, Stmt,
 // Result, Rows)
-type driverConn struct {
+type Conn struct {
 	connPool  *pool
 	createdAt time.Time
 
@@ -146,11 +146,11 @@ type driverConn struct {
 	inUse bool
 }
 
-func (dc *driverConn) releaseConn(err error) {
+func (dc *Conn) releaseConn(err error) {
 	dc.connPool.putConn(dc, err)
 }
 
-func (dc *driverConn) expired(timeout time.Duration) bool {
+func (dc *Conn) expired(timeout time.Duration) bool {
 	if timeout <= 0 {
 		return false
 	}
@@ -158,21 +158,21 @@ func (dc *driverConn) expired(timeout time.Duration) bool {
 }
 
 // the dc.connPool's Mutex is held.
-func (dc *driverConn) closeConnPoolLocked() func() error {
+func (dc *Conn) closeConnPoolLocked() func() error {
 	dc.Lock()
 	defer dc.Unlock()
 	if dc.closed {
-		return func() error { return errors.New("connpool: duplicate driverConn close") }
+		return func() error { return errors.New("connpool: duplicate Conn close") }
 	}
 	dc.closed = true
 	return dc.connPool.removeDepLocked(dc, dc)
 }
 
-func (dc *driverConn) Close() error {
+func (dc *Conn) Close() error {
 	dc.Lock()
 	if dc.closed {
 		dc.Unlock()
-		return errors.New("connpool: duplicate driverConn close")
+		return errors.New("connpool: duplicate Conn close")
 	}
 	dc.closed = true
 	dc.Unlock() // not defer; removeDep finalClose calls may need to lock
@@ -184,7 +184,7 @@ func (dc *driverConn) Close() error {
 	return fn()
 }
 
-func (dc *driverConn) finalClose() error {
+func (dc *Conn) finalClose() error {
 	var err error
 	withLock(dc, func() {
 		dc.finalClosed = true
@@ -337,7 +337,7 @@ func (connPool *pool) SetMaxIdleConns(n int) {
 	if connPool.maxOpen > 0 && connPool.maxIdleConnsLocked() > connPool.maxOpen {
 		connPool.maxIdle = connPool.maxOpen
 	}
-	var closing []*driverConn
+	var closing []*Conn
 	idleCount := len(connPool.freeConn)
 	maxIdle := connPool.maxIdleConnsLocked()
 	if idleCount > maxIdle {
@@ -434,7 +434,7 @@ func (connPool *pool) connectionCleaner(d time.Duration) {
 		}
 
 		expiredSince := nowFunc().Add(-d)
-		var closing []*driverConn
+		var closing []*Conn
 		for i := 0; i < len(connPool.freeConn); i++ {
 			c := connPool.freeConn[i]
 			if c.createdAt.Before(expiredSince) {
@@ -524,7 +524,7 @@ func (connPool *pool) openNewConnection() {
 		connPool.maybeOpenNewConnections()
 		return
 	}
-	dc := &driverConn{
+	dc := &Conn{
 		connPool:  connPool,
 		createdAt: nowFunc(),
 		Conn:      ci,
@@ -541,7 +541,7 @@ func (connPool *pool) openNewConnection() {
 // When there are no idle connections available, ConnPool.conn will create
 // a new connRequest and put it on the connPool.connRequests list.
 type connRequest struct {
-	conn *driverConn
+	conn *Conn
 	err  error
 }
 
@@ -557,8 +557,8 @@ func (connPool *pool) nextRequestKeyLocked() uint64 {
 
 var ErrBadConn = errors.New("connpool: bad connection")
 
-// conn returns a newly-opened or cached *driverConn.
-func (connPool *pool) conn(ctx context.Context, strategy connReuseStrategy) (*driverConn, error) {
+// conn returns a newly-opened or cached *Conn.
+func (connPool *pool) conn(ctx context.Context, strategy connReuseStrategy) (*Conn, error) {
 	connPool.mu.Lock()
 	if connPool.closed {
 		connPool.mu.Unlock()
@@ -637,7 +637,7 @@ func (connPool *pool) conn(ctx context.Context, strategy connReuseStrategy) (*dr
 		return nil, err
 	}
 	connPool.mu.Lock()
-	dc := &driverConn{
+	dc := &Conn{
 		connPool:  connPool,
 		createdAt: nowFunc(),
 		Conn:      ci,
@@ -656,7 +656,7 @@ const maxBadConnRetries = 2
 // GetContext returns a net.Conn, support context cancellation.
 func (connPool *pool) GetContext(ctx context.Context) (net.Conn, error) {
 	var err error
-	var ci *driverConn
+	var ci *Conn
 	for i := 0; i < maxBadConnRetries; i++ {
 		ci, err = connPool.conn(ctx, cachedOrNewConn)
 		if err == nil {
@@ -675,14 +675,17 @@ func (connPool *pool) Get() (net.Conn, error) {
 }
 
 // Put gives a net.Conn (must be from Get() or New()) back to the connPool's pool.
+// If conn is not the *connpool.Conn type, will close the net.Conn.
 func (connPool *pool) Put(conn net.Conn) {
-	if dc, ok := conn.(*driverConn); ok {
+	if dc, ok := conn.(*Conn); ok {
 		connPool.putConn(dc, nil)
+	} else {
+		conn.Close()
 	}
 }
 
 // putConnHook is a hook for testing.
-var putConnHook func(*pool, *driverConn)
+var putConnHook func(*pool, *Conn)
 
 // debugGetPut determines whether getConn & putConn calls' stack traces
 // are returned for more verbose crashes.
@@ -690,7 +693,7 @@ const debugGetPut = false
 
 // putConn adds a connection to the connPool's free pool.
 // err is optionally the last error that occurred on this connection.
-func (connPool *pool) putConn(dc *driverConn, err error) {
+func (connPool *pool) putConn(dc *Conn, err error) {
 	connPool.mu.Lock()
 	if !dc.inUse {
 		if debugGetPut {
@@ -724,16 +727,16 @@ func (connPool *pool) putConn(dc *driverConn, err error) {
 	}
 }
 
-// Satisfy a connRequest or put the driverConn in the idle pool and return true
+// Satisfy a connRequest or put the Conn in the idle pool and return true
 // or return false.
 // putConnConnPoolLocked will satisfy a connRequest if there is one, or it will
-// return the *driverConn to the freeConn list if err == nil and the idle
+// return the *Conn to the freeConn list if err == nil and the idle
 // connection limit will not be exceeded.
 // If err != nil, the value of dc is ignored.
 // If err == nil, then dc must not equal nil.
-// If a connRequest was fulfilled or the *driverConn was placed in the
+// If a connRequest was fulfilled or the *Conn was placed in the
 // freeConn list, then true is returned, otherwise false is returned.
-func (connPool *pool) putConnConnPoolLocked(dc *driverConn, err error) bool {
+func (connPool *pool) putConnConnPoolLocked(dc *Conn, err error) bool {
 	if connPool.closed {
 		return false
 	}
