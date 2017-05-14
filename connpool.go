@@ -25,7 +25,7 @@ type ConnPool interface {
 	Get() (net.Conn, error)
 	// GetContext returns a net.Conn, support context cancellation.
 	GetContext(ctx context.Context) (net.Conn, error)
-	// Put adds a net.Conn to the connPool's free pool.
+	// Put gives a net.Conn (must be from Get() or New()) back to the connPool's pool.
 	Put(conn net.Conn)
 	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	//
@@ -674,7 +674,7 @@ func (connPool *pool) Get() (net.Conn, error) {
 	return connPool.GetContext(context.Background())
 }
 
-// Put adds a net.Conn to the connPool's free pool.
+// Put gives a net.Conn (must be from Get() or New()) back to the connPool's pool.
 func (connPool *pool) Put(conn net.Conn) {
 	if dc, ok := conn.(*driverConn); ok {
 		connPool.putConn(dc, nil)
