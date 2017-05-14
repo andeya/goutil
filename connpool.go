@@ -17,15 +17,45 @@ import (
 // ConnPool creates and frees connections automatically;
 // it also maintains a free pool of idle connections.
 type ConnPool interface {
-	Close() error
-	New() (net.Conn, error)
-	Get() (net.Conn, error)
-	GetContext(ctx context.Context) (net.Conn, error)
+	// Name returns the connPool's name.
 	Name() string
+	// New creates a new net.Conn.
+	New() (net.Conn, error)
+	// Get returns a net.Conn.
+	Get() (net.Conn, error)
+	// GetContext returns a net.Conn, support context cancellation.
+	GetContext(ctx context.Context) (net.Conn, error)
+	// Put adds a net.Conn to the connPool's free pool.
 	Put(conn net.Conn)
+	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+	//
+	// Expired connections may be closed lazily before reuse.
+	//
+	// If d <= 0, connections are reused forever.
 	SetConnMaxLifetime(d time.Duration)
+	// SetMaxIdleConns sets the maximum number of connections in the idle
+	// connection pool.
+	//
+	// If MaxOpenConns is greater than 0 but less than the new MaxIdleConns
+	// then the new MaxIdleConns will be reduced to match the MaxOpenConns limit
+	//
+	// If n <= 0, no idle connections are retained.
 	SetMaxIdleConns(n int)
+	// SetMaxOpenConns sets the maximum number of open connections to the net.
+	//
+	// If MaxIdleConns is greater than 0 and the new MaxOpenConns is less than
+	// MaxIdleConns, then MaxIdleConns will be reduced to match the new
+	// MaxOpenConns limit
+	//
+	// If n <= 0, then there is no limit on the number of open connections.
+	// The default is 0 (unlimited).
 	SetMaxOpenConns(n int)
+	// Close closes the ConnPool, releasing any open resources.
+	//
+	// It is rare to Close a ConnPool, as the ConnPool handle is meant to be
+	// long-lived and shared between many goroutines.
+	Close() error
+	// Stats returns connection statistics.
 	Stats() ConnPoolStats
 }
 
@@ -368,7 +398,7 @@ func (connPool *pool) Name() string {
 	return connPool.name
 }
 
-// New returns the connPool's DialFunc.
+// New creates a new net.Conn.
 func (connPool *pool) New() (net.Conn, error) {
 	return connPool.driver()
 }
@@ -435,7 +465,7 @@ type ConnPoolStats struct {
 	OpenConnections int
 }
 
-// Stats returns net statistics.
+// Stats returns connection statistics.
 func (connPool *pool) Stats() ConnPoolStats {
 	connPool.mu.Lock()
 	stats := ConnPoolStats{
@@ -623,8 +653,7 @@ func (connPool *pool) conn(ctx context.Context, strategy connReuseStrategy) (*dr
 // connection to be opened.
 const maxBadConnRetries = 2
 
-// GetContext executes a query without returning any rows.
-// The args are for any placeholder parameters in the query.
+// GetContext returns a net.Conn, support context cancellation.
 func (connPool *pool) GetContext(ctx context.Context) (net.Conn, error) {
 	var err error
 	var ci *driverConn
@@ -640,14 +669,12 @@ func (connPool *pool) GetContext(ctx context.Context) (net.Conn, error) {
 	return ci, err
 }
 
-// Get executes a query without returning any rows.
-// The args are for any placeholder parameters in the query.
+// Get returns a net.Conn.
 func (connPool *pool) Get() (net.Conn, error) {
 	return connPool.GetContext(context.Background())
 }
 
-// Put adds a connection to the connPool's free pool.
-// err is optionally the last error that occurred on this connection.
+// Put adds a net.Conn to the connPool's free pool.
 func (connPool *pool) Put(conn net.Conn) {
 	if dc, ok := conn.(*driverConn); ok {
 		connPool.putConn(dc, nil)
