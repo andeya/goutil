@@ -11,15 +11,55 @@ import (
 	"time"
 )
 
-// nowFunc returns the current time; it's overridden in tests.
-var nowFunc = time.Now
-
 // ConnPool is a pool of zero or more underlying connections.
 // It's safe for concurrent use by multiple goroutines.
 //
 // ConnPool creates and frees connections automatically;
 // it also maintains a free pool of idle connections.
-type ConnPool struct {
+type ConnPool interface {
+	Close() error
+	New() (net.Conn, error)
+	Get() (net.Conn, error)
+	GetContext(ctx context.Context) (net.Conn, error)
+	Name() string
+	Put(conn net.Conn)
+	SetConnMaxLifetime(d time.Duration)
+	SetMaxIdleConns(n int)
+	SetMaxOpenConns(n int)
+	Stats() ConnPoolStats
+}
+
+// This is the size of the connectionOpener request chan (ConnPool.openerCh).
+// This value should be larger than the maximum typical value
+// used for connPool.maxOpen. If maxOpen is significantly larger than
+// connectionRequestQueueSize then it is possible for ALL calls into the *ConnPool
+// to block until the connectionOpener can satisfy the backlog of requests.
+const connectionRequestQueueSize = 1000000
+
+// New creates ConnPool.
+func New(name string, dialFunc DialFunc) (ConnPool, error) {
+	connPool := &pool{
+		driver:       dialFunc,
+		name:         name,
+		openerCh:     make(chan struct{}, connectionRequestQueueSize),
+		lastPut:      make(map[*driverConn]string),
+		connRequests: make(map[uint64]chan connRequest),
+	}
+	go connPool.connectionOpener()
+	return connPool, nil
+}
+
+// DialFunc returns a new connection.
+//
+// Dial may return a cached connection (one previously
+// closed), but doing so is unnecessary; the connpool package
+// maintains a pool of idle connections for efficient re-use.
+//
+// The returned connection is only used by one goroutine at a
+// time.
+type DialFunc func() (net.Conn, error)
+
+type pool struct {
 	driver DialFunc
 	name   string
 	// numClosed is an atomic counter which represents a total number of
@@ -47,16 +87,6 @@ type ConnPool struct {
 	cleanerCh   chan struct{}
 }
 
-// DialFunc returns a new connection.
-//
-// Dial may return a cached connection (one previously
-// closed), but doing so is unnecessary; the connpool package
-// maintains a pool of idle connections for efficient re-use.
-//
-// The returned connection is only used by one goroutine at a
-// time.
-type DialFunc func() (net.Conn, error)
-
 // connReuseStrategy determines how (*ConnPool).conn returns net connections.
 type connReuseStrategy uint8
 
@@ -74,7 +104,7 @@ const (
 // interfaces returned via that Conn, such as calls on Tx, Stmt,
 // Result, Rows)
 type driverConn struct {
-	connPool  *ConnPool
+	connPool  *pool
 	createdAt time.Time
 
 	sync.Mutex // guards following
@@ -154,14 +184,14 @@ type finalCloser interface {
 
 // addDep notes that x now depends on dep, and x's finalClose won't be
 // called until all of x's dependencies are removed with removeDep.
-func (connPool *ConnPool) addDep(x finalCloser, dep interface{}) {
+func (connPool *pool) addDep(x finalCloser, dep interface{}) {
 	//println(fmt.Sprintf("addDep(%T %p, %T %p)", x, x, dep, dep))
 	connPool.mu.Lock()
 	defer connPool.mu.Unlock()
 	connPool.addDepLocked(x, dep)
 }
 
-func (connPool *ConnPool) addDepLocked(x finalCloser, dep interface{}) {
+func (connPool *pool) addDepLocked(x finalCloser, dep interface{}) {
 	if connPool.dep == nil {
 		connPool.dep = make(map[finalCloser]depSet)
 	}
@@ -177,14 +207,14 @@ func (connPool *ConnPool) addDepLocked(x finalCloser, dep interface{}) {
 // If x still has dependencies, nil is returned.
 // If x no longer has any dependencies, its finalClose method will be
 // called and its error value will be returned.
-func (connPool *ConnPool) removeDep(x finalCloser, dep interface{}) error {
+func (connPool *pool) removeDep(x finalCloser, dep interface{}) error {
 	connPool.mu.Lock()
 	fn := connPool.removeDepLocked(x, dep)
 	connPool.mu.Unlock()
 	return fn()
 }
 
-func (connPool *ConnPool) removeDepLocked(x finalCloser, dep interface{}) func() error {
+func (connPool *pool) removeDepLocked(x finalCloser, dep interface{}) func() error {
 	//println(fmt.Sprintf("removeDep(%T %p, %T %p)", x, x, dep, dep))
 
 	xdep, ok := connPool.dep[x]
@@ -209,31 +239,11 @@ func (connPool *ConnPool) removeDepLocked(x finalCloser, dep interface{}) func()
 	}
 }
 
-// This is the size of the connectionOpener request chan (ConnPool.openerCh).
-// This value should be larger than the maximum typical value
-// used for connPool.maxOpen. If maxOpen is significantly larger than
-// connectionRequestQueueSize then it is possible for ALL calls into the *ConnPool
-// to block until the connectionOpener can satisfy the backlog of requests.
-const connectionRequestQueueSize = 1000000
-
-// New creates ConnPool.
-func New(name string, dialFunc DialFunc) (*ConnPool, error) {
-	connPool := &ConnPool{
-		driver:       dialFunc,
-		name:         name,
-		openerCh:     make(chan struct{}, connectionRequestQueueSize),
-		lastPut:      make(map[*driverConn]string),
-		connRequests: make(map[uint64]chan connRequest),
-	}
-	go connPool.connectionOpener()
-	return connPool, nil
-}
-
 // Close closes the ConnPool, releasing any open resources.
 //
 // It is rare to Close a ConnPool, as the ConnPool handle is meant to be
 // long-lived and shared between many goroutines.
-func (connPool *ConnPool) Close() error {
+func (connPool *pool) Close() error {
 	connPool.mu.Lock()
 	if connPool.closed { // Make ConnPool.Close idempotent
 		connPool.mu.Unlock()
@@ -265,7 +275,7 @@ func (connPool *ConnPool) Close() error {
 
 const defaultMaxIdleConns = 2
 
-func (connPool *ConnPool) maxIdleConnsLocked() int {
+func (connPool *pool) maxIdleConnsLocked() int {
 	n := connPool.maxIdle
 	switch {
 	case n == 0:
@@ -285,7 +295,7 @@ func (connPool *ConnPool) maxIdleConnsLocked() int {
 // then the new MaxIdleConns will be reduced to match the MaxOpenConns limit
 //
 // If n <= 0, no idle connections are retained.
-func (connPool *ConnPool) SetMaxIdleConns(n int) {
+func (connPool *pool) SetMaxIdleConns(n int) {
 	connPool.mu.Lock()
 	if n > 0 {
 		connPool.maxIdle = n
@@ -318,7 +328,7 @@ func (connPool *ConnPool) SetMaxIdleConns(n int) {
 //
 // If n <= 0, then there is no limit on the number of open connections.
 // The default is 0 (unlimited).
-func (connPool *ConnPool) SetMaxOpenConns(n int) {
+func (connPool *pool) SetMaxOpenConns(n int) {
 	connPool.mu.Lock()
 	connPool.maxOpen = n
 	if n < 0 {
@@ -336,7 +346,7 @@ func (connPool *ConnPool) SetMaxOpenConns(n int) {
 // Expired connections may be closed lazily before reuse.
 //
 // If d <= 0, connections are reused forever.
-func (connPool *ConnPool) SetConnMaxLifetime(d time.Duration) {
+func (connPool *pool) SetConnMaxLifetime(d time.Duration) {
 	if d < 0 {
 		d = 0
 	}
@@ -354,24 +364,24 @@ func (connPool *ConnPool) SetConnMaxLifetime(d time.Duration) {
 }
 
 // Name returns the connPool's name.
-func (connPool *ConnPool) Name() string {
+func (connPool *pool) Name() string {
 	return connPool.name
 }
 
-// Driver returns the connPool's DialFunc.
-func (connPool *ConnPool) Driver() DialFunc {
-	return connPool.driver
+// New returns the connPool's DialFunc.
+func (connPool *pool) New() (net.Conn, error) {
+	return connPool.driver()
 }
 
 // startCleanerLocked starts connectionCleaner if needed.
-func (connPool *ConnPool) startCleanerLocked() {
+func (connPool *pool) startCleanerLocked() {
 	if connPool.maxLifetime > 0 && connPool.numOpen > 0 && connPool.cleanerCh == nil {
 		connPool.cleanerCh = make(chan struct{}, 1)
 		go connPool.connectionCleaner(connPool.maxLifetime)
 	}
 }
 
-func (connPool *ConnPool) connectionCleaner(d time.Duration) {
+func (connPool *pool) connectionCleaner(d time.Duration) {
 	const minInterval = time.Second
 
 	if d < minInterval {
@@ -426,7 +436,7 @@ type ConnPoolStats struct {
 }
 
 // Stats returns net statistics.
-func (connPool *ConnPool) Stats() ConnPoolStats {
+func (connPool *pool) Stats() ConnPoolStats {
 	connPool.mu.Lock()
 	stats := ConnPoolStats{
 		OpenConnections: connPool.numOpen,
@@ -438,7 +448,7 @@ func (connPool *ConnPool) Stats() ConnPoolStats {
 // Assumes connPool.mu is locked.
 // If there are connRequests and the connection limit hasn't been reached,
 // then tell the connectionOpener to open new connections.
-func (connPool *ConnPool) maybeOpenNewConnections() {
+func (connPool *pool) maybeOpenNewConnections() {
 	numRequests := len(connPool.connRequests)
 	if connPool.maxOpen > 0 {
 		numCanOpen := connPool.maxOpen - connPool.numOpen
@@ -457,14 +467,14 @@ func (connPool *ConnPool) maybeOpenNewConnections() {
 }
 
 // Runs in a separate goroutine, opens new connections when requested.
-func (connPool *ConnPool) connectionOpener() {
+func (connPool *pool) connectionOpener() {
 	for range connPool.openerCh {
 		connPool.openNewConnection()
 	}
 }
 
 // Open one new connection
-func (connPool *ConnPool) openNewConnection() {
+func (connPool *pool) openNewConnection() {
 	// maybeOpenNewConnctions has already executed connPool.numOpen++ before it sent
 	// on connPool.openerCh. This function must execute connPool.numOpen-- if the
 	// connection fails or is closed before returning.
@@ -509,16 +519,16 @@ var errConnPoolClosed = errors.New("connpool: net is closed")
 
 // nextRequestKeyLocked returns the next connection request key.
 // It is assumed that nextRequest will not overflow.
-func (connPool *ConnPool) nextRequestKeyLocked() uint64 {
+func (connPool *pool) nextRequestKeyLocked() uint64 {
 	next := connPool.nextRequest
 	connPool.nextRequest++
 	return next
 }
 
-var ErrBadConn = errors.New("driver: bad connection")
+var ErrBadConn = errors.New("connpool: bad connection")
 
 // conn returns a newly-opened or cached *driverConn.
-func (connPool *ConnPool) conn(ctx context.Context, strategy connReuseStrategy) (*driverConn, error) {
+func (connPool *pool) conn(ctx context.Context, strategy connReuseStrategy) (*driverConn, error) {
 	connPool.mu.Lock()
 	if connPool.closed {
 		connPool.mu.Unlock()
@@ -615,7 +625,7 @@ const maxBadConnRetries = 2
 
 // GetContext executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
-func (connPool *ConnPool) GetContext(ctx context.Context) (net.Conn, error) {
+func (connPool *pool) GetContext(ctx context.Context) (net.Conn, error) {
 	var err error
 	var ci *driverConn
 	for i := 0; i < maxBadConnRetries; i++ {
@@ -632,20 +642,20 @@ func (connPool *ConnPool) GetContext(ctx context.Context) (net.Conn, error) {
 
 // Get executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
-func (connPool *ConnPool) Get() (net.Conn, error) {
+func (connPool *pool) Get() (net.Conn, error) {
 	return connPool.GetContext(context.Background())
 }
 
 // Put adds a connection to the connPool's free pool.
 // err is optionally the last error that occurred on this connection.
-func (connPool *ConnPool) Put(conn net.Conn) {
+func (connPool *pool) Put(conn net.Conn) {
 	if dc, ok := conn.(*driverConn); ok {
 		connPool.putConn(dc, nil)
 	}
 }
 
 // putConnHook is a hook for testing.
-var putConnHook func(*ConnPool, *driverConn)
+var putConnHook func(*pool, *driverConn)
 
 // debugGetPut determines whether getConn & putConn calls' stack traces
 // are returned for more verbose crashes.
@@ -653,7 +663,7 @@ const debugGetPut = false
 
 // putConn adds a connection to the connPool's free pool.
 // err is optionally the last error that occurred on this connection.
-func (connPool *ConnPool) putConn(dc *driverConn, err error) {
+func (connPool *pool) putConn(dc *driverConn, err error) {
 	connPool.mu.Lock()
 	if !dc.inUse {
 		if debugGetPut {
@@ -696,7 +706,7 @@ func (connPool *ConnPool) putConn(dc *driverConn, err error) {
 // If err == nil, then dc must not equal nil.
 // If a connRequest was fulfilled or the *driverConn was placed in the
 // freeConn list, then true is returned, otherwise false is returned.
-func (connPool *ConnPool) putConnConnPoolLocked(dc *driverConn, err error) bool {
+func (connPool *pool) putConnConnPoolLocked(dc *driverConn, err error) bool {
 	if connPool.closed {
 		return false
 	}
