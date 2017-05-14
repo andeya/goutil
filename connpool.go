@@ -27,6 +27,7 @@ type ConnPool interface {
 	// GetContext returns a net.Conn, support context cancellation.
 	GetContext(ctx context.Context) (net.Conn, error)
 	// Put gives a net.Conn (must be from Get() or New()) back to the connPool's pool.
+	// If conn is not the *connpool.Conn type, will close the net.Conn.
 	Put(conn net.Conn)
 	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	//
