@@ -27,15 +27,21 @@ func (c *ConnPools) Get(name string) (ConnPool, bool) {
 	return pool, ok
 }
 
-// Set stores ConnPool
+// Set stores ConnPool.
+// If the same name exists, will close and cover it.
 func (c *ConnPools) Set(connPool ConnPool) {
 	c.mutex.Lock()
 	pools := c.pools.Load().(map[string]ConnPool)
 	m := make(map[string]ConnPool, len(pools)+1)
+	name := connPool.Name()
 	for k, v := range pools {
-		m[k] = v
+		if k == name {
+			v.Close()
+		} else {
+			m[k] = v
+		}
 	}
-	m[connPool.Name()] = connPool
+	m[name] = connPool
 	c.pools.Store(m)
 	c.mutex.Unlock()
 }
