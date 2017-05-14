@@ -40,13 +40,15 @@ func (c *ConnPools) Set(connPool ConnPool) {
 	c.mutex.Unlock()
 }
 
-// Del delects ConnPool
+// Del delects ConnPool by name, and close the ConnPool.
 func (c *ConnPools) Del(name string) {
 	c.mutex.Lock()
 	pools := c.pools.Load().(map[string]ConnPool)
 	m := make(map[string]ConnPool, len(pools))
 	for k, v := range pools {
-		if k != name {
+		if k == name {
+			v.Close()
+		} else {
 			m[k] = v
 		}
 	}
