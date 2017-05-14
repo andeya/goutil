@@ -1,3 +1,4 @@
+// Connpool is a high availability / high concurrent net.Conn pool, which is similar to database/sql's db pool.
 package connpool
 
 import (
@@ -129,7 +130,7 @@ const (
 	cachedOrNewConn
 )
 
-// Conn wraps a driver.Conn with a mutex, to
+// Conn wraps a net.Conn with a mutex, to
 // be held during all calls into the Conn. (including any calls onto
 // interfaces returned via that Conn, such as calls on Tx, Stmt,
 // Result, Rows)
