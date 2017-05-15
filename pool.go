@@ -66,7 +66,7 @@ type Pool interface {
 const avatarRequestQueueSize = 1000000
 
 // New creates Pool.
-func New(name string, newfunc NewFunc) (Pool, error) {
+func New(name string, newfunc NewFunc) Pool {
 	p := &pool{
 		newfunc:        newfunc,
 		name:           name,
@@ -75,7 +75,7 @@ func New(name string, newfunc NewFunc) (Pool, error) {
 		avatarRequests: make(map[uint64]chan avatarRequest),
 	}
 	go p.resourceOpener()
-	return p, nil
+	return p
 }
 
 // NewFunc creates a new avatar.
