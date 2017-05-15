@@ -1,6 +1,7 @@
 # srcpool   [![GoDoc](https://godoc.org/github.com/tsuna/gohbase?status.png)](https://godoc.org/github.com/henrylee2cn/srcpool)
 
-srcpool is a high availability / high concurrent resource pool, which is similar to database/sql's db pool.
+srcpool is a high availability / high concurrent resource pool.
+It automatically manages the number of resources, which is similar to database/sql's db pool.
 
 ```go
 type Pool interface {

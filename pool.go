@@ -1,4 +1,5 @@
-// Srcpool is a high availability / high concurrent resource pool, which is similar to database/sql's db pool.
+// srcpool is a high availability / high concurrent resource pool,
+// it automatically manages the number of resources, which is similar to database/sql's db pool.
 package srcpool
 
 import (
