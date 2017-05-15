@@ -61,3 +61,14 @@ func (c *Pools) Del(name string) {
 	c.pools.Store(m)
 	c.mutex.Unlock()
 }
+
+// Clean delects and close all the Pools.
+func (c *Pools) Clean() {
+	c.mutex.Lock()
+	pools := c.pools.Load().(map[string]Pool)
+	for _, v := range pools {
+		v.Close()
+	}
+	c.pools.Store(make(map[string]Pool))
+	c.mutex.Unlock()
+}
