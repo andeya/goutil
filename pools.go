@@ -41,11 +41,11 @@ func (c *Pools) GetAll() []Pool {
 
 // Set stores Pool.
 // If the same name exists, will close and cover it.
-func (c *Pools) Set(connPool Pool) {
+func (c *Pools) Set(pool Pool) {
 	c.mutex.Lock()
 	pools := c.pools.Load().(map[string]Pool)
 	m := make(map[string]Pool, len(pools)+1)
-	name := connPool.Name()
+	name := pool.Name()
 	for k, v := range pools {
 		if k == name {
 			v.Close()
@@ -53,7 +53,7 @@ func (c *Pools) Set(connPool Pool) {
 			m[k] = v
 		}
 	}
-	m[name] = connPool
+	m[name] = pool
 	c.pools.Store(m)
 	c.mutex.Unlock()
 }
