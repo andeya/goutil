@@ -142,7 +142,14 @@ type Avatar struct {
 	inUse bool
 }
 
-func (avatar *Avatar) releaseConn(err error) {
+// Pool returns Pool to which it belongs
+func (avatar *Avatar) Pool() Pool {
+	return avatar.p
+}
+
+// Free releases self to the Pool.
+// If error is not nil, close it.
+func (avatar *Avatar) Free(err error) {
 	avatar.p.putAvatar(avatar, err)
 }
 
