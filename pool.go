@@ -460,14 +460,16 @@ func (p *pool) resourceCleaner(d time.Duration) {
 // PoolStats contains resource statistics.
 type PoolStats struct {
 	// OpenResources is the number of open resources to the resource.
-	OpenResources int
+	OpenResources   int
+	ClosedResources uint64
 }
 
 // Stats returns resource statistics.
 func (p *pool) Stats() PoolStats {
 	p.mu.Lock()
 	stats := PoolStats{
-		OpenResources: p.numOpen,
+		OpenResources:   p.numOpen,
+		ClosedResources: p.numClosed,
 	}
 	p.mu.Unlock()
 	return stats
