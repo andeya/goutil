@@ -1,38 +1,38 @@
-package connpool
+package srcpool
 
 import (
 	"sync"
 	"sync/atomic"
 )
 
-// ConnPools stores ConnPool
-type ConnPools struct {
-	// stores 'map[string]ConnPool',
+// Pools stores Pool
+type Pools struct {
+	// stores 'map[string]Pool',
 	// one server node has one connection pool.
 	pools atomic.Value
 	// protects pools
 	mutex sync.Mutex
 }
 
-// NewPools creates ConnPools
-func NewPools() *ConnPools {
-	c := &ConnPools{}
-	c.pools.Store(make(map[string]ConnPool))
+// NewPools creates Pools
+func NewPools() *Pools {
+	c := &Pools{}
+	c.pools.Store(make(map[string]Pool))
 	return c
 }
 
-// Get gets ConnPool by name
-func (c *ConnPools) Get(name string) (ConnPool, bool) {
-	pool, ok := c.pools.Load().(map[string]ConnPool)[name]
+// Get gets Pool by name
+func (c *Pools) Get(name string) (Pool, bool) {
+	pool, ok := c.pools.Load().(map[string]Pool)[name]
 	return pool, ok
 }
 
-// Set stores ConnPool.
+// Set stores Pool.
 // If the same name exists, will close and cover it.
-func (c *ConnPools) Set(connPool ConnPool) {
+func (c *Pools) Set(connPool Pool) {
 	c.mutex.Lock()
-	pools := c.pools.Load().(map[string]ConnPool)
-	m := make(map[string]ConnPool, len(pools)+1)
+	pools := c.pools.Load().(map[string]Pool)
+	m := make(map[string]Pool, len(pools)+1)
 	name := connPool.Name()
 	for k, v := range pools {
 		if k == name {
@@ -46,11 +46,11 @@ func (c *ConnPools) Set(connPool ConnPool) {
 	c.mutex.Unlock()
 }
 
-// Del delects ConnPool by name, and close the ConnPool.
-func (c *ConnPools) Del(name string) {
+// Del delects Pool by name, and close the Pool.
+func (c *Pools) Del(name string) {
 	c.mutex.Lock()
-	pools := c.pools.Load().(map[string]ConnPool)
-	m := make(map[string]ConnPool, len(pools))
+	pools := c.pools.Load().(map[string]Pool)
+	m := make(map[string]Pool, len(pools))
 	for k, v := range pools {
 		if k == name {
 			v.Close()

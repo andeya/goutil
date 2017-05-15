@@ -1,3 +1,3 @@
-# connpool   [![GoDoc](https://godoc.org/github.com/tsuna/gohbase?status.png)](https://godoc.org/github.com/henrylee2cn/connpool)
+# srcpool   [![GoDoc](https://godoc.org/github.com/tsuna/gohbase?status.png)](https://godoc.org/github.com/henrylee2cn/srcpool)
 
-Connpool is a high availability / high concurrent net.Conn pool, which is similar to database/sql's db pool.
+Srcpool is a high availability / high concurrent io.Closer pool, which is similar to database/sql's db pool.
