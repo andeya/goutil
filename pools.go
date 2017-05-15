@@ -1,6 +1,7 @@
 package srcpool
 
 import (
+	"sort"
 	"sync"
 	"sync/atomic"
 )
@@ -25,6 +26,17 @@ func NewPools() *Pools {
 func (c *Pools) Get(name string) (Pool, bool) {
 	pool, ok := c.pools.Load().(map[string]Pool)[name]
 	return pool, ok
+}
+
+// GetAll gets all the Pools
+func (c *Pools) GetAll() []Pool {
+	all := c.pools.Load().(map[string]Pool)
+	pools := make(pools, 0, len(all))
+	for _, pool := range all {
+		pools = append(pools, pool)
+	}
+	sort.Sort(pools)
+	return pools
 }
 
 // Set stores Pool.
@@ -71,4 +83,18 @@ func (c *Pools) Clean() {
 	}
 	c.pools.Store(make(map[string]Pool))
 	c.mutex.Unlock()
+}
+
+type pools []Pool
+
+func (p pools) Len() int {
+	return len(p)
+}
+
+func (p pools) Less(i, j int) bool {
+	return p[i].Name() < p[j].Name()
+}
+
+func (p pools) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
 }
