@@ -457,9 +457,9 @@ func (p *pool) resourceCleaner(d time.Duration) {
 	}
 }
 
-// PoolStats contains net statistics.
+// PoolStats contains resource statistics.
 type PoolStats struct {
-	// OpenResources is the number of open resources to the net.
+	// OpenResources is the number of open resources to the resource.
 	OpenResources int
 }
 
@@ -544,7 +544,7 @@ type avatarRequest struct {
 	err    error
 }
 
-var errPoolClosed = errors.New("pool: net is closed")
+var errPoolClosed = errors.New("pool: resource is closed")
 
 // nextRequestKeyLocked returns the next resource request key.
 // It is assumed that nextRequest will not overflow.
