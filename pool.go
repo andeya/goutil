@@ -22,11 +22,18 @@ type Pool interface {
 	Name() string
 	// Get returns a object in Resource type.
 	Get() (Resource, error)
-	// GetContext returns a object in Resource type, support context cancellation.
+	// GetContext returns a object in Resource type.
+	// Support context cancellation.
 	GetContext(context.Context) (Resource, error)
 	// Put gives a resource back to the Pool.
 	// If error is not nil, close the avatar.
 	Put(Resource, error)
+	// Callback callbacks your handle function, returns the error of getting resource or handling.
+	// Support recover panic.
+	Callback(func(Resource) error) error
+	// Callback callbacks your handle function, returns the error of getting resource or handling.
+	// Support recover panic and context cancellation.
+	CallbackContext(context.Context, func(Resource) error) error
 	// SetMaxLifetime sets the maximum amount of time a resource may be reused.
 	//
 	// Expired resource may be closed lazily before reuse.
@@ -115,6 +122,8 @@ type pool struct {
 	maxLifetime time.Duration      // maximum amount of time a resource may be reused
 	cleanerCh   chan struct{}
 }
+
+var _ Pool = new(pool)
 
 // resourceReuseStrategy determines how (*pool).getone returns resources.
 type resourceReuseStrategy uint8
@@ -273,6 +282,11 @@ func (p *pool) removeDepLocked(x finalCloser, dep interface{}) func() error {
 	}
 }
 
+// Name returns the connPool's name.
+func (p *pool) Name() string {
+	return p.name
+}
+
 // Close closes the Pool, releasing any open resources.
 //
 // It is rare to close a Pool, as the Pool handle is meant to be
@@ -395,11 +409,6 @@ func (p *pool) SetMaxLifetime(d time.Duration) {
 	p.maxLifetime = d
 	p.startCleanerLocked()
 	p.mu.Unlock()
-}
-
-// Name returns the connPool's name.
-func (p *pool) Name() string {
-	return p.name
 }
 
 // startCleanerLocked starts resourceCleaner if needed.
@@ -560,6 +569,56 @@ func (p *pool) nextRequestKeyLocked() uint64 {
 	return next
 }
 
+// maxBadGetoneRetries is the number of maximum retries if the newfunc returns
+// ErrBadConn to signal a broken resource before forcing a new
+// resource to be opened.
+const maxBadGetoneRetries = 2
+
+// GetContext returns a object in Resource type, support context cancellation.
+func (p *pool) GetContext(ctx context.Context) (Resource, error) {
+	var err error
+	var src Resource
+	for i := 0; i < maxBadGetoneRetries; i++ {
+		src, err = p.getone(ctx, cachedOrNew)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		return p.getone(ctx, alwaysNew)
+	}
+	return src, err
+}
+
+// Get returns a object in Resource type.
+func (p *pool) Get() (Resource, error) {
+	return p.GetContext(context.Background())
+}
+
+// Callback callbacks your handle function, returns the error of getting resource or handling.
+// Support recover panic.
+func (p *pool) Callback(fn func(Resource) error) error {
+	return p.CallbackContext(context.Background(), fn)
+}
+
+// Callback callbacks your handle function, returns the error of getting resource or handling.
+// Support recover panic and context cancellation.
+func (p *pool) CallbackContext(ctx context.Context, fn func(Resource) error) error {
+	src, err := p.GetContext(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			p.Put(src, fmt.Errorf("%v", r))
+		} else {
+			p.Put(src, err)
+		}
+	}()
+	err = fn(src)
+	return err
+}
+
 var ErrBadConn = errors.New("pool: bad resource")
 
 // getone returns a newly-opened or cached *Avatar.
@@ -652,32 +711,6 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 	avatar.inUse = true
 	p.mu.Unlock()
 	return avatar.src, nil
-}
-
-// maxBadGetoneRetries is the number of maximum retries if the newfunc returns
-// ErrBadConn to signal a broken resource before forcing a new
-// resource to be opened.
-const maxBadGetoneRetries = 2
-
-// GetContext returns a object in Resource type, support context cancellation.
-func (p *pool) GetContext(ctx context.Context) (Resource, error) {
-	var err error
-	var src Resource
-	for i := 0; i < maxBadGetoneRetries; i++ {
-		src, err = p.getone(ctx, cachedOrNew)
-		if err == nil {
-			break
-		}
-	}
-	if err != nil {
-		return p.getone(ctx, alwaysNew)
-	}
-	return src, err
-}
-
-// Get returns a object in Resource type.
-func (p *pool) Get() (Resource, error) {
-	return p.GetContext(context.Background())
 }
 
 // Put gives a resource back to the Pool.

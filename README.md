@@ -42,11 +42,18 @@ type Pool interface {
     Name() string
     // Get returns a object in Resource type.
     Get() (Resource, error)
-    // GetContext returns a object in Resource type, support context cancellation.
+    // GetContext returns a object in Resource type.
+    // Support context cancellation.
     GetContext(context.Context) (Resource, error)
     // Put gives a resource back to the Pool.
     // If error is not nil, close the avatar.
     Put(Resource, error)
+    // Callback callbacks your handle function, returns the error of getting resource or handling.
+    // Support recover panic.
+    Callback(func(Resource) error) error
+    // Callback callbacks your handle function, returns the error of getting resource or handling.
+    // Support recover panic and context cancellation.
+    CallbackContext(context.Context, func(Resource) error) error
     // SetMaxLifetime sets the maximum amount of time a resource may be reused.
     //
     // Expired resource may be closed lazily before reuse.
