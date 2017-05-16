@@ -87,7 +87,7 @@ func New(name string, newfunc NewFunc) Pool {
 //
 // The returned resource is only used by one goroutine at a
 // time.
-type NewFunc func() (Resource, error)
+type NewFunc func(context.Context) (Resource, error)
 
 type pool struct {
 	newfunc NewFunc
@@ -501,17 +501,18 @@ func (p *pool) maybeOpenNewResources() {
 
 // Runs in a separate goroutine, opens new resources when requested.
 func (p *pool) resourceOpener() {
+	ctx := context.TODO()
 	for range p.openerCh {
-		p.openNewResource()
+		p.openNewResource(ctx)
 	}
 }
 
 // Open one new resource
-func (p *pool) openNewResource() {
+func (p *pool) openNewResource(ctx context.Context) {
 	// maybeOpenNewConnctions has already executed p.numOpen++ before it sent
 	// on p.openerCh. This function must execute p.numOpen-- if the
 	// resource fails or is closed before returning.
-	src, err := p.newfunc()
+	src, err := p.newfunc(ctx)
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.closed {
@@ -632,7 +633,7 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 
 	p.numOpen++ // optimistically
 	p.mu.Unlock()
-	src, err := p.newfunc()
+	src, err := p.newfunc(ctx)
 	if err != nil {
 		p.mu.Lock()
 		p.numOpen-- // correct for earlier optimism

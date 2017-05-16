@@ -4,6 +4,18 @@ srcpool is a high availability / high concurrent resource pool.
 It automatically manages the number of resources, which is similar to database/sql's db pool.
 
 ```go
+// NewFunc creates a new avatar.
+//
+// NewFunc may return a cached resource (one previously
+// closed), but doing so is unnecessary; the pool package
+// maintains a pool of idle resources for efficient re-use.
+//
+// The returned resource is only used by one goroutine at a
+// time.
+type NewFunc func(context.Context) (Resource, error)
+```
+
+```go
 // Resource is a resource that can be stored in the Pool.
 type Resource interface {
     // SetAvatar stores the contact with pool
