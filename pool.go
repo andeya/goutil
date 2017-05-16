@@ -682,11 +682,14 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 			if !ok {
 				return nil, errPoolClosed
 			}
-			if ret.err == nil && ret.avatar.expired(lifetime) {
-				ret.avatar.close()
-				return nil, ErrExpired
+			if ret.err == nil {
+				if ret.avatar.expired(lifetime) {
+					ret.avatar.close()
+					return nil, ErrExpired
+				}
+				return ret.avatar.src, nil
 			}
-			return ret.avatar.src, ret.err
+			return nil, ret.err
 		}
 	}
 
