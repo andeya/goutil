@@ -570,7 +570,7 @@ func (p *pool) nextRequestKeyLocked() uint64 {
 }
 
 // maxBadGetoneRetries is the number of maximum retries if the newfunc returns
-// ErrBadConn to signal a broken resource before forcing a new
+// ErrExpired to signal a broken resource before forcing a new
 // resource to be opened.
 const maxBadGetoneRetries = 2
 
@@ -618,7 +618,8 @@ func (p *pool) CallbackContext(ctx context.Context, fn func(Resource) error) (er
 	return err
 }
 
-var ErrBadConn = errors.New("pool: bad resource")
+// ErrExpired error: getting expired resource.
+var ErrExpired = errors.New("pool: getting expired resource")
 
 // getone returns a newly-opened or cached *Avatar.
 func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Resource, error) {
@@ -646,7 +647,7 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 		p.mu.Unlock()
 		if a.expired(lifetime) {
 			a.close()
-			return nil, ErrBadConn
+			return nil, ErrExpired
 		}
 		return a.src, nil
 	}
@@ -683,7 +684,7 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 			}
 			if ret.err == nil && ret.avatar.expired(lifetime) {
 				ret.avatar.close()
-				return nil, ErrBadConn
+				return nil, ErrExpired
 			}
 			return ret.avatar.src, ret.err
 		}
