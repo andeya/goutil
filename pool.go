@@ -1,5 +1,5 @@
-// srcpool is a high availability / high concurrent resource pool,
-// it automatically manages the number of resources, which is similar to database/sql's db pool.
+// srcpool is a high availability / high concurrent resource pool, which automatically manages the number of resources.
+// So it is similar to database/sql's db pool.
 package srcpool
 
 import (
@@ -12,11 +12,11 @@ import (
 	"time"
 )
 
-// Pool is a pool of zero or more underlying avatar.
+// Pool is a pool of zero or more underlying avatar(resource).
 // It's safe for concurrent use by multiple goroutines.
 //
 // Pool creates and frees resource automatically;
-// it also maintains a free pool of idle avatar.
+// it also maintains a free pool of idle avatar(resource).
 type Pool interface {
 	// Name returns the name.
 	Name() string

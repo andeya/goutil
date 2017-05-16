@@ -4,6 +4,27 @@ srcpool is a high availability / high concurrent resource pool.
 It automatically manages the number of resources, which is similar to database/sql's db pool.
 
 ```go
+// Resource is a resource that can be stored in the Pool.
+type Resource interface {
+    // SetAvatar stores the contact with pool
+    // Do not call it yourself, it is only called by (*Pool).get, and will only be called once
+    SetAvatar(*Avatar)
+    // GetAvatar gets the contact with pool
+    // Do not call it yourself, it is only called by (*Pool).Put
+    GetAvatar() *Avatar
+    // Close closes the original source
+    // No need to call it yourself, it is only called by (*Avatar).close
+    Close() error
+}
+```
+
+```go
+
+// Pool is a pool of zero or more underlying avatar(resource).
+// It's safe for concurrent use by multiple goroutines.
+//
+// Pool creates and frees resource automatically;
+// it also maintains a free pool of idle avatar(resource).
 type Pool interface {
     // Name returns the name.
     Name() string
