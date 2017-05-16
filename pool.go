@@ -603,17 +603,16 @@ func (p *pool) Callback(fn func(Resource) error) error {
 
 // Callback callbacks your handle function, returns the error of getting resource or handling.
 // Support recover panic and context cancellation.
-func (p *pool) CallbackContext(ctx context.Context, fn func(Resource) error) error {
+func (p *pool) CallbackContext(ctx context.Context, fn func(Resource) error) (err error) {
 	src, err := p.GetContext(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			p.Put(src, fmt.Errorf("%v", r))
-		} else {
-			p.Put(src, err)
+			err = fmt.Errorf("%v", r)
 		}
+		p.Put(src, err)
 	}()
 	err = fn(src)
 	return err
