@@ -533,7 +533,7 @@ func (p *pool) openNewResource(ctx context.Context) {
 	}
 	if err != nil {
 		p.numOpen--
-		p.putPoolLocked(nil, err)
+		// p.putPoolLocked(nil, err)
 		p.maybeOpenNewResources()
 		return
 	}
