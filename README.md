@@ -139,13 +139,13 @@ it also maintains a free pool of idle avatar(resource).
 
 - NewResPool creates ResPool.
 
-	```
+	```go
 	func NewResPool(name string, newfunc func(context.Context) (Resource, error)) ResPool
 	```
 
 - Resource is a resource that can be stored in the ResPool.
 
-	```
+	```go
 	type Resource interface {
 		// SetAvatar stores the contact with resPool
 		// Do not call it yourself, it is only called by (*ResPool).get, and will only be called once
@@ -161,7 +161,7 @@ it also maintains a free pool of idle avatar(resource).
 
 - Avatar links a Resource with a mutex, to be held during all calls into the Avatar.
 
-	```
+	```go
 	type Avatar struct {
 		// Has unexported fields.
 	}
@@ -170,19 +170,19 @@ it also maintains a free pool of idle avatar(resource).
 - Free releases self to the ResPool.
 If error is not nil, close it.
 
-	```
+	```go
 	func (avatar *Avatar) Free(err error)
 	```
 
 - ResPool returns ResPool to which it belongs.
 
-	```
+	```go
 	func (avatar *Avatar) ResPool() ResPool
 	```
 
 - ResPools stores ResPool.
 
-	```
+	```go
 	type ResPools struct {
 		// Has unexported fields.
 	}
@@ -190,37 +190,37 @@ If error is not nil, close it.
 
 - NewResPools creates a new ResPools.
 
-	```
+	```go
 	func NewResPools() *ResPools
 	```
 
 - Clean delects and close all the ResPools.
 
-	```
+	```go
 	func (c *ResPools) Clean()
 	```
 
 - Del delects ResPool by name, and close the ResPool.
 
-	```
+	```go
 	func (c *ResPools) Del(name string)
 	```
 
 - Get gets ResPool by name.
 
-	```
+	```go
 	func (c *ResPools) Get(name string) (ResPool, bool)
 	```
 
 - GetAll gets all the ResPools.
 
-	```
+	```go
 	func (c *ResPools) GetAll() []ResPool
 	```
 
 - Set stores ResPool.
 If the same name exists, will close and cover it.
 
-	```
+	```go
 	func (c *ResPools) Set(pool ResPool)
 	```
