@@ -225,15 +225,6 @@ type finalCloser interface {
 	finalClose() error
 }
 
-// addDep notes that x now depends on dep, and x's finalClose won't be
-// called until all of x's dependencies are removed with removeDep.
-func (p *pool) addDep(x finalCloser, dep interface{}) {
-	//println(fmt.Sprintf("addDep(%T %p, %T %p)", x, x, dep, dep))
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.addDepLocked(x, dep)
-}
-
 func (p *pool) addDepLocked(x finalCloser, dep interface{}) {
 	if p.dep == nil {
 		p.dep = make(map[finalCloser]depSet)
@@ -244,17 +235,6 @@ func (p *pool) addDepLocked(x finalCloser, dep interface{}) {
 		p.dep[x] = xdep
 	}
 	xdep[dep] = true
-}
-
-// removeDep notes that x no longer depends on dep.
-// If x still has dependencies, nil is returned.
-// If x no longer has any dependencies, its finalClose method will be
-// called and its error value will be returned.
-func (p *pool) removeDep(x finalCloser, dep interface{}) error {
-	p.mu.Lock()
-	fn := p.removeDepLocked(x, dep)
-	p.mu.Unlock()
-	return fn()
 }
 
 func (p *pool) removeDepLocked(x finalCloser, dep interface{}) func() error {
@@ -651,7 +631,6 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 		}
 		return a.src, nil
 	}
-
 	// Out of free resources or we were asked not to use one. If we're not
 	// allowed to open any more resources, make a request and wait.
 	if p.maxOpen > 0 && p.numOpen >= p.maxOpen {
