@@ -1,23 +1,26 @@
-// srcpool is a high availability / high concurrent resource pool, which automatically manages the number of resources.
-// So it is similar to database/sql's db pool.
-package srcpool
+package pool
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"runtime"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/henrylee2cn/goutil/coarsetime"
 )
 
-// Pool is a pool of zero or more underlying avatar(resource).
-// It's safe for concurrent use by multiple goroutines.
+// ResPool is a high availability/high concurrent resource pool, which automatically manages the number of resources.
+// So it is similar to database/sql's db pool.
 //
-// Pool creates and frees resource automatically;
+// ResPool is a pool of zero or more underlying avatar(resource).
+// It's safe for concurrent use by multiple goroutines.
+// ResPool creates and frees resource automatically;
 // it also maintains a free pool of idle avatar(resource).
-type Pool interface {
+type ResPool interface {
 	// Name returns the name.
 	Name() string
 	// Get returns a object in Resource type.
@@ -25,7 +28,7 @@ type Pool interface {
 	// GetContext returns a object in Resource type.
 	// Support context cancellation.
 	GetContext(context.Context) (Resource, error)
-	// Put gives a resource back to the Pool.
+	// Put gives a resource back to the ResPool.
 	// If error is not nil, close the avatar.
 	Put(Resource, error)
 	// Callback callbacks your handle function, returns the error of getting resource or handling.
@@ -57,25 +60,38 @@ type Pool interface {
 	// If n <= 0, then there is no limit on the number of open resources.
 	// The default is 0 (unlimited).
 	SetMaxOpen(n int)
-	// Close closes the Pool, releasing any open resources.
+	// Close closes the ResPool, releasing any open resources.
 	//
-	// It is rare to close a Pool, as the Pool handle is meant to be
+	// It is rare to close a ResPool, as the ResPool handle is meant to be
 	// long-lived and shared between many goroutines.
 	Close() error
 	// Stats returns resource statistics.
-	Stats() PoolStats
+	Stats() ResPoolStats
 }
 
-// This is the size of the resourceOpener request chan (pool.openerCh).
+// Resource is a resource that can be stored in the ResPool.
+type Resource interface {
+	// SetAvatar stores the contact with resPool
+	// Do not call it yourself, it is only called by (*ResPool).get, and will only be called once
+	SetAvatar(*Avatar)
+	// GetAvatar gets the contact with resPool
+	// Do not call it yourself, it is only called by (*ResPool).Put
+	GetAvatar() *Avatar
+	// Close closes the original source
+	// No need to call it yourself, it is only called by (*Avatar).close
+	Close() error
+}
+
+// This is the size of the resourceOpener request chan (resPool.openerCh).
 // This value should be larger than the maximum typical value
-// used for pool.maxOpen. If maxOpen is significantly larger than
-// avatarRequestQueueSize then it is possible for ALL calls into the *Pool
+// used for resPool.maxOpen. If maxOpen is significantly larger than
+// avatarRequestQueueSize then it is possible for ALL calls into the *ResPool
 // to block until the resourceOpener can satisfy the backlog of requests.
 const avatarRequestQueueSize = 1000000
 
-// New creates Pool.
-func New(name string, newfunc NewFunc) Pool {
-	p := &pool{
+// NewResPool creates ResPool.
+func NewResPool(name string, newfunc func(context.Context) (Resource, error)) ResPool {
+	p := &resPool{
 		newfunc:        newfunc,
 		name:           name,
 		openerCh:       make(chan struct{}, avatarRequestQueueSize),
@@ -86,18 +102,14 @@ func New(name string, newfunc NewFunc) Pool {
 	return p
 }
 
-// NewFunc creates a new avatar.
-//
-// NewFunc may return a cached resource (one previously
-// closed), but doing so is unnecessary; the pool package
-// maintains a pool of idle resources for efficient re-use.
-//
-// The returned resource is only used by one goroutine at a
-// time.
-type NewFunc func(context.Context) (Resource, error)
-
-type pool struct {
-	newfunc NewFunc
+type resPool struct {
+	// newfunc may return a cached resource (one previously
+	// closed), but doing so is unnecessary; the resPool package
+	// maintains a resPool of idle resources for efficient re-use.
+	//
+	// The returned resource is only used by one goroutine at a
+	// time.
+	newfunc func(context.Context) (Resource, error)
 	name    string
 	// numClosed is an atomic counter which represents a total number of
 	// closed resources.
@@ -123,9 +135,9 @@ type pool struct {
 	cleanerCh   chan struct{}
 }
 
-var _ Pool = new(pool)
+var _ ResPool = new(resPool)
 
-// resourceReuseStrategy determines how (*pool).getone returns resources.
+// resourceReuseStrategy determines how (*resPool).getone returns resources.
 type resourceReuseStrategy uint8
 
 const (
@@ -140,24 +152,24 @@ const (
 // Avatar links a Resource with a mutex, to
 // be held during all calls into the Avatar.
 type Avatar struct {
-	p         *pool
+	p         *resPool
 	createdAt time.Time
 
-	sync.Mutex  // guards following
-	src         Resource
+	lock        sync.Mutex // guards following
+	res         Resource
 	closed      bool
 	finalClosed bool // Avatar.Close has been called
 
-	// guarded by pool.mu
+	// guarded by resPool.mu
 	inUse bool
 }
 
-// Pool returns Pool to which it belongs
-func (avatar *Avatar) Pool() Pool {
+// ResPool returns ResPool to which it belongs.
+func (avatar *Avatar) ResPool() ResPool {
 	return avatar.p
 }
 
-// Free releases self to the Pool.
+// Free releases self to the ResPool.
 // If error is not nil, close it.
 func (avatar *Avatar) Free(err error) {
 	avatar.p.putAvatar(avatar, err)
@@ -167,28 +179,28 @@ func (avatar *Avatar) expired(timeout time.Duration) bool {
 	if timeout <= 0 {
 		return false
 	}
-	return avatar.createdAt.Add(timeout).Before(nowFunc())
+	return avatar.createdAt.Add(timeout).Before(coarsetime.CoarseTimeNow())
 }
 
 // the avatar.p's Mutex is held.
-func (avatar *Avatar) closePoolLocked() func() error {
-	avatar.Lock()
-	defer avatar.Unlock()
+func (avatar *Avatar) closeResPoolLocked() func() error {
+	avatar.lock.Lock()
+	defer avatar.lock.Unlock()
 	if avatar.closed {
-		return func() error { return errors.New("pool: duplicate *Avatar close") }
+		return func() error { return errors.New("resPool: duplicate *Avatar close") }
 	}
 	avatar.closed = true
 	return avatar.p.removeDepLocked(avatar, avatar)
 }
 
 func (avatar *Avatar) close() error {
-	avatar.Lock()
+	avatar.lock.Lock()
 	if avatar.closed {
-		avatar.Unlock()
-		return errors.New("pool: duplicate *Avatar close")
+		avatar.lock.Unlock()
+		return errors.New("resPool: duplicate *Avatar close")
 	}
 	avatar.closed = true
-	avatar.Unlock() // not defer; removeDep finalClose calls may need to lock
+	avatar.lock.Unlock() // not defer; removeDep finalClose calls may need to lock
 
 	// And now updates that require holding avatar.mu.Lock.
 	avatar.p.mu.Lock()
@@ -199,10 +211,10 @@ func (avatar *Avatar) close() error {
 
 func (avatar *Avatar) finalClose() error {
 	var err error
-	withLock(avatar, func() {
+	withLock(&avatar.lock, func() {
 		avatar.finalClosed = true
-		err = avatar.src.Close()
-		avatar.src = nil
+		err = avatar.res.Close()
+		avatar.res = nil
 	})
 
 	avatar.p.mu.Lock()
@@ -217,15 +229,15 @@ func (avatar *Avatar) finalClose() error {
 // depSet is a finalCloser's outstanding dependencies
 type depSet map[interface{}]bool // set of true bools
 
-// The finalCloser interface is used by (*Pool).addDep and related
+// The finalCloser interface is used by (*ResPool).addDep and related
 // dependency reference counting.
 type finalCloser interface {
 	// finalClose is called when the reference count of an resource
-	// goes to zero. (*Pool).mu is not held while calling it.
+	// goes to zero. (*ResPool).mu is not held while calling it.
 	finalClose() error
 }
 
-func (p *pool) addDepLocked(x finalCloser, dep interface{}) {
+func (p *resPool) addDepLocked(x finalCloser, dep interface{}) {
 	if p.dep == nil {
 		p.dep = make(map[finalCloser]depSet)
 	}
@@ -237,7 +249,7 @@ func (p *pool) addDepLocked(x finalCloser, dep interface{}) {
 	xdep[dep] = true
 }
 
-func (p *pool) removeDepLocked(x finalCloser, dep interface{}) func() error {
+func (p *resPool) removeDepLocked(x finalCloser, dep interface{}) func() error {
 	//println(fmt.Sprintf("removeDep(%T %p, %T %p)", x, x, dep, dep))
 
 	xdep, ok := p.dep[x]
@@ -262,18 +274,18 @@ func (p *pool) removeDepLocked(x finalCloser, dep interface{}) func() error {
 	}
 }
 
-// Name returns the connPool's name.
-func (p *pool) Name() string {
+// Name returns the connResPool's name.
+func (p *resPool) Name() string {
 	return p.name
 }
 
-// Close closes the Pool, releasing any open resources.
+// Close closes the ResPool, releasing any open resources.
 //
-// It is rare to close a Pool, as the Pool handle is meant to be
+// It is rare to close a ResPool, as the ResPool handle is meant to be
 // long-lived and shared between many goroutines.
-func (p *pool) Close() error {
+func (p *resPool) Close() error {
 	p.mu.Lock()
-	if p.closed { // Make Pool.Close idempotent
+	if p.closed { // Make ResPool.Close idempotent
 		p.mu.Unlock()
 		return nil
 	}
@@ -284,7 +296,7 @@ func (p *pool) Close() error {
 	var err error
 	fns := make([]func() error, 0, len(p.freeAvatar))
 	for _, avatar := range p.freeAvatar {
-		fns = append(fns, avatar.closePoolLocked())
+		fns = append(fns, avatar.closeResPoolLocked())
 	}
 	p.freeAvatar = nil
 	p.closed = true
@@ -303,7 +315,7 @@ func (p *pool) Close() error {
 
 const defaultMaxIdle = 2
 
-func (p *pool) maxIdleLocked() int {
+func (p *resPool) maxIdleLocked() int {
 	n := p.maxIdle
 	switch {
 	case n == 0:
@@ -323,7 +335,7 @@ func (p *pool) maxIdleLocked() int {
 // then the new MaxIdle will be reduced to match the SetMaxIdle limit
 //
 // If n <= 0, no idle resources are retained.
-func (p *pool) SetMaxIdle(n int) {
+func (p *resPool) SetMaxIdle(n int) {
 	p.mu.Lock()
 	if n > 0 {
 		p.maxIdle = n
@@ -356,7 +368,7 @@ func (p *pool) SetMaxIdle(n int) {
 //
 // If n <= 0, then there is no limit on the number of open resources.
 // The default is 0 (unlimited).
-func (p *pool) SetMaxOpen(n int) {
+func (p *resPool) SetMaxOpen(n int) {
 	p.mu.Lock()
 	p.maxOpen = n
 	if n < 0 {
@@ -374,7 +386,7 @@ func (p *pool) SetMaxOpen(n int) {
 // Expired resource may be closed lazily before reuse.
 //
 // If d <= 0, resource are reused forever.
-func (p *pool) SetMaxLifetime(d time.Duration) {
+func (p *resPool) SetMaxLifetime(d time.Duration) {
 	if d < 0 {
 		d = 0
 	}
@@ -392,14 +404,14 @@ func (p *pool) SetMaxLifetime(d time.Duration) {
 }
 
 // startCleanerLocked starts resourceCleaner if needed.
-func (p *pool) startCleanerLocked() {
+func (p *resPool) startCleanerLocked() {
 	if p.maxLifetime > 0 && p.numOpen > 0 && p.cleanerCh == nil {
 		p.cleanerCh = make(chan struct{}, 1)
 		go p.resourceCleaner(p.maxLifetime)
 	}
 }
 
-func (p *pool) resourceCleaner(d time.Duration) {
+func (p *resPool) resourceCleaner(d time.Duration) {
 	const minInterval = time.Second
 
 	if d < minInterval {
@@ -410,7 +422,7 @@ func (p *pool) resourceCleaner(d time.Duration) {
 	for {
 		select {
 		case <-t.C:
-		case <-p.cleanerCh: // maxLifetime was changed or connPool was closed.
+		case <-p.cleanerCh: // maxLifetime was changed or connResPool was closed.
 		}
 
 		p.mu.Lock()
@@ -421,7 +433,7 @@ func (p *pool) resourceCleaner(d time.Duration) {
 			return
 		}
 
-		expiredSince := nowFunc().Add(-d)
+		expiredSince := coarsetime.CoarseTimeNow().Add(-d)
 		var closing []*Avatar
 		for i := 0; i < len(p.freeAvatar); i++ {
 			c := p.freeAvatar[i]
@@ -447,8 +459,8 @@ func (p *pool) resourceCleaner(d time.Duration) {
 	}
 }
 
-// PoolStats contains resource statistics.
-type PoolStats struct {
+// ResPoolStats contains resource statistics.
+type ResPoolStats struct {
 	// OpenResources is the number of open resources to the resource.
 	OpenResources   int
 	FreeResources   int
@@ -456,9 +468,9 @@ type PoolStats struct {
 }
 
 // Stats returns resource statistics.
-func (p *pool) Stats() PoolStats {
+func (p *resPool) Stats() ResPoolStats {
 	p.mu.Lock()
-	stats := PoolStats{
+	stats := ResPoolStats{
 		OpenResources:   p.numOpen,
 		ClosedResources: p.numClosed,
 		FreeResources:   len(p.freeAvatar),
@@ -470,7 +482,7 @@ func (p *pool) Stats() PoolStats {
 // Assumes p.mu is locked.
 // If there are avatarRequests and the resource limit hasn't been reached,
 // then tell the resourceOpener to open new resources.
-func (p *pool) maybeOpenNewResources() {
+func (p *resPool) maybeOpenNewResources() {
 	numRequests := len(p.avatarRequests)
 	if p.maxOpen > 0 {
 		numCanOpen := p.maxOpen - p.numOpen
@@ -489,7 +501,7 @@ func (p *pool) maybeOpenNewResources() {
 }
 
 // Runs in a separate goroutine, opens new resources when requested.
-func (p *pool) resourceOpener() {
+func (p *resPool) resourceOpener() {
 	ctx := context.TODO()
 	for range p.openerCh {
 		p.openNewResource(ctx)
@@ -497,53 +509,53 @@ func (p *pool) resourceOpener() {
 }
 
 // Open one new resource
-func (p *pool) openNewResource(ctx context.Context) {
+func (p *resPool) openNewResource(ctx context.Context) {
 	// maybeOpenNewConnctions has already executed p.numOpen++ before it sent
 	// on p.openerCh. This function must execute p.numOpen-- if the
 	// resource fails or is closed before returning.
-	src, err := p.newfunc(ctx)
+	res, err := p.newfunc(ctx)
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.closed {
 		if err == nil {
-			src.Close()
+			res.Close()
 		}
 		p.numOpen--
 		return
 	}
 	if err != nil {
 		p.numOpen--
-		// p.putPoolLocked(nil, err)
+		// p.putResPoolLocked(nil, err)
 		p.maybeOpenNewResources()
 		return
 	}
 	avatar := &Avatar{
 		p:         p,
-		createdAt: nowFunc(),
-		src:       src,
+		createdAt: coarsetime.CoarseTimeNow(),
+		res:       res,
 	}
-	src.SetAvatar(avatar)
-	if p.putPoolLocked(avatar, err) {
+	res.SetAvatar(avatar)
+	if p.putResPoolLocked(avatar, err) {
 		p.addDepLocked(avatar, avatar)
 	} else {
 		p.numOpen--
-		src.Close()
+		res.Close()
 	}
 }
 
 // avatarRequest represents one request for a new resource
-// When there are no idle resources available, Pool.getone will create
+// When there are no idle resources available, ResPool.getone will create
 // a new avatarRequest and put it on the p.avatarRequests list.
 type avatarRequest struct {
 	avatar *Avatar
 	err    error
 }
 
-var errPoolClosed = errors.New("pool: resource is closed")
+var errResPoolClosed = errors.New("resPool: resource is closed")
 
 // nextRequestKeyLocked returns the next resource request key.
 // It is assumed that nextRequest will not overflow.
-func (p *pool) nextRequestKeyLocked() uint64 {
+func (p *resPool) nextRequestKeyLocked() uint64 {
 	next := p.nextRequest
 	p.nextRequest++
 	return next
@@ -555,11 +567,11 @@ func (p *pool) nextRequestKeyLocked() uint64 {
 const maxBadGetoneRetries = 2
 
 // GetContext returns a object in Resource type, support context cancellation.
-func (p *pool) GetContext(ctx context.Context) (Resource, error) {
+func (p *resPool) GetContext(ctx context.Context) (Resource, error) {
 	var err error
-	var src Resource
+	var res Resource
 	for i := 0; i < maxBadGetoneRetries; i++ {
-		src, err = p.getone(ctx, cachedOrNew)
+		res, err = p.getone(ctx, cachedOrNew)
 		if err == nil {
 			break
 		}
@@ -567,24 +579,24 @@ func (p *pool) GetContext(ctx context.Context) (Resource, error) {
 	if err != nil {
 		return p.getone(ctx, alwaysNew)
 	}
-	return src, err
+	return res, err
 }
 
 // Get returns a object in Resource type.
-func (p *pool) Get() (Resource, error) {
+func (p *resPool) Get() (Resource, error) {
 	return p.GetContext(context.Background())
 }
 
 // Callback callbacks your handle function, returns the error of getting resource or handling.
 // Support recover panic.
-func (p *pool) Callback(fn func(Resource) error) error {
+func (p *resPool) Callback(fn func(Resource) error) error {
 	return p.CallbackContext(context.Background(), fn)
 }
 
 // Callback callbacks your handle function, returns the error of getting resource or handling.
 // Support recover panic and context cancellation.
-func (p *pool) CallbackContext(ctx context.Context, fn func(Resource) error) (err error) {
-	src, err := p.GetContext(ctx)
+func (p *resPool) CallbackContext(ctx context.Context, fn func(Resource) error) (err error) {
+	res, err := p.GetContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -592,21 +604,21 @@ func (p *pool) CallbackContext(ctx context.Context, fn func(Resource) error) (er
 		if r := recover(); r != nil {
 			err = fmt.Errorf("%v", r)
 		}
-		p.Put(src, err)
+		p.Put(res, err)
 	}()
-	err = fn(src)
+	err = fn(res)
 	return err
 }
 
 // ErrExpired error: getting expired resource.
-var ErrExpired = errors.New("pool: getting expired resource")
+var ErrExpired = errors.New("resPool: getting expired resource")
 
 // getone returns a newly-opened or cached *Avatar.
-func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Resource, error) {
+func (p *resPool) getone(ctx context.Context, strategy resourceReuseStrategy) (Resource, error) {
 	p.mu.Lock()
 	if p.closed {
 		p.mu.Unlock()
-		return nil, errPoolClosed
+		return nil, errResPoolClosed
 	}
 	// Check if the context is expired.
 	select {
@@ -629,7 +641,7 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 			a.close()
 			return nil, ErrExpired
 		}
-		return a.src, nil
+		return a.res, nil
 	}
 	// Out of free resources or we were asked not to use one. If we're not
 	// allowed to open any more resources, make a request and wait.
@@ -659,14 +671,14 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 			return nil, ctx.Err()
 		case ret, ok := <-req:
 			if !ok {
-				return nil, errPoolClosed
+				return nil, errResPoolClosed
 			}
 			if ret.err == nil {
 				if ret.avatar.expired(lifetime) {
 					ret.avatar.close()
 					return nil, ErrExpired
 				}
-				return ret.avatar.src, nil
+				return ret.avatar.res, nil
 			}
 			return nil, ret.err
 		}
@@ -674,7 +686,7 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 
 	p.numOpen++ // optimistically
 	p.mu.Unlock()
-	src, err := p.newfunc(ctx)
+	res, err := p.newfunc(ctx)
 	if err != nil {
 		p.mu.Lock()
 		p.numOpen-- // correct for earlier optimism
@@ -685,43 +697,43 @@ func (p *pool) getone(ctx context.Context, strategy resourceReuseStrategy) (Reso
 	p.mu.Lock()
 	avatar := &Avatar{
 		p:         p,
-		createdAt: nowFunc(),
-		src:       src,
+		createdAt: coarsetime.CoarseTimeNow(),
+		res:       res,
 	}
-	src.SetAvatar(avatar)
+	res.SetAvatar(avatar)
 	p.addDepLocked(avatar, avatar)
 	avatar.inUse = true
 	p.mu.Unlock()
-	return avatar.src, nil
+	return avatar.res, nil
 }
 
-// Put gives a resource back to the Pool.
+// Put gives a resource back to the ResPool.
 // If error is not nil, close the avatar.
-func (p *pool) Put(src Resource, err error) {
-	a := src.GetAvatar()
+func (p *resPool) Put(res Resource, err error) {
+	a := res.GetAvatar()
 	if a == nil {
-		src.Close()
+		res.Close()
 		return
 	}
 	p.putAvatar(a, err)
 }
 
 // putAvatarHook is a hook for testing.
-var putAvatarHook func(*pool, *Avatar)
+var putAvatarHook func(*resPool, *Avatar)
 
 // debugGetPut determines whether getConn & putAvatar calls' stack traces
 // are returned for more verbose crashes.
 const debugGetPut = false
 
-// putAvatar adds a resource to the Pool's free pool.
+// putAvatar adds a resource to the ResPool's free resPool.
 // err is optionally the last error that occurred on this avatar.
-func (p *pool) putAvatar(avatar *Avatar, err error) {
+func (p *resPool) putAvatar(avatar *Avatar, err error) {
 	p.mu.Lock()
 	if !avatar.inUse {
 		if debugGetPut {
 			fmt.Printf("putAvatar(%v) DUPLICATE was: %s\n\nPREVIOUS was: %s", avatar, stack(), p.lastPut[avatar])
 		}
-		panic("pool: resource returned that was never out")
+		panic("resPool: resource returned that was never out")
 	}
 	if debugGetPut {
 		p.lastPut[avatar] = stack()
@@ -741,7 +753,7 @@ func (p *pool) putAvatar(avatar *Avatar, err error) {
 	if putAvatarHook != nil {
 		putAvatarHook(p, avatar)
 	}
-	added := p.putPoolLocked(avatar, nil)
+	added := p.putResPoolLocked(avatar, nil)
 	p.mu.Unlock()
 
 	if !added {
@@ -749,16 +761,16 @@ func (p *pool) putAvatar(avatar *Avatar, err error) {
 	}
 }
 
-// Satisfy a avatarRequest or put the Avatar in the idle pool and return true
+// Satisfy a avatarRequest or put the Avatar in the idle resPool and return true
 // or return false.
-// putPoolLocked will satisfy a avatarRequest if there is one, or it will
+// putResPoolLocked will satisfy a avatarRequest if there is one, or it will
 // return the *Avatar to the freeAvatar list if err == nil and the idle
 // resource limit will not be exceeded.
 // If err != nil, the value of avatar is ignored.
 // If err == nil, then avatar must not equal nil.
 // If a avatarRequest was fulfilled or the *Avatar was placed in the
 // freeAvatar list, then true is returned, otherwise false is returned.
-func (p *pool) putPoolLocked(avatar *Avatar, err error) bool {
+func (p *resPool) putResPoolLocked(avatar *Avatar, err error) bool {
 	if p.closed {
 		return false
 	}
@@ -798,4 +810,97 @@ func withLock(lk sync.Locker, fn func()) {
 	lk.Lock()
 	defer lk.Unlock() // in case fn panics
 	fn()
+}
+
+// ResPools stores ResPool
+type ResPools struct {
+	// stores 'map[string]ResPool',
+	// one server node has one connection pool.
+	resPools atomic.Value
+	// protects resPools
+	mutex sync.Mutex
+}
+
+// NewResPools creates a new ResPools.
+func NewResPools() *ResPools {
+	c := &ResPools{}
+	c.resPools.Store(make(map[string]ResPool))
+	return c
+}
+
+// Get gets ResPool by name.
+func (c *ResPools) Get(name string) (ResPool, bool) {
+	pool, ok := c.resPools.Load().(map[string]ResPool)[name]
+	return pool, ok
+}
+
+// GetAll gets all the ResPools.
+func (c *ResPools) GetAll() []ResPool {
+	all := c.resPools.Load().(map[string]ResPool)
+	resPools := make(resPools, 0, len(all))
+	for _, pool := range all {
+		resPools = append(resPools, pool)
+	}
+	sort.Sort(resPools)
+	return resPools
+}
+
+// Set stores ResPool.
+// If the same name exists, will close and cover it.
+func (c *ResPools) Set(pool ResPool) {
+	c.mutex.Lock()
+	resPools := c.resPools.Load().(map[string]ResPool)
+	m := make(map[string]ResPool, len(resPools)+1)
+	name := pool.Name()
+	for k, v := range resPools {
+		if k == name {
+			v.Close()
+		} else {
+			m[k] = v
+		}
+	}
+	m[name] = pool
+	c.resPools.Store(m)
+	c.mutex.Unlock()
+}
+
+// Del delects ResPool by name, and close the ResPool.
+func (c *ResPools) Del(name string) {
+	c.mutex.Lock()
+	resPools := c.resPools.Load().(map[string]ResPool)
+	m := make(map[string]ResPool, len(resPools))
+	for k, v := range resPools {
+		if k == name {
+			v.Close()
+		} else {
+			m[k] = v
+		}
+	}
+	c.resPools.Store(m)
+	c.mutex.Unlock()
+}
+
+// Clean delects and close all the ResPools.
+func (c *ResPools) Clean() {
+	c.mutex.Lock()
+	resPools := c.resPools.Load().(map[string]ResPool)
+	for _, v := range resPools {
+		v.Close()
+	}
+	c.resPools.Store(make(map[string]ResPool))
+	c.mutex.Unlock()
+}
+
+type resPools []ResPool
+
+func (p resPools) Len() int {
+	return len(p)
+}
+
+func (p resPools) Less(i, j int) bool {
+	return p[i].Name() < p[j].Name()
+}
+
+func (p resPools) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
 }
