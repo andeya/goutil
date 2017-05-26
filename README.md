@@ -81,6 +81,12 @@ If calling 'Go' after calling 'Stop', will no longer reuse goroutine.
 ResPool is a high availability/high concurrent resource pool, which automatically manages the number of resources.
 So it is similar to database/sql's db pool.
 
+- import it
+
+	```go
+	"github.com/henrylee2cn/goutil/pool"
+	```
+
 - ResPool is a pool of zero or more underlying avatar(resource).
 It's safe for concurrent use by multiple goroutines.
 ResPool creates and frees resource automatically;
