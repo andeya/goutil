@@ -13,7 +13,7 @@ Common and useful utils for the Go project development.
 - [CoarseTime](#coarsetime) Current time truncated to the nearest second
 - [GoPool](#gopool) Goroutines' pool
 - [ResPool](#respool) Resources' pool
-- [Lunar](#lunar) Chinese Lunar Calendar
+- [Calendar](#calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
 
 
 ## 3. UtilsAPI
@@ -233,14 +233,14 @@ If the same name exists, will close and cover it.
 	func (c *ResPools) Set(pool ResPool)
 	```
 
-### Lunar
+### Calendar
 
-Chinese Lunar Calendar.
+Chinese Lunar Calendar, Solar Calendar and cron time rules.
 
 - import it
 
 	```go
-	"github.com/henrylee2cn/goutil/lunar"
+	"github.com/henrylee2cn/goutil/calendar"
 	```
 
-[Details to enter](lunar/README.md)
+[Calendar details](calendar/README.md)
