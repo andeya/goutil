@@ -1,8 +1,8 @@
-# lunar
+# calendar
 
 Chinese Lunar Calendar, Solar Calendar and cron time rules.
 
-## Calendar
+## About
 
 	//Solar structure
 	type Solar struct {
