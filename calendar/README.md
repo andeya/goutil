@@ -23,7 +23,7 @@ Chinese Lunar Calendar, Solar Calendar and cron time rules.
 	}
 
 ```go
-func NewSolar(year, month, day, hour, min, sec int, nsec int) *Solar
+func NewSolar(year, month, day, hour, min, sec, nsec int) *Solar
 ```
 
 ```go
@@ -91,4 +91,4 @@ func main() {
 
 ## Cron
 
-[cron](corn/README.md)
+[cron](cron/README.md)
