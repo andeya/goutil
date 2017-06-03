@@ -274,6 +274,18 @@ func (l Lunar) Truncate(d time.Duration) *Lunar {
 	return l.Convert().Truncate(d).Convert()
 }
 
+// MonthFirst returns lunar time of the month 1 day.
+func (l Lunar) MonthFirst() *Lunar {
+	l.day = 1
+	return &l
+}
+
+// MonthLast returns to the last day of the month.
+func (l Lunar) MonthLast() *Lunar {
+	l.day = LunarMonthDays(l.year, l.month)
+	return &l
+}
+
 // Equal returns whether it is equal to the lunar time.
 func (l *Lunar) Equal(lunar *Lunar) bool {
 	return l.year == lunar.year &&
