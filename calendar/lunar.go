@@ -385,7 +385,7 @@ func LeapDays(year int) int {
 	return 0
 }
 
-// LunarMonthDays the days of the m-th month of this year
+// LunarMonthDays the days of the m-th month of this year.
 func LunarMonthDays(year, month int) int {
 	if (lunarTable[year-MinYear] & (0x10000 >> uint(month))) != 0 {
 		return 30
