@@ -165,8 +165,8 @@ func (s *SpecSchedule) LunarNext(t *calendar.Lunar) *calendar.Lunar {
 	// This flag indicates whether a field has been incremented.
 	added := false
 
-	// If no time is found within five years, return zero.
-	yearLimit := t.Year() + 5
+	// If no time is found within calendar.MaxYear-t.Year(), return zero.
+	yearLimit := calendar.MaxYear
 
 WRAP:
 	if t.Year() > yearLimit {
