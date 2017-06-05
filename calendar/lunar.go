@@ -353,6 +353,51 @@ func (l *Lunar) Nanosecond() int {
 	return l.nanosecond
 }
 
+// SetHour sets hour.
+// NOTE: hour range [0:23].
+func (l *Lunar) SetHour(hour int) *Lunar {
+	if hour < 0 || hour > 23 {
+		panic("hour range [0:23]")
+	}
+	l.hour = hour
+	return l
+}
+
+// SetMinute sets minute.
+// NOTE: minute range [0:59].
+func (l *Lunar) SetMinute(minute int) *Lunar {
+	if minute < 0 || minute > 59 {
+		panic("minute range [0:59]")
+	}
+	l.minute = minute
+	return l
+}
+
+// SetSecond sets second.
+// NOTE: second range [0:59].
+func (l *Lunar) SetSecond(second int) *Lunar {
+	if second < 0 || second > 59 {
+		panic("second range [0:59]")
+	}
+	l.second = second
+	return l
+}
+
+// SetNanosecond sets nanosecond.
+// NOTE: nanosecond range [0:999999999].
+func (l *Lunar) SetNanosecond(nanosecond int) *Lunar {
+	if nanosecond < 0 || nanosecond > 999999999 {
+		panic("nanosecond range [0:999999999]")
+	}
+	l.nanosecond = nanosecond
+	return l
+}
+
+// Copy returns a copy .
+func (l Lunar) Copy() *Lunar {
+	return &l
+}
+
 // Festival returns festival.
 func (l *Lunar) Festival(fm FestivalMap) (string, error) {
 	m := fmt.Sprintf("%2d", l.month)
