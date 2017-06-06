@@ -55,7 +55,7 @@ var (
 	monthStr1           = []string{"初", "十", "廿", "卅"}
 	monthStr2           = []string{"日", "一", "二", "三", "四", "五", "六", "七", "八", "九"}
 
-	base = time.Date(MinYear, 1, 31, 0, 0, 0, 0, time.UTC)
+	base = time.Date(MinYear, 1, 31, 0, 0, 0, 0, CST)
 
 	// CST  CST China Standard Time UT 8:00
 	CST = time.FixedZone("CST", 3600*8)
@@ -285,6 +285,10 @@ func (l Lunar) MonthFirst() *Lunar {
 
 // MonthLast returns to the last day of the month.
 func (l Lunar) MonthLast() *Lunar {
+	if l.isLeapMonth {
+		l.day = LunarMonthDays(l.year, 13)
+		return &l
+	}
 	l.day = LunarMonthDays(l.year, l.month)
 	return &l
 }
