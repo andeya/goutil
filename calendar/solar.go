@@ -12,21 +12,21 @@ type Solar struct {
 
 // NewSolarNow creates current solar time.
 func NewSolarNow() *Solar {
-	return &Solar{time.Now()}
+	return &Solar{time.Now().In(CST)}
 }
 
 // NewSolarTime creates a solar time from time.Time.
 func NewSolarTime(t time.Time) *Solar {
-	return &Solar{t}
+	return &Solar{t.In(CST)}
 }
 
 // NewSolar creates a solar time.
-func NewSolar(year, month, day, hour, min, sec int, nsec int) *Solar {
+func NewSolar(year, month, day, hour, min, sec int, nsec int, loc *time.Location) *Solar {
 	if !isYearValid(year) {
 		return nil
 	}
-	t := time.Date(year, time.Month(month), day, hour, min, sec, nsec, time.UTC)
-	return &Solar{t}
+	t := time.Date(year, time.Month(month), day, hour, min, sec, nsec, loc)
+	return &Solar{t.In(CST)}
 }
 
 // String formats time.

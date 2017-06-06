@@ -82,7 +82,7 @@ func main() {
 	s0 = l0.Convert()
 	fmt.Println(s0)
 
-	s1 := calendar.NewSolar(1987, 8, 9, 9, 0, 0, 0)
+	s1 := calendar.NewSolar(1987, 8, 9, 9, 0, 0, 0, time.UTC)
 	fmt.Println(s1)
 	l1 := s0.Convert()
 	fmt.Println(l1)
@@ -116,7 +116,7 @@ func main() {
 	z4 := calendar.ZhiHour(22)
 	fmt.Println(z, z1, z2, z3, z4)
 
-	l = calendar.NewSolar(2012, 7, 9, 23, 35, 51, 0).Convert()
+	l = calendar.NewSolar(2012, 7, 9, 23, 35, 51, 0, calendar.CST).Convert()
 	fmt.Println("Mon Jul 9 23:35:51 2012 -> ", l)
 	fmt.Println("2012年五月廿二 10时20分15秒 -> ", calendar.NewLunar(2012, 5, 22, 10, 20, 15, 0, false))
 }

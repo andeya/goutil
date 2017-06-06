@@ -56,6 +56,9 @@ var (
 	monthStr2           = []string{"日", "一", "二", "三", "四", "五", "六", "七", "八", "九"}
 
 	base = time.Date(MinYear, 1, 31, 0, 0, 0, 0, time.UTC)
+
+	// CST  CST China Standard Time UT 8:00
+	CST = time.FixedZone("CST", 3600*8)
 )
 
 //Luanr structure
@@ -260,7 +263,7 @@ func (l *Lunar) Convert() *Solar {
 	year := solar.Year()
 	month := int(solar.Month())
 	day := solar.Day()
-	return NewSolar(year, month, day, l.Hour(), l.Minute(), l.Second(), l.Nanosecond())
+	return NewSolar(year, month, day, l.Hour(), l.Minute(), l.Second(), l.Nanosecond(), CST)
 }
 
 // Truncate returns the result of rounding t down to a multiple of d (since the zero time).
