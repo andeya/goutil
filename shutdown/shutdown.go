@@ -11,12 +11,14 @@ import (
 )
 
 func init() {
-	// subscribe to SIGINT signals
-	stopChan := make(chan os.Signal)
-	signal.Notify(stopChan, os.Interrupt, os.Kill)
-	<-stopChan // wait for SIGINT
-	Shutdown()
-	signal.Stop(stopChan)
+	go func() {
+		// subscribe to SIGINT signals
+		stopChan := make(chan os.Signal)
+		signal.Notify(stopChan, os.Interrupt, os.Kill)
+		<-stopChan // wait for SIGINT
+		signal.Stop(stopChan)
+		Shutdown()
+	}()
 }
 
 var (
@@ -73,8 +75,10 @@ func Shutdown(timeout ...time.Duration) {
 	graceful := shutdown()
 	if graceful {
 		log.Infof("servers are shutted down gracefully.\n")
+		os.Exit(0)
 	} else {
 		log.Errorf("servers are shutted down, but not gracefully.\n")
+		os.Exit(-1)
 	}
 }
 
