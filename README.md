@@ -13,9 +13,9 @@ Common and useful utils for the Go project development.
 - [Calendar](#calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
 - [CoarseTime](#coarsetime) Current time truncated to the nearest second
 - [GoPool](#gopool) Goroutines' pool
-- [Random](#random) Random bytes or string
 - [ResPool](#respool) Resources' pool
 - [Shutdown](#shutdown) Close current program gracefully
+- [Various](#various) Various small functions
 
 
 ## 3. UtilsAPI
@@ -289,6 +289,8 @@ Parameter timeout is used to reset time-out period for current program shutdown.
 	```
 
 ### Various
+
+Various small functions.
 
 - import it
 
