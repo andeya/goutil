@@ -10,13 +10,27 @@ Common and useful utils for the Go project development.
 
 ## 2. Contents
 
+- [Calendar](#calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
 - [CoarseTime](#coarsetime) Current time truncated to the nearest second
 - [GoPool](#gopool) Goroutines' pool
+- [Random](#random) Random bytes or string
 - [ResPool](#respool) Resources' pool
-- [Calendar](#calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
+- [Shutdown](#shutdown) Close current program gracefully
 
 
 ## 3. UtilsAPI
+
+### Calendar
+
+Chinese Lunar Calendar, Solar Calendar and cron time rules.
+
+- import it
+
+	```go
+	"github.com/henrylee2cn/goutil/calendar"
+	```
+
+[Calendar details](calendar/README.md)
 
 ### CoarseTime
 
@@ -233,14 +247,77 @@ If the same name exists, will close and cover it.
 	func (c *ResPools) Set(pool ResPool)
 	```
 
-### Calendar
+### Shutdown
 
-Chinese Lunar Calendar, Solar Calendar and cron time rules.
+Close current program gracefully.
 
 - import it
 
 	```go
-	"github.com/henrylee2cn/goutil/calendar"
+	"github.com/henrylee2cn/goutil/shutdown"
 	```
 
-[Calendar details](calendar/README.md)
+- SetShutdown sets the function which is called after current program shutdown,
+and the time-out period for current program shutdown.
+If parameter timeout is 0, automatically use default `defaultTimeout`(60s).
+If parameter timeout less than 0, it is indefinite period.
+The finalizer function is executed before the shutdown deadline, but it is not guaranteed to be completed.
+
+	```go
+	func SetShutdown(timeout time.Duration, fn ...func() error)
+	```
+
+- Shutdown closes current program gracefully.
+Parameter timeout is used to reset time-out period for current program shutdown.
+
+	```go
+	func Shutdown(timeout ...time.Duration)
+	```
+- Logger logger interface
+
+	```go
+	Logger interface {
+		Infof(format string, v ...interface{})
+		Errorf(format string, v ...interface{})
+	}
+
+- SetLog resets logger
+
+	```go
+	func SetLog(logger Logger)
+	```
+	```
+
+### Various
+
+- import it
+
+	```go
+	"github.com/henrylee2cn/goutil/pool"
+	```
+
+- Byte2String convert []byte type to string type.
+
+	```go
+	func Bytes2String(b []byte) string
+	```
+
+- String2Bytes convert *string type to []byte type.
+NOTE: panic if modify the member value of the []byte.
+
+	```go
+	func String2Bytes(s *string) []byte
+	```
+
+- RandomBytes returns securely generated random bytes. It will panic if the system's secure random number generator fails to function correctly.
+
+	```go
+	func RandomBytes(n int) []byte
+	```
+
+- RandomString returns a URL-safe, base64 encoded securely generated random string. It will panic if the system's secure random number generator fails to function correctly.
+The length n must be an integer multiple of 4, otherwise the last character will be padded with `=`.
+
+	```go
+	func RandomString(n int) string
+	```
