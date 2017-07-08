@@ -298,17 +298,17 @@ Various small functions.
 	"github.com/henrylee2cn/goutil/pool"
 	```
 
-- Byte2String convert []byte type to string type.
+- BytesToString convert []byte type to string type.
 
 	```go
-	func Bytes2String(b []byte) string
+	func BytesToString(b []byte) string
 	```
 
-- String2Bytes convert *string type to []byte type.
+- StringToBytes convert *string type to []byte type.
 NOTE: panic if modify the member value of the []byte.
 
 	```go
-	func String2Bytes(s *string) []byte
+	func StringToBytes(s *string) []byte
 	```
 
 - RandomBytes returns securely generated random bytes. It will panic if the system's secure random number generator fails to function correctly.
