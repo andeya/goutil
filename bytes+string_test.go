@@ -12,7 +12,7 @@ func TestBytesToString(t *testing.T) {
 
 func TestStringToBytes(t *testing.T) {
 	s := "testing: StringToBytes"
-	b := StringToBytes(&s)
+	b := StringToBytes(s)
 	t.Logf("type: %T, value: %v, val-string: %s\n", b, b, b)
 	b = append(b, '!')
 	t.Logf("after append:\ntype: %T, value: %v, val-string: %s\n", b, b, b)

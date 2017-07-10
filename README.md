@@ -304,11 +304,11 @@ Various small functions.
 	func BytesToString(b []byte) string
 	```
 
-- StringToBytes convert *string type to []byte type.
+- StringToBytes convert string type to []byte type.
 NOTE: panic if modify the member value of the []byte.
 
 	```go
-	func StringToBytes(s *string) []byte
+	func StringToBytes(s string) []byte
 	```
 
 - RandomBytes returns securely generated random bytes. It will panic if the system's secure random number generator fails to function correctly.
