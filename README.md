@@ -323,3 +323,21 @@ The length n must be an integer multiple of 4, otherwise the last character will
 	```go
 	func RandomString(n int) string
 	```
+
+- CamelString converts the accepted string to a camel string (xx_yy to XxYy)
+
+	```go
+	func CamelString(s string) string
+	```
+
+- SnakeString converts the accepted string to a snake string (XxYy to xx_yy)
+
+	```go
+	func SnakeString(s string) string
+	```
+
+- ObjectName gets the type name of the object
+
+	```go
+	func ObjectName(obj interface{}) string
+	```
