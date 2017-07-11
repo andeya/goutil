@@ -12,9 +12,9 @@ Common and useful utils for the Go project development.
 
 - [Calendar](#calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
 - [CoarseTime](#coarsetime) Current time truncated to the nearest second
+- [Graceful](#graceful) Shutdown or reboot current process gracefully.
 - [GoPool](#gopool) Goroutines' pool
 - [ResPool](#respool) Resources' pool
-- [Shutdown](#shutdown) Close current program gracefully
 - [Various](#various) Various small functions
 
 
@@ -47,6 +47,63 @@ This is a faster alternative to time.Now().
 
 	```go
 	func CoarseTimeNow() time.Time
+	```
+
+### Graceful
+
+Shutdown or reboot current process gracefully.
+
+- import it
+
+	```go
+	"github.com/henrylee2cn/goutil/graceful"
+	```
+
+- SetShutdown sets the function which is called after the process shutdown,
+and the time-out period for the process shutdown.
+If 0<=timeout<5s, automatically use 'MinShutdownTimeout'(5s).
+If timeout<0, indefinite period.
+'preCloseFunc' is executed before closing process, but not guaranteed to be completed.
+'postCloseFunc' is executed after process are closed, but not guaranteed to be completed.
+
+	```go
+	func SetShutdown(timeout time.Duration, fn ...func() error)
+	```
+
+- Shutdown closes all the frame process gracefully.
+Parameter timeout is used to reset time-out period for the process shutdown.
+
+	```go
+	func Shutdown(timeout ...time.Duration)
+	```
+
+- Reboot all the frame process gracefully.
+Notes: Windows system are not supported!
+
+	```
+	func Reboot(timeout ...time.Duration)
+	```
+
+- SetExtractProcFiles sets extract proc files only for reboot.
+Notes: Windows system are not supported!
+
+	```
+	func SetExtractProcFiles(extractProcFiles []*os.File)
+	```
+
+- Logger logger interface
+
+	```go
+	Logger interface {
+		Infof(format string, v ...interface{})
+		Errorf(format string, v ...interface{})
+	}
+
+- SetLog resets logger
+
+	```go
+	func SetLog(logger Logger)
+	```
 	```
 
 ### GoPool
@@ -245,47 +302,6 @@ If the same name exists, will close and cover it.
 
 	```go
 	func (c *ResPools) Set(pool ResPool)
-	```
-
-### Shutdown
-
-Close current program gracefully.
-
-- import it
-
-	```go
-	"github.com/henrylee2cn/goutil/shutdown"
-	```
-
-- SetShutdown sets the function which is called after current program shutdown,
-and the time-out period for current program shutdown.
-If parameter timeout is 0, automatically use default `defaultTimeout`(60s).
-If parameter timeout less than 0, it is indefinite period.
-The finalizer function is executed before the shutdown deadline, but it is not guaranteed to be completed.
-
-	```go
-	func SetShutdown(timeout time.Duration, fn ...func() error)
-	```
-
-- Shutdown closes current program gracefully.
-Parameter timeout is used to reset time-out period for current program shutdown.
-
-	```go
-	func Shutdown(timeout ...time.Duration)
-	```
-- Logger logger interface
-
-	```go
-	Logger interface {
-		Infof(format string, v ...interface{})
-		Errorf(format string, v ...interface{})
-	}
-
-- SetLog resets logger
-
-	```go
-	func SetLog(logger Logger)
-	```
 	```
 
 ### Various
