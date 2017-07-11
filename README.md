@@ -80,14 +80,14 @@ Parameter timeout is used to reset time-out period for the process shutdown.
 - Reboot all the frame process gracefully.
 Notes: Windows system are not supported!
 
-	```
+	```go
 	func Reboot(timeout ...time.Duration)
 	```
 
 - SetExtractProcFiles sets extract proc files only for reboot.
 Notes: Windows system are not supported!
 
-	```
+	```go
 	func SetExtractProcFiles(extractProcFiles []*os.File)
 	```
 
@@ -98,12 +98,12 @@ Notes: Windows system are not supported!
 		Infof(format string, v ...interface{})
 		Errorf(format string, v ...interface{})
 	}
+	```
 
 - SetLog resets logger
 
 	```go
 	func SetLog(logger Logger)
-	```
 	```
 
 ### GoPool
