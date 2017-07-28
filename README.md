@@ -357,3 +357,16 @@ The length n must be an integer multiple of 4, otherwise the last character will
 	```go
 	func ObjectName(obj interface{}) string
 	```
+
+- JsQueryEscape escapes the string in javascript standard so it can be safely placed inside a URL query.
+
+	```go
+	func JsQueryEscape(s string) string
+	```
+
+- JsQueryUnescape does the inverse transformation of JsQueryEscape, converting %AB into the byte 0xAB and '+' into ' ' (space). It returns an error if any % is not followed by two hexadecimal digits.
+
+	```go
+	func JsQueryUnescape(s string) (string, error)
+	```
+
