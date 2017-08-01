@@ -12,6 +12,7 @@ Common and useful utils for the Go project development.
 
 - [Calendar](#calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
 - [CoarseTime](#coarsetime) Current time truncated to the nearest second
+- [Errors](#errors) Improved errors package.
 - [Graceful](#graceful) Shutdown or reboot current process gracefully.
 - [GoPool](#gopool) Goroutines' pool
 - [ResPool](#respool) Resources' pool
@@ -47,6 +48,34 @@ This is a faster alternative to time.Now().
 
 	```go
 	func CoarseTimeNow() time.Time
+	```
+
+### Errors
+
+Errors is improved errors package.
+
+- import it
+
+	```go
+	"github.com/henrylee2cn/goutil/errors"
+	```
+
+- New returns an error that formats as the given text.
+
+	```go
+	func New(text string) error
+	```
+
+- Errorf formats according to a format specifier and returns the string as a value that satisfies error.
+
+	```go
+	func Errorf(format string, a ...interface{}) error
+	```
+
+- Merge merges multi errors.
+
+	```go
+	func Merge(errs ...error) error
 	```
 
 ### Graceful
