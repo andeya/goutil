@@ -468,18 +468,15 @@ The normal Map is high-performance mapping under low concurrency conditions.
 	```
 
 - SearchFile Search a file in paths.
-
-this is often used in search config file in /etc ~/
+This is often used in search config file in `/etc` `~/`
 
 	```go
 	func SearchFile(filename string, paths ...string) (fullpath string, err error)
 	```
 
-- GrepFile like command grep -E
-
-for example: GrepFile(`^hello`, "hello.txt")
-
-\n is striped while read
+- GrepFile like command grep -E.
+For example: GrepFile(`^hello`, "hello.txt").
+`\n` is striped while read
 
 	```go
 	func GrepFile(patten string, filename string) (lines []string, err error)
