@@ -78,6 +78,12 @@ Errors is improved errors package.
 	func Merge(errs ...error) error
 	```
 
+- Append appends multiple errors to the error.
+
+	```go
+	func Append(err error, errs ...error) error
+	```
+
 ### Graceful
 
 Shutdown or reboot current process gracefully.
@@ -429,4 +435,59 @@ The normal Map is high-performance mapping under low concurrency conditions.
 
 	```go
 	func NormalMap(capacity ...int) Map
+	```
+
+- SelfPath gets compiled executable file absolute path.
+
+	```go
+	func SelfPath() string
+	```
+
+- SelfDir gets compiled executable file directory.
+
+	```go
+	func SelfDir() string
+	```
+
+- RelPath gets relative path.
+
+	```go
+	func RelPath(targpath string) string
+	```
+
+- SelfChdir switch the working path to my own path.
+
+	```go
+	func SelfChdir()
+	```
+
+- FileExists reports whether the named file or directory exists.
+
+	```go
+	func FileExists(name string) bool
+	```
+
+- SearchFile Search a file in paths.
+
+this is often used in search config file in /etc ~/
+
+	```go
+	func SearchFile(filename string, paths ...string) (fullpath string, err error)
+	```
+
+- GrepFile like command grep -E
+
+for example: GrepFile(`^hello`, "hello.txt")
+
+\n is striped while read
+
+	```go
+	func GrepFile(patten string, filename string) (lines []string, err error)
+	```
+
+- WalkDirs traverses the directory, return to the relative path.
+You can specify the suffix.
+
+	```go
+	func WalkDirs(targpath string, suffixes ...string) (dirlist []string)
 	```
