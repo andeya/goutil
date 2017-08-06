@@ -488,3 +488,15 @@ You can specify the suffix.
 	```go
 	func WalkDirs(targpath string, suffixes ...string) (dirlist []string)
 	```
+
+- IsExportedOrBuiltinType is this type exported or a builtin?
+
+	```go
+	func IsExportedOrBuiltinType(t reflect.Type) bool
+	```
+
+- IsExportedName is this an exported - upper case - name?
+
+	```go
+	func IsExportedType(name string) bool
+	```
