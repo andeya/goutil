@@ -498,5 +498,5 @@ You can specify the suffix.
 - IsExportedName is this an exported - upper case - name?
 
 	```go
-	func IsExportedType(name string) bool
+	func IsExportedName(name string) bool
 	```
