@@ -537,18 +537,20 @@ func (m *atomicMap) Len() int {
 // If exist=false, no kv data is exist.
 // @added by henrylee2cn 2017/08/10
 func (m *atomicMap) Random() (key, value interface{}, exist bool) {
-	length := atomic.LoadInt32(&m.length)
-	if length == 0 {
-		return
-	}
-	i := rand.Intn(int(length))
-	m.Range(func(k, v interface{}) bool {
-		if i == 0 {
-			key, value, exist = k, v, true
-			return false
+	for !exist {
+		length := atomic.LoadInt32(&m.length)
+		if length == 0 {
+			return
 		}
-		i--
-		return true
-	})
+		i := rand.Intn(int(length))
+		m.Range(func(k, v interface{}) bool {
+			if i == 0 {
+				key, value, exist = k, v, true
+				return false
+			}
+			i--
+			return true
+		})
+	}
 	return
 }
