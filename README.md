@@ -425,8 +425,11 @@ It is safe for multiple goroutines to call a Map's methods concurrently.
 		// Range calls f sequentially for each key and value present in the map.
 		// If f returns false, range stops the iteration.
 		Range(f func(key, value interface{}) bool)
-		// Len returns the length of the map.
-		Len() int
+		// InexactLen returns the length of the map.
+		// Note:
+		//  the count implemented using sync.Map may be inaccurate;
+		//  the count implemented using NormalMap is accurate.
+		InexactLen() int
 	}
 	```
 
