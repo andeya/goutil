@@ -447,7 +447,7 @@ The normal Map is high-performance mapping under low concurrency conditions.
 It is safe for multiple goroutines to call a atomicMap's methods concurrently.
 From go v1.9 sync.Map.
 
-	```
+	```go
 	func AtomicMap() Map
 	```
 
