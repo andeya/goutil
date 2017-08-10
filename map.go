@@ -1,7 +1,9 @@
 package goutil
 
 import (
+	"math/rand"
 	"sync"
+	"time"
 )
 
 // Map is a concurrent map with loads, stores, and deletes.
@@ -22,6 +24,9 @@ type Map interface {
 	// Range calls f sequentially for each key and value present in the map.
 	// If f returns false, range stops the iteration.
 	Range(f func(key, value interface{}) bool)
+	// Random returns a pair kv randomly.
+	// If exist=false, no kv data is exist.
+	Random() (key, value interface{}, exist bool)
 	// InexactLen returns the length of the map.
 	// Note:
 	//  the count implemented using sync.Map may be inaccurate;
@@ -96,6 +101,30 @@ func (m *normalMap) Range(f func(key, value interface{}) bool) {
 			break
 		}
 	}
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+// Random returns a pair kv randomly.
+// If exist=false, no kv data is exist.
+func (m *normalMap) Random() (key, value interface{}, exist bool) {
+	m.rwmu.RLock()
+	defer m.rwmu.RUnlock()
+	length := len(m.data)
+	if length == 0 {
+		return
+	}
+	i := rand.Intn(length)
+	for key, value = range m.data {
+		if i == 0 {
+			exist = true
+			return
+		}
+		i--
+	}
+	return
 }
 
 // InexactLen returns the length of the map.
