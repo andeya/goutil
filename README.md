@@ -428,19 +428,27 @@ It is safe for multiple goroutines to call a Map's methods concurrently.
 		// Random returns a pair kv randomly.
 		// If exist=false, no kv data is exist.
 		Random() (key, value interface{}, exist bool)
-		// InexactLen returns the length of the map.
+		// Len returns the length of the map.
 		// Note:
-		//  the count implemented using sync.Map may be inaccurate;
-		//  the count implemented using NormalMap is accurate.
-		InexactLen() int
+		//  the count implemented using atomicMap may be inaccurate;
+		//  the count implemented using rwMap is accurate.
+		Len() int
 	}
 	```
 
-- NormalMap make a new concurrent safe map with sync.RWRWMutex.
+- RwMap creates a new concurrent safe map with sync.RWMutex.
 The normal Map is high-performance mapping under low concurrency conditions.
 
 	```go
-	func NormalMap(capacity ...int) Map
+	func RwMap(capacity ...int) Map
+	```
+
+- AtomicMap creates a concurrent map with amortized-constant-time loads, stores, and deletes.
+It is safe for multiple goroutines to call a atomicMap's methods concurrently.
+From go v1.9 sync.Map.
+
+	```
+	func AtomicMap() Map
 	```
 
 - SelfPath gets compiled executable file absolute path.
