@@ -1,4 +1,4 @@
-# goutil   [![GoDoc](https://godoc.org/github.com/tsuna/gohbase?status.png)](https://godoc.org/github.com/henrylee2cn/goutil)    ![goutil goreportcard](https://goreportcard.com/badge/github.com/henrylee2cn/goutil)
+# goutil [![report card](https://goreportcard.com/badge/github.com/henrylee2cn/goutil?style=flat-square)](http://goreportcard.com/report/henrylee2cn/goutil) [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/henrylee2cn/goutil)
 
 Common and useful utils for the Go project development.
 
