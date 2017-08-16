@@ -429,9 +429,10 @@ func (m *atomicMap) Delete(key interface{}) {
 		m.mu.Unlock()
 	}
 	if ok {
-		e.delete()
-		// @added by henrylee2cn 2017/08/10
-		atomic.AddInt32(&m.length, -1)
+		if e.delete() {
+			// @added by henrylee2cn 2017/08/10
+			atomic.AddInt32(&m.length, -1)
+		}
 	}
 }
 
@@ -539,7 +540,7 @@ func (m *atomicMap) Len() int {
 func (m *atomicMap) Random() (key, value interface{}, exist bool) {
 	for !exist {
 		length := atomic.LoadInt32(&m.length)
-		if length == 0 {
+		if length <= 0 {
 			return
 		}
 		i := rand.Intn(int(length))
