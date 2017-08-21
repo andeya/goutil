@@ -514,3 +514,9 @@ You can specify the suffix.
 	```go
 	func IsExportedName(name string) bool
 	```
+
+- PanicTrace trace panic stack info.
+
+	```go
+	func PanicTrace(kb int) []byte
+	```
