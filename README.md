@@ -94,6 +94,12 @@ Shutdown or reboot current process gracefully.
 	"github.com/henrylee2cn/goutil/graceful"
 	```
 
+- GraceSignal open graceful shutdown or reboot signal.
+
+	```go
+	func GraceSignal()
+	```
+
 - SetShutdown sets the function which is called after the process shutdown,
 and the time-out period for the process shutdown.
 If 0<=timeout<5s, automatically use 'MinShutdownTimeout'(5s).

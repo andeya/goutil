@@ -29,6 +29,11 @@ var (
 	postCloseFunc   func() error
 )
 
+// GraceSignal open graceful shutdown or reboot signal.
+func GraceSignal() {
+	graceSignal()
+}
+
 // SetShutdown sets the function which is called after the process shutdown,
 // and the time-out period for the process shutdown.
 // If 0<=timeout<5s, automatically use 'MinShutdownTimeout'(5s).
