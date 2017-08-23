@@ -22,7 +22,7 @@ import (
 
 // GraceSignal open graceful shutdown or reboot signal.
 func GraceSignal() {
-	graceSignal()
+	go graceSignal()
 }
 
 // MinShutdownTimeout the default time-out period for the process shutdown.
