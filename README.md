@@ -104,11 +104,11 @@ Shutdown or reboot current process gracefully.
 and the time-out period for the process shutdown.
 If 0<=timeout<5s, automatically use 'MinShutdownTimeout'(5s).
 If timeout<0, indefinite period.
-'preCloseFunc' is executed before closing process, but not guaranteed to be completed.
-'postCloseFunc' is executed after process are closed, but not guaranteed to be completed.
+'firstSweep' is first executed.
+'beforeExiting' is executed before process exiting.
 
 	```go
-	func SetShutdown(timeout time.Duration, fn ...func() error)
+	func SetShutdown(timeout time.Duration, firstSweep, beforeExiting func() error)
 	```
 
 - Shutdown closes all the frame process gracefully.

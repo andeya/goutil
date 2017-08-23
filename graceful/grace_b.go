@@ -58,9 +58,9 @@ func Reboot(timeout ...time.Duration) {
 
 			var reboot = true
 
-			if preCloseFunc != nil {
-				if err := preCloseFunc(); err != nil {
-					log.Errorf("[reboot-preClose] %s", err.Error())
+			if firstSweep != nil {
+				if err := firstSweep(); err != nil {
+					log.Errorf("[reboot-firstSweep] %s", err.Error())
 					graceful = false
 				}
 			}

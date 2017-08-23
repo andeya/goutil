@@ -25,8 +25,8 @@ const MinShutdownTimeout = 5 * time.Second
 
 var (
 	shutdownTimeout time.Duration
-	preCloseFunc    func() error
-	postCloseFunc   func() error
+	firstSweep      func() error
+	beforeExiting   func() error
 )
 
 // GraceSignal open graceful shutdown or reboot signal.
@@ -38,9 +38,9 @@ func GraceSignal() {
 // and the time-out period for the process shutdown.
 // If 0<=timeout<5s, automatically use 'MinShutdownTimeout'(5s).
 // If timeout<0, indefinite period.
-// 'preCloseFunc' is executed before closing process, but not guaranteed to be completed.
-// 'postCloseFunc' is executed after process are closed, but not guaranteed to be completed.
-func SetShutdown(timeout time.Duration, preCloseFunc, postCloseFunc func() error) {
+// 'firstSweep' is first executed.
+// 'beforeExiting' is executed before process exiting.
+func SetShutdown(timeout time.Duration, firstSweep, beforeExiting func() error) {
 	if timeout < 0 {
 		shutdownTimeout = 1<<63 - 1
 	} else if timeout < MinShutdownTimeout {
@@ -48,8 +48,8 @@ func SetShutdown(timeout time.Duration, preCloseFunc, postCloseFunc func() error
 	} else {
 		shutdownTimeout = timeout
 	}
-	preCloseFunc = preCloseFunc
-	postCloseFunc = postCloseFunc
+	firstSweep = firstSweep
+	beforeExiting = beforeExiting
 }
 
 // Shutdown closes all the frame process gracefully.
@@ -64,9 +64,9 @@ func Shutdown(timeout ...time.Duration) {
 
 			var graceful = true
 
-			if preCloseFunc != nil {
-				if err := preCloseFunc(); err != nil {
-					log.Errorf("[shutdown-preClose] %s", err.Error())
+			if firstSweep != nil {
+				if err := firstSweep(); err != nil {
+					log.Errorf("[shutdown-firstSweep] %s", err.Error())
 					graceful = false
 				}
 			}
@@ -85,7 +85,7 @@ func Shutdown(timeout ...time.Duration) {
 
 func contextExec(timeout []time.Duration, action string, deferCallback func(ctxTimeout context.Context) <-chan struct{}) {
 	if len(timeout) > 0 {
-		SetShutdown(timeout[0], preCloseFunc, postCloseFunc)
+		SetShutdown(timeout[0], firstSweep, beforeExiting)
 	}
 	ctxTimeout, _ := context.WithTimeout(context.Background(), shutdownTimeout)
 	select {
@@ -98,9 +98,9 @@ func contextExec(timeout []time.Duration, action string, deferCallback func(ctxT
 }
 
 func shutdown(ctxTimeout context.Context, action string) bool {
-	if postCloseFunc != nil {
-		if err := postCloseFunc(); err != nil {
-			log.Errorf("[%s-postClose] %s", action, err.Error())
+	if beforeExiting != nil {
+		if err := beforeExiting(); err != nil {
+			log.Errorf("[%s-beforeExiting] %s", action, err.Error())
 			return false
 		}
 	}
