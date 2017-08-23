@@ -57,12 +57,9 @@ func Reboot(timeout ...time.Duration) {
 			defer close(endCh)
 
 			var reboot = true
-
-			if firstSweep != nil {
-				if err := firstSweep(); err != nil {
-					log.Errorf("[reboot-firstSweep] %s", err.Error())
-					graceful = false
-				}
+			if err := firstSweep(); err != nil {
+				log.Errorf("[reboot-firstSweep] %s", err.Error())
+				graceful = false
 			}
 
 			// Starts a new process passing it the active listeners. It

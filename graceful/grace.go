@@ -20,27 +20,27 @@ import (
 	"time"
 )
 
-// MinShutdownTimeout the default time-out period for the process shutdown.
-const MinShutdownTimeout = 5 * time.Second
-
-var (
-	shutdownTimeout time.Duration
-	firstSweep      func() error
-	beforeExiting   func() error
-)
-
 // GraceSignal open graceful shutdown or reboot signal.
 func GraceSignal() {
 	graceSignal()
 }
 
+// MinShutdownTimeout the default time-out period for the process shutdown.
+const MinShutdownTimeout = 5 * time.Second
+
+var (
+	shutdownTimeout time.Duration
+	firstSweep      = func() error { return nil }
+	beforeExiting   = func() error { return nil }
+)
+
 // SetShutdown sets the function which is called after the process shutdown,
 // and the time-out period for the process shutdown.
 // If 0<=timeout<5s, automatically use 'MinShutdownTimeout'(5s).
 // If timeout<0, indefinite period.
-// 'firstSweep' is first executed.
-// 'beforeExiting' is executed before process exiting.
-func SetShutdown(timeout time.Duration, firstSweep, beforeExiting func() error) {
+// 'firstSweepFunc' is first executed.
+// 'beforeExitingFunc' is executed before process exiting.
+func SetShutdown(timeout time.Duration, firstSweepFunc, beforeExitingFunc func() error) {
 	if timeout < 0 {
 		shutdownTimeout = 1<<63 - 1
 	} else if timeout < MinShutdownTimeout {
@@ -48,15 +48,20 @@ func SetShutdown(timeout time.Duration, firstSweep, beforeExiting func() error) 
 	} else {
 		shutdownTimeout = timeout
 	}
-	firstSweep = firstSweep
-	beforeExiting = beforeExiting
+	if firstSweepFunc == nil {
+		firstSweepFunc = func() error { return nil }
+	}
+	if beforeExitingFunc == nil {
+		beforeExitingFunc = func() error { return nil }
+	}
+	firstSweep = firstSweepFunc
+	beforeExiting = beforeExitingFunc
 }
 
 // Shutdown closes all the frame process gracefully.
 // Parameter timeout is used to reset time-out period for the process shutdown.
 func Shutdown(timeout ...time.Duration) {
 	log.Infof("shutting down process...")
-
 	contextExec(timeout, "shutdown", func(ctxTimeout context.Context) <-chan struct{} {
 		endCh := make(chan struct{})
 		go func() {
@@ -64,11 +69,9 @@ func Shutdown(timeout ...time.Duration) {
 
 			var graceful = true
 
-			if firstSweep != nil {
-				if err := firstSweep(); err != nil {
-					log.Errorf("[shutdown-firstSweep] %s", err.Error())
-					graceful = false
-				}
+			if err := firstSweep(); err != nil {
+				log.Errorf("[shutdown-firstSweep] %s", err.Error())
+				graceful = false
 			}
 
 			graceful = shutdown(ctxTimeout, "shutdown") && graceful
@@ -98,12 +101,9 @@ func contextExec(timeout []time.Duration, action string, deferCallback func(ctxT
 }
 
 func shutdown(ctxTimeout context.Context, action string) bool {
-	if beforeExiting != nil {
-		if err := beforeExiting(); err != nil {
-			log.Errorf("[%s-beforeExiting] %s", action, err.Error())
-			return false
-		}
+	if err := beforeExiting(); err != nil {
+		log.Errorf("[%s-beforeExiting] %s", action, err.Error())
+		return false
 	}
-
 	return true
 }
