@@ -40,6 +40,8 @@ func Reboot(timeout ...time.Duration) {
 	log.Infof("windows system doesn't support reboot! call Shutdown() is recommended.")
 }
 
-// SetExtractProcFiles sets extract proc files only for reboot.
-// Notes: Windows system are not supported!
-func SetExtractProcFiles([]*os.File) {}
+// SetInheritedProcFiles sets the file to be inherited by the new process.
+// Notes:
+//  Only for reboot!
+//  Windows system are not supported!
+func SetInheritedProcFiles([]*os.File) {}

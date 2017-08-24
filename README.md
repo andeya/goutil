@@ -125,11 +125,13 @@ Notes: Windows system are not supported!
 	func Reboot(timeout ...time.Duration)
 	```
 
-- SetExtractProcFiles sets extract proc files only for reboot.
-Notes: Windows system are not supported!
+- SetInheritedProcFiles sets the file to be inherited by the new process.
+Notes:
+ Only for reboot!
+ Windows system are not supported!
 
 	```go
-	func SetExtractProcFiles(extractProcFiles []*os.File)
+	func SetInheritedProcFiles([]*os.File)
 	```
 
 - Logger logger interface

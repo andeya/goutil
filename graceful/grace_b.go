@@ -102,21 +102,26 @@ func Reboot(timeout ...time.Duration) {
 	}
 }
 
-var allProcFiles = []*os.File{os.Stdin, os.Stdout, os.Stderr}
+var (
+	allInheritedProcFiles          = []*os.File{os.Stdin, os.Stdout, os.Stderr}
+	defaultInheritedProcFilesCount = len(allInheritedProcFiles)
+)
 
-// SetExtractProcFiles sets extract proc files for only reboot.
-// Notes: Windows system are not supported!
-func SetExtractProcFiles(extractProcFiles []*os.File) {
-	for _, f := range extractProcFiles {
+// SetInheritedProcFiles sets the file to be inherited by the new process.
+// Notes:
+//  Only for reboot!
+//  Windows system are not supported!
+func SetInheritedProcFiles(procFiles ...*os.File) {
+	for _, f := range procFiles {
 		var had bool
-		for _, ff := range allProcFiles {
+		for _, ff := range allInheritedProcFiles {
 			if ff == f {
 				had = true
 				break
 			}
 		}
 		if !had {
-			allProcFiles = append(allProcFiles, f)
+			allInheritedProcFiles = append(allInheritedProcFiles, f)
 		}
 	}
 }
@@ -131,8 +136,10 @@ var originalWD, _ = os.Getwd()
 // deployed binary to be started. It returns the pid of the newly started
 // process when successful.
 func startProcess() (int, error) {
-	for _, f := range allProcFiles {
-		defer f.Close()
+	for i, f := range allInheritedProcFiles {
+		if i >= defaultInheritedProcFilesCount {
+			defer f.Close()
+		}
 	}
 
 	// Use the original binary location. This works with symlinks such that if
@@ -145,7 +152,7 @@ func startProcess() (int, error) {
 	process, err := os.StartProcess(argv0, os.Args, &os.ProcAttr{
 		Dir:   originalWD,
 		Env:   os.Environ(),
-		Files: allProcFiles,
+		Files: allInheritedProcFiles,
 	})
 	if err != nil {
 		return 0, err
