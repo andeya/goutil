@@ -26,7 +26,7 @@ func GraceSignal() {
 }
 
 // MinShutdownTimeout the default time-out period for the process shutdown.
-const MinShutdownTimeout = 5 * time.Second
+const MinShutdownTimeout = 15 * time.Second
 
 var (
 	shutdownTimeout time.Duration
