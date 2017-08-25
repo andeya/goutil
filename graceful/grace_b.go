@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -107,11 +108,11 @@ var (
 	defaultInheritedProcFilesCount = len(allInheritedProcFiles)
 )
 
-// SetInheritedProcFiles sets the file to be inherited by the new process.
+// AddInherited adds the files and envs to be inherited by the new process.
 // Notes:
 //  Only for reboot!
 //  Windows system are not supported!
-func SetInheritedProcFiles(procFiles ...*os.File) {
+func AddInherited(procFiles []*os.File, envs []*Env) {
 	for _, f := range procFiles {
 		var had bool
 		for _, ff := range allInheritedProcFiles {
@@ -123,6 +124,9 @@ func SetInheritedProcFiles(procFiles ...*os.File) {
 		if !had {
 			allInheritedProcFiles = append(allInheritedProcFiles, f)
 		}
+	}
+	for _, env := range envs {
+		customEnvs[env.K] = env.V
 	}
 }
 
@@ -149,9 +153,21 @@ func startProcess() (int, error) {
 		return 0, err
 	}
 
+	// Pass on the environment and replace the old count key with the new one.
+	var envs []string
+	for _, env := range os.Environ() {
+		k := strings.Split(env, "=")[0]
+		if _, ok := customEnvs[k]; !ok {
+			envs = append(envs, env)
+		}
+	}
+	for k, v := range customEnvs {
+		envs = append(envs, k+"="+v)
+	}
+
 	process, err := os.StartProcess(argv0, os.Args, &os.ProcAttr{
 		Dir:   originalWD,
-		Env:   os.Environ(),
+		Env:   envs,
 		Files: allInheritedProcFiles,
 	})
 	if err != nil {

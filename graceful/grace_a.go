@@ -40,8 +40,8 @@ func Reboot(timeout ...time.Duration) {
 	log.Infof("windows system doesn't support reboot! call Shutdown() is recommended.")
 }
 
-// SetInheritedProcFiles sets the file to be inherited by the new process.
+// AddInherited adds the files and envs to be inherited by the new process.
 // Notes:
 //  Only for reboot!
 //  Windows system are not supported!
-func SetInheritedProcFiles([]*os.File) {}
+func AddInherited(procFiles []*os.File, envs []*Env) {}

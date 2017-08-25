@@ -19,6 +19,41 @@ import (
 	"github.com/henrylee2cn/goutil/graceful"
 )
 
+// Listen announces on the local network address laddr. The network net must be
+// a stream-oriented network: "tcp", "tcp4", "tcp6", "unix" or "unixpacket". It
+// returns an inherited net.Listener for the matching network and address, or
+// creates a new one using net.Listen.
+func Listen(nett, laddr string) (net.Listener, error) {
+	return globalInheritNet.Listen(nett, laddr)
+}
+
+// ListenTCP announces on the local network address laddr. The network net must
+// be: "tcp", "tcp4" or "tcp6". It returns an inherited net.Listener for the
+// matching network and address, or creates a new one using net.ListenTCP.
+func ListenTCP(nett string, laddr *net.TCPAddr) (*net.TCPListener, error) {
+	return globalInheritNet.ListenTCP(nett, laddr)
+}
+
+// ListenUnix announces on the local network address laddr. The network net
+// must be a: "unix" or "unixpacket". It returns an inherited net.Listener for
+// the matching network and address, or creates a new one using net.ListenUnix.
+func ListenUnix(nett string, laddr *net.UnixAddr) (*net.UnixListener, error) {
+	return globalInheritNet.ListenUnix(nett, laddr)
+}
+
+// Append append listener to inheritNet.active
+func Append(ln net.Listener) error {
+	return globalInheritNet.Append(ln)
+}
+
+// SetInherited adds the files and envs to be inherited by the new process.
+// Notes:
+//  Only for reboot!
+//  Windows system are not supported!
+func SetInherited() error {
+	return globalInheritNet.SetInherited()
+}
+
 const (
 	// Used to indicate a graceful restart in the new process.
 	envCountKey = "LISTEN_FDS"
@@ -28,10 +63,11 @@ const (
 // In order to keep the working directory the same as when we started we record
 // it at startup.
 var originalWD, _ = os.Getwd()
+var globalInheritNet = new(inheritNet)
 
-// Net provides the family of Listen functions and maintains the associated
-// state. Typically you will have only once instance of Net per application.
-type Net struct {
+// inheritNet provides the family of Listen functions and maintains the associated
+// state. Typically you will have only once instance of inheritNet per application.
+type inheritNet struct {
 	inherited   []net.Listener
 	active      []net.Listener
 	mutex       sync.Mutex
@@ -41,7 +77,7 @@ type Net struct {
 	fdStart int
 }
 
-func (n *Net) inherit() error {
+func (n *inheritNet) inherit() error {
 	var retErr error
 	n.inheritOnce.Do(func() {
 		n.mutex.Lock()
@@ -86,7 +122,7 @@ func (n *Net) inherit() error {
 // a stream-oriented network: "tcp", "tcp4", "tcp6", "unix" or "unixpacket". It
 // returns an inherited net.Listener for the matching network and address, or
 // creates a new one using net.Listen.
-func (n *Net) Listen(nett, laddr string) (net.Listener, error) {
+func (n *inheritNet) Listen(nett, laddr string) (net.Listener, error) {
 	switch nett {
 	default:
 		return nil, net.UnknownNetworkError(nett)
@@ -108,7 +144,7 @@ func (n *Net) Listen(nett, laddr string) (net.Listener, error) {
 // ListenTCP announces on the local network address laddr. The network net must
 // be: "tcp", "tcp4" or "tcp6". It returns an inherited net.Listener for the
 // matching network and address, or creates a new one using net.ListenTCP.
-func (n *Net) ListenTCP(nett string, laddr *net.TCPAddr) (*net.TCPListener, error) {
+func (n *inheritNet) ListenTCP(nett string, laddr *net.TCPAddr) (*net.TCPListener, error) {
 	if err := n.inherit(); err != nil {
 		return nil, err
 	}
@@ -140,7 +176,7 @@ func (n *Net) ListenTCP(nett string, laddr *net.TCPAddr) (*net.TCPListener, erro
 // ListenUnix announces on the local network address laddr. The network net
 // must be a: "unix" or "unixpacket". It returns an inherited net.Listener for
 // the matching network and address, or creates a new one using net.ListenUnix.
-func (n *Net) ListenUnix(nett string, laddr *net.UnixAddr) (*net.UnixListener, error) {
+func (n *inheritNet) ListenUnix(nett string, laddr *net.UnixAddr) (*net.UnixListener, error) {
 	if err := n.inherit(); err != nil {
 		return nil, err
 	}
@@ -169,8 +205,8 @@ func (n *Net) ListenUnix(nett string, laddr *net.UnixAddr) (*net.UnixListener, e
 	return l, nil
 }
 
-// Append append listener to Net.active
-func (n *Net) Append(ln net.Listener) error {
+// Append append listener to inheritNet.active
+func (n *inheritNet) Append(ln net.Listener) error {
 	if err := n.inherit(); err != nil {
 		return err
 	}
@@ -202,7 +238,7 @@ func (n *Net) Append(ln net.Listener) error {
 }
 
 // activeListeners returns a snapshot copy of the active listeners.
-func (n *Net) activeListeners() ([]net.Listener, error) {
+func (n *inheritNet) activeListeners() ([]net.Listener, error) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 	ls := make([]net.Listener, len(n.active))
@@ -231,11 +267,11 @@ func isSameAddr(a1, a2 net.Addr) bool {
 	return a1s == a2s
 }
 
-// SetInheritedProcFiles sets the file to be inherited by the new process.
+// SetInherited adds the files and envs to be inherited by the new process.
 // Notes:
 //  Only for reboot!
 //  Windows system are not supported!
-func (n *Net) SetInherited() error {
+func (n *inheritNet) SetInherited() error {
 	listeners, err := n.activeListeners()
 	if err != nil {
 		return err
@@ -251,10 +287,9 @@ func (n *Net) SetInherited() error {
 		files = append(files, f)
 	}
 
-	graceful.SetInheritedProcFiles(files...)
-
-	// Pass on the environment and replace the old count key with the new one.
-	os.Setenv(envCountKey, strconv.Itoa(len(listeners)))
+	graceful.AddInherited(files, []*graceful.Env{
+		{K: envCountKey, V: strconv.Itoa(len(listeners))},
+	})
 
 	return nil
 }

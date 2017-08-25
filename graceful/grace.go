@@ -107,3 +107,11 @@ func shutdown(ctxTimeout context.Context, action string) bool {
 	}
 	return true
 }
+
+// Env environment variable
+type Env struct {
+	K string
+	V string
+}
+
+var customEnvs = make(map[string]string)
