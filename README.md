@@ -125,13 +125,13 @@ Notes: Windows system are not supported!
 	func Reboot(timeout ...time.Duration)
 	```
 
-- SetInheritedProcFiles sets the file to be inherited by the new process.
+- AddInherited adds the files and envs to be inherited by the new process.
 Notes:
  Only for reboot!
  Windows system are not supported!
 
 	```go
-	func SetInheritedProcFiles([]*os.File)
+	func AddInherited(procFiles []*os.File, envs []*Env)
 	```
 
 - Logger logger interface
