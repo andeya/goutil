@@ -79,8 +79,8 @@ func (m *rwMap) Store(key, value interface{}) {
 func (m *rwMap) LoadOrStore(key, value interface{}) (actual interface{}, loaded bool) {
 	m.rwmu.Lock()
 	actual, loaded = m.data[key]
-	m.data[key] = value
 	if !loaded {
+		m.data[key] = value
 		actual = value
 	}
 	m.rwmu.Unlock()

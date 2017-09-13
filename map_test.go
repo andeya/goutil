@@ -37,3 +37,14 @@ func TestAtomicMap(t *testing.T) {
 	}
 	t.Logf("%#v", s)
 }
+
+func TestLoadOrStore(t *testing.T) {
+	m := RwMap()
+	t.Log(m.LoadOrStore(1, "a"))
+	t.Log(m.LoadOrStore(1, "b"))
+	t.Log(m.LoadOrStore(1, "c"))
+	m = RwMap()
+	t.Log(m.LoadOrStore(1, "a"))
+	t.Log(m.LoadOrStore(1, "b"))
+	t.Log(m.LoadOrStore(1, "c"))
+}
