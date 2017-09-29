@@ -353,6 +353,10 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 	if e, ok := read.m[key]; ok {
 		actual, loaded, ok := e.tryLoadOrStore(value)
 		if ok {
+			// @added by henrylee2cn 2017/09/29
+			if !loaded {
+				atomic.AddInt32(&m.length, 1)
+			}
 			return actual, loaded
 		}
 	}
@@ -362,8 +366,6 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 	if e, ok := read.m[key]; ok {
 		if e.unexpungeLocked() {
 			m.dirty[key] = e
-			// @added by henrylee2cn 2017/09/29
-			atomic.AddInt32(&m.length, 1)
 		}
 		actual, loaded, _ = e.tryLoadOrStore(value)
 	} else if e, ok := m.dirty[key]; ok {
@@ -378,11 +380,12 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 		}
 		m.dirty[key] = newEntry(value)
 		actual, loaded = value, false
-		// @added by henrylee2cn 2017/08/10
-		atomic.AddInt32(&m.length, 1)
 	}
 	m.mu.Unlock()
-
+	// @added by henrylee2cn 2017/09/29
+	if !loaded {
+		atomic.AddInt32(&m.length, 1)
+	}
 	return actual, loaded
 }
 
