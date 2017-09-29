@@ -31,11 +31,16 @@ func TestAtomicMap(t *testing.T) {
 	m.Store(4, "d")
 	m.Store(5, "e")
 	m.Store(6, "f")
-	m.Store(6, "f")
-	m.Store(6, "f")
+	m.LoadOrStore(6, "f")
+	m.LoadOrStore(6, "f")
+	m.Delete(1)
+	m.LoadOrStore(1, "a")
+	m.Store(1, "a")
 	m.Delete(1)
 	m.Delete(1)
-	t.Logf("Len: %d", m.Len())
+	if m.Len() != 5 {
+		t.Fatalf("Len: expect: 5, but have: %d", m.Len())
+	}
 	var s = make(map[interface{}]int)
 	for i := 10000; i > 0; i-- {
 		k, _, _ := m.Random()

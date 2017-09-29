@@ -289,6 +289,8 @@ func (m *atomicMap) Store(key, value interface{}) {
 			// The entry was previously expunged, which implies that there is a
 			// non-nil dirty map and this entry is not in it.
 			m.dirty[key] = e
+			// @added by henrylee2cn 2017/09/29
+			atomic.AddInt32(&m.length, 1)
 		}
 		e.storeLocked(&value)
 	} else if e, ok := m.dirty[key]; ok {
@@ -360,6 +362,8 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 	if e, ok := read.m[key]; ok {
 		if e.unexpungeLocked() {
 			m.dirty[key] = e
+			// @added by henrylee2cn 2017/09/29
+			atomic.AddInt32(&m.length, 1)
 		}
 		actual, loaded, _ = e.tryLoadOrStore(value)
 	} else if e, ok := m.dirty[key]; ok {
@@ -434,9 +438,10 @@ func (m *atomicMap) Delete(key interface{}) {
 		m.mu.Unlock()
 	}
 	if ok {
-		e.delete()
-		// @added by henrylee2cn 2017/09/29
-		atomic.AddInt32(&m.length, -1)
+		if e.delete() {
+			// @added by henrylee2cn 2017/09/29
+			atomic.AddInt32(&m.length, -1)
+		}
 	}
 }
 
