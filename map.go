@@ -374,12 +374,11 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 		}
 		m.dirty[key] = newEntry(value)
 		actual, loaded = value, false
-	}
-	m.mu.Unlock()
-	// @added by henrylee2cn 2017/08/10
-	if !loaded {
+		// @added by henrylee2cn 2017/08/10
 		atomic.AddInt32(&m.length, 1)
 	}
+	m.mu.Unlock()
+
 	return actual, loaded
 }
 
@@ -424,15 +423,20 @@ func (m *atomicMap) Delete(key interface{}) {
 		read, _ = m.read.Load().(readOnly)
 		e, ok = read.m[key]
 		if !ok && read.amended {
-			delete(m.dirty, key)
+			// @modified by henrylee2cn 2017/09/29
+			if _, ok = m.dirty[key]; ok {
+				delete(m.dirty, key)
+				// @added by henrylee2cn 2017/09/29
+				atomic.AddInt32(&m.length, -1)
+				ok = false
+			}
 		}
 		m.mu.Unlock()
 	}
 	if ok {
-		if e.delete() {
-			// @added by henrylee2cn 2017/08/10
-			atomic.AddInt32(&m.length, -1)
-		}
+		e.delete()
+		// @added by henrylee2cn 2017/09/29
+		atomic.AddInt32(&m.length, -1)
 	}
 }
 
