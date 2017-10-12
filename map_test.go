@@ -1,6 +1,7 @@
 package goutil
 
 import (
+	"sync"
 	"testing"
 )
 
@@ -19,6 +20,39 @@ func TestRwMap(t *testing.T) {
 		s[k]++
 	}
 	t.Logf("%#v", s)
+}
+
+func TestAtomicMapLen(t *testing.T) {
+	m := AtomicMap()
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		func(a int) {
+			m.Store(a, "a")
+			m.LoadOrStore(a, "b")
+			m.Len()
+			m.Delete(a)
+			m.Len()
+			m.LoadOrStore(a, "b")
+			m.Store(a, "a")
+			m.Len()
+			wg.Done()
+		}(i)
+	}
+
+	wg.Wait()
+
+	if a := m.Len(); a != 10 {
+		b := m.Len()
+		t.Fatalf("Len: expect: 10, but have: %d %d", a, b)
+	}
+	i := 10 - 1
+	for ; i >= 0; i-- {
+		m.Delete(i)
+	}
+	if m.Len() != 0 {
+		t.Fatalf("Len: expect: 0, but have: %d", m.Len())
+	}
 }
 
 func TestAtomicMap(t *testing.T) {

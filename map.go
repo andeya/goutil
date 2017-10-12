@@ -196,16 +196,13 @@ type atomicMap struct {
 	// map, the dirty map will be promoted to the read map (in the unamended
 	// state) and the next store to the map will make a new dirty copy.
 	misses int
-
-	// inexact length
-	// @added by henrylee2cn 2017/08/10
-	length int32
 }
 
 // readOnly is an immutable struct stored atomically in the atomicMap.read field.
 type readOnly struct {
 	m       map[interface{}]*entry
-	amended bool // true if the dirty map contains some key not in m.
+	deleted *int64 // @added by henrylee2cn 2017/10/12
+	amended bool   // true if the dirty map contains some key not in m.
 }
 
 // expunged is an arbitrary pointer that marks entries which have been deleted
@@ -278,8 +275,14 @@ func (e *entry) load() (value interface{}, ok bool) {
 // Store sets the value for a key.
 func (m *atomicMap) Store(key, value interface{}) {
 	read, _ := m.read.Load().(readOnly)
-	if e, ok := read.m[key]; ok && e.tryStore(&value) {
-		return
+	if e, ok := read.m[key]; ok {
+		switch e.tryStore(&value) {
+		case 1:
+			return
+		case 2:
+			// @added by henrylee2cn 2017/10/12
+			atomic.AddInt64(read.deleted, -1)
+		}
 	}
 
 	m.mu.Lock()
@@ -289,8 +292,8 @@ func (m *atomicMap) Store(key, value interface{}) {
 			// The entry was previously expunged, which implies that there is a
 			// non-nil dirty map and this entry is not in it.
 			m.dirty[key] = e
-			// @added by henrylee2cn 2017/09/29
-			atomic.AddInt32(&m.length, 1)
+			// @added by henrylee2cn 2017/10/12
+			atomic.AddInt64(read.deleted, -1)
 		}
 		e.storeLocked(&value)
 	} else if e, ok := m.dirty[key]; ok {
@@ -300,31 +303,32 @@ func (m *atomicMap) Store(key, value interface{}) {
 			// We're adding the first new key to the dirty map.
 			// Make sure it is allocated and mark the read-only map as incomplete.
 			m.dirtyLocked()
-			m.read.Store(readOnly{m: read.m, amended: true})
+			m.read.Store(readOnly{m: read.m, amended: true, deleted: new(int64)})
 		}
 		m.dirty[key] = newEntry(value)
-		// @added by henrylee2cn 2017/08/10
-		atomic.AddInt32(&m.length, 1)
 	}
 	m.mu.Unlock()
 }
 
 // tryStore stores a value if the entry has not been expunged.
 //
-// If the entry is expunged, tryStore returns false and leaves the entry
+// If the entry is expunged, tryStore returns 0 and leaves the entry
 // unchanged.
-func (e *entry) tryStore(i *interface{}) bool {
+func (e *entry) tryStore(i *interface{}) int8 {
 	p := atomic.LoadPointer(&e.p)
 	if p == expunged {
-		return false
+		return 0
 	}
 	for {
 		if atomic.CompareAndSwapPointer(&e.p, p, unsafe.Pointer(i)) {
-			return true
+			if p == nil {
+				return 2
+			}
+			return 1
 		}
 		p = atomic.LoadPointer(&e.p)
 		if p == expunged {
-			return false
+			return 0
 		}
 	}
 }
@@ -353,9 +357,9 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 	if e, ok := read.m[key]; ok {
 		actual, loaded, ok := e.tryLoadOrStore(value)
 		if ok {
-			// @added by henrylee2cn 2017/09/29
+			// @added by henrylee2cn 2017/10/12
 			if !loaded {
-				atomic.AddInt32(&m.length, 1)
+				atomic.AddInt64(read.deleted, -1)
 			}
 			return actual, loaded
 		}
@@ -366,6 +370,8 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 	if e, ok := read.m[key]; ok {
 		if e.unexpungeLocked() {
 			m.dirty[key] = e
+			// @added by henrylee2cn 2017/10/12
+			atomic.AddInt64(read.deleted, -1)
 		}
 		actual, loaded, _ = e.tryLoadOrStore(value)
 	} else if e, ok := m.dirty[key]; ok {
@@ -376,16 +382,13 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 			// We're adding the first new key to the dirty map.
 			// Make sure it is allocated and mark the read-only map as incomplete.
 			m.dirtyLocked()
-			m.read.Store(readOnly{m: read.m, amended: true})
+			m.read.Store(readOnly{m: read.m, amended: true, deleted: new(int64)})
 		}
 		m.dirty[key] = newEntry(value)
 		actual, loaded = value, false
 	}
 	m.mu.Unlock()
-	// @added by henrylee2cn 2017/09/29
-	if !loaded {
-		atomic.AddInt32(&m.length, 1)
-	}
+
 	return actual, loaded
 }
 
@@ -430,20 +433,13 @@ func (m *atomicMap) Delete(key interface{}) {
 		read, _ = m.read.Load().(readOnly)
 		e, ok = read.m[key]
 		if !ok && read.amended {
-			// @modified by henrylee2cn 2017/09/29
-			if _, ok = m.dirty[key]; ok {
-				delete(m.dirty, key)
-				// @added by henrylee2cn 2017/09/29
-				atomic.AddInt32(&m.length, -1)
-				ok = false
-			}
+			delete(m.dirty, key)
 		}
 		m.mu.Unlock()
 	}
 	if ok {
 		if e.delete() {
-			// @added by henrylee2cn 2017/09/29
-			atomic.AddInt32(&m.length, -1)
+			atomic.AddInt64(read.deleted, 1)
 		}
 	}
 }
@@ -484,7 +480,7 @@ func (m *atomicMap) Range(f func(key, value interface{}) bool) {
 		m.mu.Lock()
 		read, _ = m.read.Load().(readOnly)
 		if read.amended {
-			read = readOnly{m: m.dirty}
+			read = readOnly{m: m.dirty, deleted: new(int64)}
 			m.read.Store(read)
 			m.dirty = nil
 			m.misses = 0
@@ -508,7 +504,7 @@ func (m *atomicMap) missLocked() {
 	if m.misses < len(m.dirty) {
 		return
 	}
-	m.read.Store(readOnly{m: m.dirty})
+	m.read.Store(readOnly{m: m.dirty, deleted: new(int64)})
 	m.dirty = nil
 	m.misses = 0
 }
@@ -541,9 +537,29 @@ func (e *entry) tryExpungeLocked() (isExpunged bool) {
 // Len returns the length of the map.
 // Note:
 //  the length may be inaccurate.
-// @added by henrylee2cn 2017/08/10
+// @added by henrylee2cn 2017/10/12
 func (m *atomicMap) Len() int {
-	return int(atomic.LoadInt32(&m.length))
+	var length int
+	read, _ := m.read.Load().(readOnly)
+	if read.amended {
+		// m.dirty contains keys not in read.m. Fortunately, Range is already O(N)
+		// (assuming the caller does not break out early), so a call to Range
+		// amortizes an entire copy of the map: we can promote the dirty copy
+		// immediately!
+		m.mu.Lock()
+		read, _ = m.read.Load().(readOnly)
+		if read.amended {
+			read = readOnly{m: m.dirty, deleted: new(int64)}
+			length = len(m.dirty)
+			m.read.Store(read)
+			m.dirty = nil
+			m.misses = 0
+		}
+		m.mu.Unlock()
+		return length
+	}
+	length = len(read.m) - int(atomic.LoadInt64(read.deleted))
+	return length
 }
 
 // Random returns a pair kv randomly.
@@ -551,7 +567,7 @@ func (m *atomicMap) Len() int {
 // @added by henrylee2cn 2017/08/10
 func (m *atomicMap) Random() (key, value interface{}, exist bool) {
 	for !exist {
-		length := atomic.LoadInt32(&m.length)
+		length := m.Len()
 		if length <= 0 {
 			return
 		}
