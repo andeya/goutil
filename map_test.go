@@ -84,5 +84,22 @@ func TestAtomicMap(t *testing.T) {
 	if m.Len() != 0 {
 		t.Fatalf("Len: expect: 0, but have: %d", m.Len())
 	}
+}
 
+func TestOther(t *testing.T) {
+	m := RwMap()
+	t.Log(m.Load("key"))
+	m.Range(func(_, _ interface{}) bool {
+		return true
+	})
+	m.Len()
+	m.Random()
+
+	m = AtomicMap()
+	t.Log(m.Load("key"))
+	m.Range(func(_, _ interface{}) bool {
+		return true
+	})
+	m.Len()
+	m.Random()
 }

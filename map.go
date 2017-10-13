@@ -554,7 +554,9 @@ func (m *atomicMap) Len() int {
 		m.mu.Unlock()
 		return length
 	}
-	length = len(read.m) - int(atomic.LoadInt64(read.deleted))
+	if read.deleted != nil {
+		length = len(read.m) - int(atomic.LoadInt64(read.deleted))
+	}
 	return length
 }
 
@@ -582,7 +584,7 @@ func (m *atomicMap) Random() (key, value interface{}, exist bool) {
 			}
 			m.mu.Unlock()
 		}
-		if length == -1 {
+		if length == -1 && read.deleted != nil {
 			length = len(read.m) - int(atomic.LoadInt64(read.deleted))
 		}
 		if length <= 0 {
