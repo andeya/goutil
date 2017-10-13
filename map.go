@@ -542,10 +542,6 @@ func (m *atomicMap) Len() int {
 	var length int
 	read, _ := m.read.Load().(readOnly)
 	if read.amended {
-		// m.dirty contains keys not in read.m. Fortunately, Range is already O(N)
-		// (assuming the caller does not break out early), so a call to Range
-		// amortizes an entire copy of the map: we can promote the dirty copy
-		// immediately!
 		m.mu.Lock()
 		read, _ = m.read.Load().(readOnly)
 		if read.amended {
@@ -566,20 +562,43 @@ func (m *atomicMap) Len() int {
 // If exist=false, no kv data is exist.
 // @added by henrylee2cn 2017/08/10
 func (m *atomicMap) Random() (key, value interface{}, exist bool) {
-	for !exist {
-		length := m.Len()
+	var (
+		length, i int
+		read      readOnly
+		e         *entry
+	)
+	for {
+		length = -1
+		read, _ = m.read.Load().(readOnly)
+		if read.amended {
+			m.mu.Lock()
+			read, _ = m.read.Load().(readOnly)
+			if read.amended {
+				read = readOnly{m: m.dirty, deleted: new(int64)}
+				length = len(m.dirty)
+				m.read.Store(read)
+				m.dirty = nil
+				m.misses = 0
+			}
+			m.mu.Unlock()
+		}
+		if length == -1 {
+			length = len(read.m) - int(atomic.LoadInt64(read.deleted))
+		}
 		if length <= 0 {
+			return nil, nil, false
+		}
+		i = rand.Intn(length)
+		for key, e = range read.m {
+			value, exist = e.load()
+			if !exist {
+				continue
+			}
+			if i > 0 {
+				i--
+				continue
+			}
 			return
 		}
-		i := rand.Intn(int(length))
-		m.Range(func(k, v interface{}) bool {
-			if i == 0 {
-				key, value, exist = k, v, true
-				return false
-			}
-			i--
-			return true
-		})
 	}
-	return
 }

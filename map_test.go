@@ -22,7 +22,30 @@ func TestRwMap(t *testing.T) {
 	t.Logf("%#v", s)
 }
 
-func TestAtomicMapLen(t *testing.T) {
+func TestLoadOrStore(t *testing.T) {
+	m := RwMap()
+	if v, loaded := m.LoadOrStore(1, "rw-a"); v != "rw-a" || loaded {
+		t.Fatalf("v: %v, loaded: %v", v, loaded)
+	}
+	if v, loaded := m.LoadOrStore(1, "rw-b"); v != "rw-a" || !loaded {
+		t.Fatalf("v: %v, loaded: %v", v, loaded)
+	}
+	if v, loaded := m.LoadOrStore(1, "rw-c"); v != "rw-a" || !loaded {
+		t.Fatalf("v: %v, loaded: %v", v, loaded)
+	}
+	m = AtomicMap()
+	if v, loaded := m.LoadOrStore(1, "atomic-a"); v != "atomic-a" || loaded {
+		t.Fatalf("v: %v, loaded: %v", v, loaded)
+	}
+	if v, loaded := m.LoadOrStore(1, "atomic-b"); v != "atomic-a" || !loaded {
+		t.Fatalf("v: %v, loaded: %v", v, loaded)
+	}
+	if v, loaded := m.LoadOrStore(1, "atomic-c"); v != "atomic-a" || !loaded {
+		t.Fatalf("v: %v, loaded: %v", v, loaded)
+	}
+}
+
+func TestAtomicMap(t *testing.T) {
 	m := AtomicMap()
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
@@ -46,6 +69,14 @@ func TestAtomicMapLen(t *testing.T) {
 		b := m.Len()
 		t.Fatalf("Len: expect: 10, but have: %d %d", a, b)
 	}
+
+	var s = make(map[interface{}]int)
+	for i := 100000; i > 0; i-- {
+		k, _, _ := m.Random()
+		s[k]++
+	}
+	t.Logf("%#v", s)
+
 	i := 10 - 1
 	for ; i >= 0; i-- {
 		m.Delete(i)
@@ -53,43 +84,5 @@ func TestAtomicMapLen(t *testing.T) {
 	if m.Len() != 0 {
 		t.Fatalf("Len: expect: 0, but have: %d", m.Len())
 	}
-}
 
-func TestAtomicMap(t *testing.T) {
-	m := AtomicMap()
-	m.Delete(1)
-	m.Delete(1)
-	m.Store(1, "a")
-	m.Store(2, "b")
-	m.Store(3, "c")
-	m.Store(4, "d")
-	m.Store(5, "e")
-	m.Store(6, "f")
-	m.LoadOrStore(6, "f")
-	m.LoadOrStore(6, "f")
-	m.Delete(1)
-	m.LoadOrStore(1, "a")
-	m.Store(1, "a")
-	m.Delete(1)
-	m.Delete(1)
-	if m.Len() != 5 {
-		t.Fatalf("Len: expect: 5, but have: %d", m.Len())
-	}
-	var s = make(map[interface{}]int)
-	for i := 10000; i > 0; i-- {
-		k, _, _ := m.Random()
-		s[k]++
-	}
-	t.Logf("%#v", s)
-}
-
-func TestLoadOrStore(t *testing.T) {
-	m := RwMap()
-	t.Log(m.LoadOrStore(1, "a"))
-	t.Log(m.LoadOrStore(1, "b"))
-	t.Log(m.LoadOrStore(1, "c"))
-	m = RwMap()
-	t.Log(m.LoadOrStore(1, "a"))
-	t.Log(m.LoadOrStore(1, "b"))
-	t.Log(m.LoadOrStore(1, "c"))
 }
