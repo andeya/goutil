@@ -354,7 +354,7 @@ Various small functions.
 - import it
 
 	```go
-	"github.com/henrylee2cn/goutil/pool"
+	"github.com/henrylee2cn/goutil"
 	```
 
 - BytesToString convert []byte type to string type.
