@@ -528,3 +528,15 @@ You can specify the suffix.
 	```go
 	func PanicTrace(kb int) []byte
 	```
+
+- ExtranetIP get external IP addr.
+
+	```go
+	func ExtranetIP() (ip string, err error)
+	```
+
+- IntranetIP get internal IP addr.
+
+	```go
+	func IntranetIP() (string, error)
+	```
