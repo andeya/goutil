@@ -3,9 +3,8 @@ package goutil
 import (
 	"math/rand"
 	"sync"
-	"time"
-
 	"sync/atomic"
+	"time"
 	"unsafe"
 )
 
