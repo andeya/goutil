@@ -31,9 +31,6 @@ type Map interface {
 	// If exist=false, no kv data is exist.
 	Random() (key, value interface{}, exist bool)
 	// Len returns the length of the map.
-	// Note:
-	//  the count implemented using atomicMap may be inaccurate;
-	//  the count implemented using rwMap is accurate.
 	Len() int
 }
 
