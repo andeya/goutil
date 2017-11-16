@@ -86,6 +86,30 @@ func TestAtomicMap(t *testing.T) {
 	}
 }
 
+func TestLen(t *testing.T) {
+	m := AtomicMap()
+	var wg sync.WaitGroup
+	for i := 1; i <= 100000; i++ {
+		wg.Add(1)
+		go func(a int) {
+			m.Store(a, "a")
+			wg.Done()
+		}(i)
+	}
+	m.Range(func(k, v interface{}) bool {
+		m.Delete(k)
+		return true
+	})
+	wg.Wait()
+	m.Range(func(k, v interface{}) bool {
+		m.Delete(k)
+		return true
+	})
+	if a := m.Len(); a != 0 {
+		t.Fatalf("Len: expect: 0, but have: %d", a)
+	}
+}
+
 func TestOther(t *testing.T) {
 	m := RwMap()
 	t.Log(m.Load("key"))
