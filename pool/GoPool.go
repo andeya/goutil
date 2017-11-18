@@ -204,7 +204,7 @@ func (gp *GoPool) getCh() *goroutineChan {
 }
 
 func (gp *GoPool) release(ch *goroutineChan) bool {
-	ch.lastUseTime = coarsetime.CoarseTimeNow()
+	ch.lastUseTime = coarsetime.FloorTimeNow()
 	gp.lock.Lock()
 	if gp.mustStop {
 		gp.lock.Unlock()

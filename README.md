@@ -11,7 +11,7 @@ Common and useful utils for the Go project development.
 ## 2. Contents
 
 - [Calendar](#calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
-- [CoarseTime](#coarsetime) Current time truncated to the nearest second
+- [CoarseTime](#coarsetime) Current time truncated to the nearest 100ms
 - [Errors](#errors) Improved errors package.
 - [Graceful](#graceful) Shutdown or reboot current process gracefully.
 - [GoPool](#gopool) Goroutines' pool
@@ -43,11 +43,18 @@ The current time truncated to the nearest second.
 	"github.com/henrylee2cn/goutil/coarsetime"
 	```
 
-- CoarseTimeNow returns the current time truncated to the nearest second.
+- FloorTimeNow returns the current time from the range (now-100ms,now].
 This is a faster alternative to time.Now().
 
 	```go
-	func CoarseTimeNow() time.Time
+	func FloorTimeNow() time.Time
+	```
+
+- CeilingTimeNow returns the current time from the range [now,now+100ms).
+This is a faster alternative to time.Now().
+
+	```go
+	func CeilingTimeNow() time.Time
 	```
 
 ### Errors

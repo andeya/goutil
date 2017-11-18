@@ -179,7 +179,7 @@ func (avatar *Avatar) expired(timeout time.Duration) bool {
 	if timeout <= 0 {
 		return false
 	}
-	return avatar.createdAt.Add(timeout).Before(coarsetime.CoarseTimeNow())
+	return avatar.createdAt.Add(timeout).Before(coarsetime.FloorTimeNow())
 }
 
 // the avatar.p's Mutex is held.
@@ -433,7 +433,7 @@ func (p *resPool) resourceCleaner(d time.Duration) {
 			return
 		}
 
-		expiredSince := coarsetime.CoarseTimeNow().Add(-d)
+		expiredSince := coarsetime.FloorTimeNow().Add(-d)
 		var closing []*Avatar
 		for i := 0; i < len(p.freeAvatar); i++ {
 			c := p.freeAvatar[i]
@@ -531,7 +531,7 @@ func (p *resPool) openNewResource(ctx context.Context) {
 	}
 	avatar := &Avatar{
 		p:         p,
-		createdAt: coarsetime.CoarseTimeNow(),
+		createdAt: coarsetime.FloorTimeNow(),
 		res:       res,
 	}
 	res.SetAvatar(avatar)
@@ -697,7 +697,7 @@ func (p *resPool) getone(ctx context.Context, strategy resourceReuseStrategy) (R
 	p.mu.Lock()
 	avatar := &Avatar{
 		p:         p,
-		createdAt: coarsetime.CoarseTimeNow(),
+		createdAt: coarsetime.FloorTimeNow(),
 		res:       res,
 	}
 	res.SetAvatar(avatar)
