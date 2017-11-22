@@ -37,7 +37,7 @@ func TestRandomBytes(t *testing.T) {
 }
 
 func TestRandomString(t *testing.T) {
-	SetRandomSeed("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_", '-', '_')
+	r := NewRandom("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_", '-', '_')
 	m := map[string]bool{}
 	var lock sync.Mutex
 	var group sync.WaitGroup
@@ -45,7 +45,7 @@ func TestRandomString(t *testing.T) {
 	group.Add(count)
 	for i := 0; i < count; i++ {
 		go func() {
-			id := RandomString(10)
+			id := r.RandomString(10)
 			lock.Lock()
 			m[id] = true
 			lock.Unlock()
