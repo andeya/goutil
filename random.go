@@ -20,20 +20,53 @@ func RandomBytes(n int) []byte {
 }
 
 var (
-	encodeURL    = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
-	encodeURLLen = len(encodeURL)
+	encoding   = base64.URLEncoding
+	encoder    = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
+	encoderLen = len(encoder)
+	ignoreMap  = map[byte]struct{}{}
 )
+
+// SetRandomSeed sets a new padded Encoding defined by the given alphabet.
+func SetRandomSeed(encoderSeed string, ignore ...byte) {
+	encoding = base64.NewEncoding(encoderSeed)
+	ignoreMap = map[byte]struct{}{}
+	if len(ignore) > 0 {
+		bMap := map[byte]struct{}{}
+		for i := 0; i < len(encoderSeed); i++ {
+			bMap[encoderSeed[i]] = struct{}{}
+		}
+		for _, b := range ignore {
+			ignoreMap[b] = struct{}{}
+			delete(bMap, b)
+		}
+		encoder = encoder[:0]
+		for b := range bMap {
+			encoder = append(encoder, b)
+		}
+	} else {
+		encoder = []byte(encoderSeed)
+	}
+	encoderLen = len(encoder)
+}
 
 // RandomString returns a URL-safe, base64 encoded securely generated
 // random string. It will panic if the system's secure random number generator
 // fails to function correctly.
 // The length n must be an integer multiple of 4, otherwise the last character will be padded with `=`.
 func RandomString(n int) string {
-	d := base64.URLEncoding.DecodedLen(n)
-	buf := make([]byte, base64.URLEncoding.EncodedLen(d), n)
-	base64.URLEncoding.Encode(buf, RandomBytes(d))
-	for i := n - len(buf); i > 0; i-- {
-		buf = append(buf, encodeURL[mrand.Intn(encodeURLLen)])
+	d := encoding.DecodedLen(n)
+	buf := make([]byte, encoding.EncodedLen(d), n)
+	encoding.Encode(buf, RandomBytes(d))
+	if len(ignoreMap) > 0 {
+		var ok bool
+		for i, b := range buf {
+			if _, ok = ignoreMap[b]; ok {
+				buf[i] = encoder[mrand.Intn(encoderLen)]
+			}
+		}
 	}
-	return string(buf)
+	for i := n - len(buf); i > 0; i-- {
+		buf = append(buf, encoder[mrand.Intn(encoderLen)])
+	}
+	return BytesToString(buf)
 }
