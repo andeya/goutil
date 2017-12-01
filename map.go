@@ -280,20 +280,33 @@ func (m *atomicMap) Store(key, value interface{}) {
 		case 2:
 			// @added by henrylee2cn 2017/11/17
 			atomic.AddInt64(&m.length, 1)
+			return
 		}
 	}
 
 	m.mu.Lock()
 	read, _ = m.read.Load().(readOnly)
 	if e, ok := read.m[key]; ok {
-		if e.unexpungeLocked() {
-			// The entry was previously expunged, which implies that there is a
-			// non-nil dirty map and this entry is not in it.
-			m.dirty[key] = e
+		switch e.tryStore(&value) {
+		case 1:
+			m.mu.Unlock()
+			return
+		case 2:
 			// @added by henrylee2cn 2017/11/17
 			atomic.AddInt64(&m.length, 1)
+			m.mu.Unlock()
+			return
+		case 0:
+			if e.unexpungeLocked() {
+				// The entry was previously expunged, which implies that there is a
+				// non-nil dirty map and this entry is not in it.
+				m.dirty[key] = e
+				// @added by henrylee2cn 2017/11/17
+				atomic.AddInt64(&m.length, 1)
+			}
+			e.storeLocked(&value)
 		}
-		e.storeLocked(&value)
+
 	} else if e, ok := m.dirty[key]; ok {
 		e.storeLocked(&value)
 	} else {
@@ -369,10 +382,12 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 	if e, ok := read.m[key]; ok {
 		if e.unexpungeLocked() {
 			m.dirty[key] = e
-			// @added by henrylee2cn 2017/11/17
+		}
+		actual, loaded, ok = e.tryLoadOrStore(value)
+		// @added by henrylee2cn 2017/12/01
+		if ok && !loaded {
 			atomic.AddInt64(&m.length, 1)
 		}
-		actual, loaded, _ = e.tryLoadOrStore(value)
 	} else if e, ok := m.dirty[key]; ok {
 		actual, loaded, _ = e.tryLoadOrStore(value)
 		m.missLocked()
