@@ -729,6 +729,23 @@ const debugGetPut = false
 // err is optionally the last error that occurred on this avatar.
 func (p *resPool) putAvatar(avatar *Avatar, err error) {
 	p.mu.Lock()
+
+	if err != nil {
+		if !avatar.inUse {
+			// Make it expired
+			avatar.createdAt = time.Time{}
+			return
+		}
+		// Don't reuse bad resources.
+		// Since the conn is considered bad and is being discarded, treat it
+		// as closed. Don't decrement the open count here, finalClose will
+		// take care of that.
+		p.maybeOpenNewResources()
+		p.mu.Unlock()
+		avatar.close()
+		return
+	}
+
 	if !avatar.inUse {
 		if debugGetPut {
 			fmt.Printf("putAvatar(%v) DUPLICATE was: %s\n\nPREVIOUS was: %s", avatar, stack(), p.lastPut[avatar])
@@ -740,16 +757,6 @@ func (p *resPool) putAvatar(avatar *Avatar, err error) {
 	}
 	avatar.inUse = false
 
-	if err != nil {
-		// Don't reuse bad resources.
-		// Since the conn is considered bad and is being discarded, treat it
-		// as closed. Don't decrement the open count here, finalClose will
-		// take care of that.
-		p.maybeOpenNewResources()
-		p.mu.Unlock()
-		avatar.close()
-		return
-	}
 	if putAvatarHook != nil {
 		putAvatarHook(p, avatar)
 	}
