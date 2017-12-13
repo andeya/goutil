@@ -741,12 +741,9 @@ func (p *resPool) putAvatar(avatar *Avatar, err error) {
 		avatar.close()
 		return
 	}
-
 	if !avatar.inUse {
-		if debugGetPut {
-			fmt.Printf("putAvatar(%v) DUPLICATE was: %s\n\nPREVIOUS was: %s", avatar, stack(), p.lastPut[avatar])
-		}
-		panic("resPool: resource returned that was never out")
+		p.mu.Unlock()
+		return
 	}
 	if debugGetPut {
 		p.lastPut[avatar] = stack()
