@@ -733,6 +733,7 @@ func (p *resPool) putAvatar(avatar *Avatar, err error) {
 	if err != nil {
 		if !avatar.inUse {
 			p.mu.Unlock()
+			avatar.close()
 			return
 		}
 		// Don't reuse bad resources.
