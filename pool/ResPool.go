@@ -729,18 +729,14 @@ const debugGetPut = false
 // err is optionally the last error that occurred on this avatar.
 func (p *resPool) putAvatar(avatar *Avatar, err error) {
 	p.mu.Lock()
-
 	if err != nil {
-		if !avatar.inUse {
-			p.mu.Unlock()
-			avatar.close()
-			return
+		if avatar.inUse {
+			// Don't reuse bad resources.
+			// Since the conn is considered bad and is being discarded, treat it
+			// as closed. Don't decrement the open count here, finalClose will
+			// take care of that.
+			p.maybeOpenNewResources()
 		}
-		// Don't reuse bad resources.
-		// Since the conn is considered bad and is being discarded, treat it
-		// as closed. Don't decrement the open count here, finalClose will
-		// take care of that.
-		p.maybeOpenNewResources()
 		p.mu.Unlock()
 		avatar.close()
 		return
