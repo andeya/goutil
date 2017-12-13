@@ -732,8 +732,6 @@ func (p *resPool) putAvatar(avatar *Avatar, err error) {
 
 	if err != nil {
 		if !avatar.inUse {
-			// Make it expired
-			avatar.createdAt = time.Time{}
 			p.mu.Unlock()
 			return
 		}
