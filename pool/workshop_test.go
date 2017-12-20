@@ -15,7 +15,7 @@ func (t *testWorker) Do()            {}
 
 func TestWorkshop(t *testing.T) {
 	w := NewWorkshop(0, 0, newTestWorker)
-	defer w.Close()
+	// defer w.Close()
 	n := 100000
 	wg := new(sync.WaitGroup)
 	wg.Add(n)

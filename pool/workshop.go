@@ -175,7 +175,7 @@ func (w *Workshop) updateFreeLocked() {
 }
 
 // Stats returns the current workshop stats.
-func (w *Workshop) Stats() *WorkshopStats {
+func (w *Workshop) Stats() WorkshopStats {
 	w.lock.Lock()
 	w.stats.Worker = int32(len(w.infos))
 	w.stats.Doing = int32(w.stats.Hire - w.stats.Fire)
@@ -195,8 +195,9 @@ func (w *Workshop) Stats() *WorkshopStats {
 	}
 	w.stats.LeastUsed = min
 	w.stats.MostUsed = max
+	stats := *w.stats
 	w.lock.Unlock()
-	return w.stats
+	return stats
 }
 
 // Close wait for all the work to be completed and close the workshop.
