@@ -100,6 +100,7 @@ func (w *Workshop) Do(callback func(Worker) error) error {
 	return callback(worker)
 }
 
+// ErrWorkshopClosed error: 'workshop is closed'
 var ErrWorkshopClosed = fmt.Errorf("%s", "workshop is closed")
 
 func (w *Workshop) hireLocked() (*workerInfo, error) {
