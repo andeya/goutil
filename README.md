@@ -16,6 +16,7 @@ Common and useful utils for the Go project development.
 - [Graceful](#graceful) Shutdown or reboot current process gracefully.
 - [GoPool](#gopool) Goroutines' pool
 - [ResPool](#respool) Resources' pool
+- [Workshop](#workshop) working workshop
 - [Various](#various) Various small functions
 
 
@@ -352,6 +353,46 @@ If the same name exists, will close and cover it.
 
 	```go
 	func (c *ResPools) Set(pool ResPool)
+	```
+
+### Workshop
+
+```go
+type (
+	// Worker woker interface
+	Worker interface {
+		Health() bool
+		Close() error
+	}
+	// Workshop working workshop
+	Workshop struct {
+		// Has unexported fields.
+	}
+)
+```
+	
+- NewWorkshop creates a new workshop.
+	
+	```go
+	func NewWorkshop(maxQuota, maxIdle int32, newWorkerFunc func() (Worker, error)) *Workshop
+	```
+
+- Close wait for all the work to be completed and close the workshop.
+	
+	```go
+	func (w *Workshop) Close()
+	```
+
+- Do assign a worker to execute the callback function.
+	
+	```go
+	func (w *Workshop) Do(callback func(Worker) error) error
+	```
+
+- Stats returns the current workshop stats.
+	
+	```go
+	func (w *Workshop) Stats() *WorkshopStats
 	```
 
 ### Various

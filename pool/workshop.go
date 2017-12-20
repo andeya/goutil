@@ -12,7 +12,7 @@ type (
 		Health() bool
 		Close() error
 	}
-	// Workshop workshop
+	// Workshop working workshop
 	Workshop struct {
 		newFn    func() (Worker, error)
 		maxQuota int32
