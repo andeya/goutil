@@ -166,6 +166,11 @@ func (w *Workshop) Fire(worker Worker) {
 
 // Hire hires a healthy worker and marks the worker to add a job.
 func (w *Workshop) Hire() (Worker, error) {
+	select {
+	case <-w.closeCh:
+		return nil, ErrWorkshopClosed
+	default:
+	}
 	w.lock.Lock()
 	info, err := w.hireLocked()
 	if err != nil {
