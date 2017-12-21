@@ -99,7 +99,12 @@ func (w *Workshop) Callback(fn func(Worker) error) error {
 	worker := info.worker
 	defer func() {
 		w.lock.Lock()
-		w.fireLocked(info)
+		_, ok := w.infos[worker]
+		if !ok {
+			worker.Close()
+		} else {
+			w.fireLocked(info)
+		}
 		w.lock.Unlock()
 	}()
 	return fn(worker)
