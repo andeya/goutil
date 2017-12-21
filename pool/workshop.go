@@ -123,7 +123,9 @@ func (w *Workshop) Fire(worker Worker) {
 	w.lock.Lock()
 	info, ok := w.infos[worker]
 	if !ok {
-		info.worker.Close()
+		if worker != nil {
+			worker.Close()
+		}
 		w.lock.Unlock()
 		return
 	}
@@ -131,8 +133,10 @@ func (w *Workshop) Fire(worker Worker) {
 	w.lock.Unlock()
 }
 
-// ErrWorkshopClosed error: 'workshop is closed'
-var ErrWorkshopClosed = fmt.Errorf("%s", "workshop is closed")
+var (
+	// ErrWorkshopClosed error: 'workshop is closed'
+	ErrWorkshopClosed = fmt.Errorf("%s", "workshop is closed")
+)
 
 func (w *Workshop) hireLocked() (*workerInfo, error) {
 	var info *workerInfo
