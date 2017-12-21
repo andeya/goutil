@@ -386,7 +386,7 @@ If the same name exists, will close and cover it.
 <br>Note: Worker can not be implemented using empty structures(struct{})!
 
 	```go
-func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func() (Worker, error)) *Workshop
+	func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func() (Worker, error)) *Workshop
 	```
 
 - Close wait for all the work to be completed and close the workshop.
