@@ -26,7 +26,7 @@ type (
 		mostFree        *workerInfo
 		stats           *WorkshopStats
 		statsReader     atomic.Value
-		lock            sync.RWMutex
+		lock            sync.Mutex
 		wg              sync.WaitGroup
 		closeCh         chan struct{}
 	}
