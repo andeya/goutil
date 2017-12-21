@@ -14,14 +14,20 @@ func (t *testWorker) Close() error   { return nil }
 func (t *testWorker) Do()            {}
 
 func TestWorkshop(t *testing.T) {
-	w := NewWorkshop(0, 0, newTestWorker)
-	// defer w.Close()
+	w := NewWorkshop(100, time.Second, newTestWorker)
+	defer w.Close()
 	n := 100000
 	wg := new(sync.WaitGroup)
 	wg.Add(n)
 	t1 := time.Now()
+	var closeCh = make(chan struct{})
 	go func() {
 		for {
+			select {
+			case <-closeCh:
+				return
+			default:
+			}
 			t.Logf("%+v", w.Stats())
 			time.Sleep(time.Microsecond)
 		}
@@ -40,5 +46,7 @@ func TestWorkshop(t *testing.T) {
 	}
 	wg.Wait()
 	d := time.Since(t1)
+	close(closeCh)
+	time.Sleep(time.Second * 2)
 	t.Logf("stats: %+v, cost: %v, TPS: %v", w.Stats(), d, d/time.Duration(n))
 }

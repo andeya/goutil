@@ -357,24 +357,34 @@ If the same name exists, will close and cover it.
 
 ### Workshop
 
-```go
-type (
-	// Worker woker interface
-	Worker interface {
-		Health() bool
-		Close() error
-	}
-	// Workshop working workshop
-	Workshop struct {
-		// Has unexported fields.
-	}
-)
-```
+- import it
+
+	```go
+	"github.com/henrylee2cn/goutil/pool"
+	```
+
+- Type definition
+
+	```go
+	type (
+		// Worker woker interface
+		Worker interface {
+			Health() bool
+			Close() error
+		}
+		// Workshop working workshop
+		Workshop struct {
+			// Has unexported fields.
+		}
+	)
+	```
 	
 - NewWorkshop creates a new workshop.
+If maxQuota<=0, will use default value.
+If maxIdleDuration<=0, will use default value.
 	
 	```go
-	func NewWorkshop(maxQuota, maxIdle int32, newWorkerFunc func() (Worker, error)) *Workshop
+func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func() (Worker, error)) *Workshop
 	```
 
 - Close wait for all the work to be completed and close the workshop.

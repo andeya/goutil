@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"time"
+
+	"github.com/henrylee2cn/goutil/coarsetime"
 )
 
 type (
@@ -14,20 +17,21 @@ type (
 	}
 	// Workshop working workshop
 	Workshop struct {
-		newFn    func() (Worker, error)
-		maxQuota int32
-		maxIdle  int32
-		infos    map[*workerInfo]struct{}
-		mostFree *workerInfo
-		stats    *WorkshopStats
-		lock     sync.Mutex
-		wg       sync.WaitGroup
-		closeCh  chan struct{}
+		newFn           func() (Worker, error)
+		maxQuota        int
+		maxIdleDuration time.Duration
+		infos           map[*workerInfo]struct{}
+		mostFree        *workerInfo
+		stats           *WorkshopStats
+		lock            sync.Mutex
+		wg              sync.WaitGroup
+		closeCh         chan struct{}
 	}
 	workerInfo struct {
-		worker Worker
-		jobNum int32
-		wg     sync.WaitGroup
+		worker     Worker
+		jobNum     int32
+		idleExpire time.Time
+		wg         sync.WaitGroup
 	}
 	// WorkshopStats workshop stats
 	WorkshopStats struct {
@@ -44,25 +48,24 @@ type (
 )
 
 const (
-	defaultWorkerMaxQuota = 64
-	defaultWorkerMaxIdle  = 8
+	defaultWorkerMaxQuota        = 64
+	defaultWorkerMaxIdleDuration = 3 * time.Minute
 )
 
 // NewWorkshop creates a new workshop.
-func NewWorkshop(maxQuota, maxIdle int32, newWorkerFunc func() (Worker, error)) *Workshop {
+// If maxQuota<=0, will use default value.
+// If maxIdleDuration<=0, will use default value.
+func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func() (Worker, error)) *Workshop {
 	if maxQuota <= 0 {
 		maxQuota = defaultWorkerMaxQuota
 	}
-	if maxIdle <= 0 {
-		maxIdle = defaultWorkerMaxIdle
-	}
-	if maxIdle > maxQuota {
-		maxIdle = maxQuota
+	if maxIdleDuration <= 0 {
+		maxIdleDuration = defaultWorkerMaxIdleDuration
 	}
 	w := new(Workshop)
 	w.stats = new(WorkshopStats)
 	w.maxQuota = maxQuota
-	w.maxIdle = maxIdle
+	w.maxIdleDuration = maxIdleDuration
 	w.infos = make(map[*workerInfo]struct{}, maxQuota)
 	w.closeCh = make(chan struct{})
 	w.newFn = func() (worker Worker, err error) {
@@ -104,12 +107,21 @@ func (w *Workshop) Do(callback func(Worker) error) error {
 var ErrWorkshopClosed = fmt.Errorf("%s", "workshop is closed")
 
 func (w *Workshop) hireLocked() (*workerInfo, error) {
-	var info = w.mostFree
-	if len(w.infos) >= int(w.maxQuota) || (info != nil && info.jobNum == 0) {
-		info.use()
-		if info.jobNum == 1 {
+	var info *workerInfo
+GET:
+	info = w.mostFree
+	if len(w.infos) >= w.maxQuota || (info != nil && info.jobNum == 0) {
+		if info.jobNum == 0 {
 			w.stats.Idle--
+			if coarsetime.FloorTimeNow().After(info.idleExpire) {
+				delete(w.infos, info)
+				info.worker.Close()
+				w.stats.Closed++
+				w.updateFreeLocked()
+				goto GET
+			}
 		}
+		info.use()
 		w.updateFreeLocked()
 	} else {
 		worker, err := w.newFn()
@@ -149,12 +161,7 @@ func (w *Workshop) fireLocked(info *workerInfo) {
 	info.free()
 	jobNum := info.jobNum
 	if jobNum == 0 {
-		if w.stats.Idle >= w.maxIdle {
-			delete(w.infos, info)
-			info.worker.Close()
-			w.stats.Closed++
-			return
-		}
+		info.idleExpire = coarsetime.CeilingTimeNow().Add(w.maxIdleDuration)
 		w.stats.Idle++
 	}
 	if jobNum >= w.mostFree.jobNum {
@@ -164,9 +171,13 @@ func (w *Workshop) fireLocked(info *workerInfo) {
 }
 
 func (w *Workshop) updateFreeLocked() {
-	var mostFree = w.mostFree
+	if len(w.infos) == 0 {
+		w.mostFree = nil
+		return
+	}
+	var mostFree *workerInfo
 	for info := range w.infos {
-		if info.jobNum >= mostFree.jobNum {
+		if mostFree != nil && info.jobNum >= mostFree.jobNum {
 			continue
 		}
 		mostFree = info
@@ -175,23 +186,37 @@ func (w *Workshop) updateFreeLocked() {
 }
 
 // Stats returns the current workshop stats.
+// Remove the overtime idle workers.
 func (w *Workshop) Stats() WorkshopStats {
 	w.lock.Lock()
-	w.stats.Worker = int32(len(w.infos))
 	w.stats.Doing = int32(w.stats.Hire - w.stats.Fire)
 	var max, min int32
-	if w.stats.Worker > 0 {
-		var tmp int32
-		min = math.MaxInt32
-		for info := range w.infos {
-			tmp = info.jobNum
-			if tmp > max {
-				max = tmp
-			}
-			if tmp < min {
-				min = tmp
-			}
+	var tmp int32
+	min = math.MaxInt32
+	var shouldUpdate bool
+	for info := range w.infos {
+		if info.jobNum == 0 && coarsetime.FloorTimeNow().After(info.idleExpire) {
+			delete(w.infos, info)
+			info.worker.Close()
+			w.stats.Closed++
+			w.stats.Idle--
+			shouldUpdate = true
+			continue
 		}
+		tmp = info.jobNum
+		if tmp > max {
+			max = tmp
+		}
+		if tmp < min {
+			min = tmp
+		}
+	}
+	if shouldUpdate {
+		w.updateFreeLocked()
+	}
+	w.stats.Worker = int32(len(w.infos))
+	if min == math.MaxInt32 {
+		min = 0
 	}
 	w.stats.LeastUsed = min
 	w.stats.MostUsed = max
