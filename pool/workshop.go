@@ -184,16 +184,24 @@ func (w *Workshop) Stats() WorkshopStats {
 func (w *Workshop) fireLocked(info *workerInfo) {
 	info.free()
 	w.stats.fireOne()
+
 	if !info.worker.Health() {
 		delete(w.infos, info.worker)
 		w.stats.Worker--
+		w.setMostFreeLocked()
+		w.stats.LeastUsed = w.mostFree.jobNum
 		w.writeStatsLocked()
 		return
 	}
+
 	jobNum := info.jobNum
 	if jobNum == 0 {
 		info.idleExpire = coarsetime.CeilingTimeNow().Add(w.maxIdleDuration)
 		w.stats.Idle++
+		w.stats.LeastUsed = 0
+		w.writeStatsLocked()
+	} else if jobNum < w.stats.LeastUsed {
+		w.stats.LeastUsed = jobNum
 		w.writeStatsLocked()
 	}
 	if jobNum < w.mostFree.jobNum {
@@ -227,7 +235,11 @@ GET:
 	}
 
 	w.stats.hireOne()
-
+	jobNum := info.jobNum
+	w.stats.LeastUsed = jobNum
+	if jobNum > w.stats.MostUsed {
+		w.stats.MostUsed = jobNum
+	}
 	w.writeStatsLocked()
 
 	return info, nil
