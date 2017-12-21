@@ -402,6 +402,7 @@ If the same name exists, will close and cover it.
 	```
 
 - Fire marks the worker to reduce a job.
+<br>If the worker does not belong to the workshop, close the worker.
 
 	```go
 	func (w *Workshop) Fire(worker Worker)

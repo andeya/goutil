@@ -118,10 +118,12 @@ func (w *Workshop) Hire() (Worker, error) {
 }
 
 // Fire marks the worker to reduce a job.
+// If the worker does not belong to the workshop, close the worker.
 func (w *Workshop) Fire(worker Worker) {
 	w.lock.Lock()
 	info, ok := w.infos[worker]
 	if !ok {
+		info.worker.Close()
 		w.lock.Unlock()
 		return
 	}
