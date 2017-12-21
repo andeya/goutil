@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type testWorker struct{}
+type testWorker struct{ int }
 
 func newTestWorker() (Worker, error) { return &testWorker{}, nil }
 func (t *testWorker) Health() bool   { return true }
@@ -29,24 +29,30 @@ func TestWorkshop(t *testing.T) {
 			default:
 			}
 			t.Logf("%+v", w.Stats())
-			time.Sleep(time.Microsecond)
+			time.Sleep(time.Microsecond / 10)
 		}
 	}()
 	for i := 0; i < n; i++ {
 		go func() {
 			defer wg.Add(-1)
-			err := w.Do(func(w Worker) error {
-				w.(*testWorker).Do()
+			err := w.Do(func(worker Worker) error {
+				worker.(*testWorker).Do()
 				return nil
 			})
 			if err != nil {
 				t.Fatalf("%v", err)
 			}
+			worker, err := w.Hire()
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+			worker.(*testWorker).Do()
+			w.Fire(worker)
 		}()
 	}
 	wg.Wait()
 	d := time.Since(t1)
 	close(closeCh)
 	time.Sleep(time.Second * 2)
-	t.Logf("stats: %+v, cost: %v, TPS: %v", w.Stats(), d, d/time.Duration(n))
+	t.Logf("stats: %+v, cost: %v, TPS: %v", w.Stats(), d, d/time.Duration(n*3))
 }

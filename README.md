@@ -368,6 +368,7 @@ If the same name exists, will close and cover it.
 	```go
 	type (
 		// Worker woker interface
+		// Note: Worker can not be implemented using empty structures(struct{})!
 		Worker interface {
 			Health() bool
 			Close() error
@@ -380,27 +381,40 @@ If the same name exists, will close and cover it.
 	```
 	
 - NewWorkshop creates a new workshop.
-If maxQuota<=0, will use default value.
-If maxIdleDuration<=0, will use default value.
-	
+<br>If maxQuota<=0, will use default value.
+<br>If maxIdleDuration<=0, will use default value.
+<br>Note: Worker can not be implemented using empty structures(struct{})!
+
 	```go
 func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func() (Worker, error)) *Workshop
 	```
 
 - Close wait for all the work to be completed and close the workshop.
-	
+
 	```go
 	func (w *Workshop) Close()
 	```
 
 - Do assign a worker to execute the callback function.
-	
+
 	```go
 	func (w *Workshop) Do(callback func(Worker) error) error
 	```
 
+- Fire marks the worker to reduce a job.
+
+	```go
+	func (w *Workshop) Fire(worker Worker)
+	```
+
+- Hire hires a worker and marks the worker to add a job.
+
+	```go
+	func (w *Workshop) Hire() (Worker, error)
+	```
+
 - Stats returns the current workshop stats.
-	
+
 	```go
 	func (w *Workshop) Stats() *WorkshopStats
 	```

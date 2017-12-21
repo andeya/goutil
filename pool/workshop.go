@@ -11,6 +11,7 @@ import (
 
 type (
 	// Worker woker interface
+	// Note: Worker can not be implemented using empty structures(struct{})!
 	Worker interface {
 		Health() bool
 		Close() error
@@ -20,7 +21,7 @@ type (
 		newFn           func() (Worker, error)
 		maxQuota        int
 		maxIdleDuration time.Duration
-		infos           map[*workerInfo]struct{}
+		infos           map[Worker]*workerInfo
 		mostFree        *workerInfo
 		stats           *WorkshopStats
 		lock            sync.Mutex
@@ -55,6 +56,7 @@ const (
 // NewWorkshop creates a new workshop.
 // If maxQuota<=0, will use default value.
 // If maxIdleDuration<=0, will use default value.
+// Note: Worker can not be implemented using empty structures(struct{})!
 func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func() (Worker, error)) *Workshop {
 	if maxQuota <= 0 {
 		maxQuota = defaultWorkerMaxQuota
@@ -66,7 +68,7 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 	w.stats = new(WorkshopStats)
 	w.maxQuota = maxQuota
 	w.maxIdleDuration = maxIdleDuration
-	w.infos = make(map[*workerInfo]struct{}, maxQuota)
+	w.infos = make(map[Worker]*workerInfo, maxQuota)
 	w.closeCh = make(chan struct{})
 	w.newFn = func() (worker Worker, err error) {
 		defer func() {
@@ -103,6 +105,30 @@ func (w *Workshop) Do(callback func(Worker) error) error {
 	return callback(worker)
 }
 
+// Hire hires a worker and marks the worker to add a job.
+func (w *Workshop) Hire() (Worker, error) {
+	w.lock.Lock()
+	info, err := w.hireLocked()
+	if err != nil {
+		w.lock.Unlock()
+		return nil, err
+	}
+	w.lock.Unlock()
+	return info.worker, nil
+}
+
+// Fire marks the worker to reduce a job.
+func (w *Workshop) Fire(worker Worker) {
+	w.lock.Lock()
+	info, ok := w.infos[worker]
+	if !ok {
+		w.lock.Unlock()
+		return
+	}
+	w.fireLocked(info)
+	w.lock.Unlock()
+}
+
 // ErrWorkshopClosed error: 'workshop is closed'
 var ErrWorkshopClosed = fmt.Errorf("%s", "workshop is closed")
 
@@ -114,7 +140,7 @@ GET:
 		if info.jobNum == 0 {
 			w.stats.Idle--
 			if coarsetime.FloorTimeNow().After(info.idleExpire) {
-				delete(w.infos, info)
+				delete(w.infos, info.worker)
 				info.worker.Close()
 				w.stats.Closed++
 				w.updateFreeLocked()
@@ -133,7 +159,7 @@ GET:
 			wg:     w.wg,
 		}
 		info.use()
-		w.infos[info] = struct{}{}
+		w.infos[info.worker] = info
 		w.mostFree = info
 	}
 
@@ -154,7 +180,7 @@ func (info *workerInfo) free() {
 func (w *Workshop) fireLocked(info *workerInfo) {
 	w.stats.Fire++
 	if !info.worker.Health() {
-		delete(w.infos, info)
+		delete(w.infos, info.worker)
 		w.stats.Closed++
 		return
 	}
@@ -176,7 +202,7 @@ func (w *Workshop) updateFreeLocked() {
 		return
 	}
 	var mostFree *workerInfo
-	for info := range w.infos {
+	for _, info := range w.infos {
 		if mostFree != nil && info.jobNum >= mostFree.jobNum {
 			continue
 		}
@@ -194,9 +220,9 @@ func (w *Workshop) Stats() WorkshopStats {
 	var tmp int32
 	min = math.MaxInt32
 	var shouldUpdate bool
-	for info := range w.infos {
+	for _, info := range w.infos {
 		if info.jobNum == 0 && coarsetime.FloorTimeNow().After(info.idleExpire) {
-			delete(w.infos, info)
+			delete(w.infos, info.worker)
 			info.worker.Close()
 			w.stats.Closed++
 			w.stats.Idle--
@@ -236,7 +262,7 @@ func (w *Workshop) Close() {
 	w.wg.Wait()
 	w.lock.Lock()
 	defer w.lock.Unlock()
-	for info := range w.infos {
+	for _, info := range w.infos {
 		info.worker.Close()
 		w.stats.Closed++
 	}
