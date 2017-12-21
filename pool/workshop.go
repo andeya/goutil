@@ -83,8 +83,8 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 	return w
 }
 
-// Do assign a worker to execute the callback function.
-func (w *Workshop) Do(callback func(Worker) error) error {
+// Callback assigns a worker to execute the function.
+func (w *Workshop) Callback(fn func(Worker) error) error {
 	select {
 	case <-w.closeCh:
 		return ErrWorkshopClosed
@@ -102,7 +102,7 @@ func (w *Workshop) Do(callback func(Worker) error) error {
 		w.fireLocked(info)
 		w.lock.Unlock()
 	}()
-	return callback(worker)
+	return fn(worker)
 }
 
 // Hire hires a worker and marks the worker to add a job.

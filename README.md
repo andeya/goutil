@@ -395,10 +395,10 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 	func (w *Workshop) Close()
 	```
 
-- Do assign a worker to execute the callback function.
+- Callback assigns a worker to execute the function.
 
 	```go
-	func (w *Workshop) Do(callback func(Worker) error) error
+	func (w *Workshop) Callback(fn func(Worker) error) error
 	```
 
 - Fire marks the worker to reduce a job.
