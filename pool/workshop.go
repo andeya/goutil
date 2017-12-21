@@ -72,7 +72,7 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 	}
 	w := new(Workshop)
 	w.stats = new(WorkshopStats)
-	w.writeStats()
+	w.writeStatsLocked()
 	w.maxQuota = maxQuota
 	w.maxIdleDuration = maxIdleDuration
 	w.infos = make(map[Worker]*workerInfo, maxQuota)
@@ -94,7 +94,7 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 		w.infos[worker] = info
 		w.stats.Created++
 		w.stats.Worker++
-		return info, err
+		return info, nil
 	}
 	go w.gc()
 	return w
@@ -109,7 +109,6 @@ func (w *Workshop) Callback(fn func(Worker) error) error {
 	}
 	w.lock.Lock()
 	info, err := w.hireLocked()
-	w.writeStats()
 	w.lock.Unlock()
 	if err != nil {
 		return err
@@ -122,7 +121,6 @@ func (w *Workshop) Callback(fn func(Worker) error) error {
 			worker.Close()
 		} else {
 			w.fireLocked(info)
-			w.writeStats()
 		}
 		w.lock.Unlock()
 	}()
@@ -162,7 +160,6 @@ func (w *Workshop) Fire(worker Worker) {
 		return
 	}
 	w.fireLocked(info)
-	w.writeStats()
 	w.lock.Unlock()
 
 }
@@ -171,7 +168,6 @@ func (w *Workshop) Fire(worker Worker) {
 func (w *Workshop) Hire() (Worker, error) {
 	w.lock.Lock()
 	info, err := w.hireLocked()
-	w.writeStats()
 	if err != nil {
 		w.lock.Unlock()
 		return nil, err
@@ -186,22 +182,23 @@ func (w *Workshop) Stats() WorkshopStats {
 }
 
 func (w *Workshop) fireLocked(info *workerInfo) {
+	info.free()
 	w.stats.fireOne()
 	if !info.worker.Health() {
 		delete(w.infos, info.worker)
 		w.stats.Worker--
+		w.writeStatsLocked()
 		return
 	}
-	info.free()
 	jobNum := info.jobNum
 	if jobNum == 0 {
 		info.idleExpire = coarsetime.CeilingTimeNow().Add(w.maxIdleDuration)
 		w.stats.Idle++
+		w.writeStatsLocked()
 	}
-	if jobNum >= w.mostFree.jobNum {
-		return
+	if jobNum < w.mostFree.jobNum {
+		w.mostFree = info
 	}
-	w.mostFree = info
 }
 
 func (w *Workshop) hireLocked() (*workerInfo, error) {
@@ -209,17 +206,15 @@ func (w *Workshop) hireLocked() (*workerInfo, error) {
 GET:
 	info = w.mostFree
 	if len(w.infos) >= w.maxQuota || (info != nil && info.jobNum == 0) {
+		if !w.checkInfoLocked(info) {
+			w.setMostFreeLocked()
+			goto GET
+		}
 		if info.jobNum == 0 {
 			w.stats.Idle--
-			if coarsetime.FloorTimeNow().After(info.idleExpire) {
-				delete(w.infos, info.worker)
-				info.worker.Close()
-				w.stats.Worker--
-				w.updateFreeLocked()
-				goto GET
-			}
 		}
-		w.updateFreeLocked()
+		info.use()
+		w.setMostFreeLocked()
 
 	} else {
 		var err error
@@ -227,36 +222,15 @@ GET:
 		if err != nil {
 			return nil, err
 		}
+		info.use()
 		w.mostFree = info
 	}
 
-	if !info.worker.Health() {
-		delete(w.infos, info.worker)
-		w.stats.Worker--
-		if info.jobNum == 0 {
-			w.stats.Idle--
-		}
-		return w.hireLocked()
-	}
-
-	info.use()
 	w.stats.hireOne()
-	return info, nil
-}
 
-func (w *Workshop) updateFreeLocked() {
-	if len(w.infos) == 0 {
-		w.mostFree = nil
-		return
-	}
-	var mostFree *workerInfo
-	for _, info := range w.infos {
-		if mostFree != nil && info.jobNum >= mostFree.jobNum {
-			continue
-		}
-		mostFree = info
-	}
-	w.mostFree = mostFree
+	w.writeStatsLocked()
+
+	return info, nil
 }
 
 func (w *Workshop) gc() {
@@ -280,12 +254,7 @@ func (w *Workshop) refreshLocked() {
 	min = math.MaxInt32
 	var shouldUpdate bool
 	for _, info := range w.infos {
-		if info.jobNum == 0 &&
-			(!info.worker.Health() || coarsetime.FloorTimeNow().After(info.idleExpire)) {
-			delete(w.infos, info.worker)
-			info.worker.Close()
-			w.stats.Worker--
-			w.stats.Idle--
+		if !w.checkInfoLocked(info) {
 			shouldUpdate = true
 			continue
 		}
@@ -298,14 +267,45 @@ func (w *Workshop) refreshLocked() {
 		}
 	}
 	if shouldUpdate {
-		w.updateFreeLocked()
+		w.setMostFreeLocked()
 	}
 	if min == math.MaxInt32 {
 		min = 0
 	}
 	w.stats.LeastUsed = min
 	w.stats.MostUsed = max
-	w.writeStats()
+	w.writeStatsLocked()
+}
+
+func (w *Workshop) setMostFreeLocked() {
+	if len(w.infos) == 0 {
+		w.mostFree = nil
+		return
+	}
+	var mostFree *workerInfo
+	for _, info := range w.infos {
+		if mostFree != nil && info.jobNum >= mostFree.jobNum {
+			continue
+		}
+		mostFree = info
+	}
+	w.mostFree = mostFree
+}
+
+func (w *Workshop) checkInfoLocked(info *workerInfo) bool {
+	if !info.worker.Health() ||
+		(info.jobNum == 0 && coarsetime.FloorTimeNow().After(info.idleExpire)) {
+		delete(w.infos, info.worker)
+		info.worker.Close()
+		w.stats.Worker--
+		if info.jobNum == 0 {
+			w.stats.Idle--
+		} else {
+			w.wg.Add(-int(info.jobNum))
+		}
+		return false
+	}
+	return true
 }
 
 func (info *workerInfo) use() {
@@ -318,7 +318,7 @@ func (info *workerInfo) free() {
 	info.wg.Add(-1)
 }
 
-func (w *Workshop) writeStats() {
+func (w *Workshop) writeStatsLocked() {
 	w.statsReader.Store(*w.stats)
 }
 
