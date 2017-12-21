@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/henrylee2cn/goutil/coarsetime"
@@ -18,15 +19,17 @@ type (
 	}
 	// Workshop working workshop
 	Workshop struct {
-		newFn           func() (Worker, error)
-		maxQuota        int
-		maxIdleDuration time.Duration
-		infos           map[Worker]*workerInfo
-		mostFree        *workerInfo
-		stats           *WorkshopStats
-		lock            sync.Mutex
-		wg              sync.WaitGroup
-		closeCh         chan struct{}
+		addFn                func() (*workerInfo, error)
+		maxQuota             int
+		maxIdleDuration      time.Duration
+		statsRefreshInterval time.Duration
+		infos                map[Worker]*workerInfo
+		mostFree             *workerInfo
+		stats                *WorkshopStats
+		statsReader          atomic.Value
+		lock                 sync.RWMutex
+		wg                   sync.WaitGroup
+		closeCh              chan struct{}
 	}
 	workerInfo struct {
 		worker     Worker
@@ -39,7 +42,6 @@ type (
 		Worker    int32
 		Idle      int32
 		Created   uint64
-		Closed    uint64
 		Hire      uint64
 		Fire      uint64
 		Doing     int32
@@ -49,8 +51,14 @@ type (
 )
 
 const (
-	defaultWorkerMaxQuota        = 64
-	defaultWorkerMaxIdleDuration = 3 * time.Minute
+	defaultWorkerMaxQuota             = 64
+	defaultWorkerMaxIdleDuration      = 3 * time.Minute
+	defaultWorkerStatsRefreshInterval = 30 * time.Second
+)
+
+var (
+	// ErrWorkshopClosed error: 'workshop is closed'
+	ErrWorkshopClosed = fmt.Errorf("%s", "workshop is closed")
 )
 
 // NewWorkshop creates a new workshop.
@@ -66,20 +74,35 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 	}
 	w := new(Workshop)
 	w.stats = new(WorkshopStats)
+	w.writeStats()
 	w.maxQuota = maxQuota
 	w.maxIdleDuration = maxIdleDuration
+	w.statsRefreshInterval = maxIdleDuration / 5
+	if w.statsRefreshInterval <= 0 {
+		w.statsRefreshInterval = defaultWorkerStatsRefreshInterval
+	}
 	w.infos = make(map[Worker]*workerInfo, maxQuota)
 	w.closeCh = make(chan struct{})
-	w.newFn = func() (worker Worker, err error) {
+	w.addFn = func() (info *workerInfo, err error) {
 		defer func() {
 			if p := recover(); p != nil {
 				err = fmt.Errorf("%v", p)
-			} else {
-				w.stats.Created++
 			}
 		}()
-		return newWorkerFunc()
+		worker, err := newWorkerFunc()
+		if err != nil {
+			return nil, err
+		}
+		info = &workerInfo{
+			worker: worker,
+			wg:     w.wg,
+		}
+		w.infos[worker] = info
+		w.stats.Created++
+		w.stats.Worker++
+		return info, err
 	}
+	go w.refreshWork()
 	return w
 }
 
@@ -92,6 +115,7 @@ func (w *Workshop) Callback(fn func(Worker) error) error {
 	}
 	w.lock.Lock()
 	info, err := w.hireLocked()
+	w.writeStats()
 	w.lock.Unlock()
 	if err != nil {
 		return err
@@ -104,22 +128,31 @@ func (w *Workshop) Callback(fn func(Worker) error) error {
 			worker.Close()
 		} else {
 			w.fireLocked(info)
+			w.writeStats()
 		}
 		w.lock.Unlock()
 	}()
 	return fn(worker)
 }
 
-// Hire hires a healthy worker and marks the worker to add a job.
-func (w *Workshop) Hire() (Worker, error) {
-	w.lock.Lock()
-	info, err := w.hireLocked()
-	if err != nil {
-		w.lock.Unlock()
-		return nil, err
+// Close wait for all the work to be completed and close the workshop.
+func (w *Workshop) Close() {
+	select {
+	case <-w.closeCh:
+		return
+	default:
+		close(w.closeCh)
 	}
-	w.lock.Unlock()
-	return info.worker, nil
+	w.wg.Wait()
+	w.lock.Lock()
+	defer w.lock.Unlock()
+	for _, info := range w.infos {
+		info.worker.Close()
+	}
+	w.infos = nil
+	w.stats.Idle = 0
+	w.stats.Worker = 0
+	w.refreshLocked()
 }
 
 // Fire marks the worker to reduce a job.
@@ -135,60 +168,35 @@ func (w *Workshop) Fire(worker Worker) {
 		return
 	}
 	w.fireLocked(info)
+	w.writeStats()
 	w.lock.Unlock()
+
 }
 
-var (
-	// ErrWorkshopClosed error: 'workshop is closed'
-	ErrWorkshopClosed = fmt.Errorf("%s", "workshop is closed")
-)
-
-func (w *Workshop) hireLocked() (*workerInfo, error) {
-	var info *workerInfo
-GET:
-	info = w.mostFree
-	if len(w.infos) >= w.maxQuota || (info != nil && info.jobNum == 0) {
-		if info.jobNum == 0 {
-			w.stats.Idle--
-			if coarsetime.FloorTimeNow().After(info.idleExpire) {
-				delete(w.infos, info.worker)
-				info.worker.Close()
-				w.stats.Closed++
-				w.updateFreeLocked()
-				goto GET
-			}
-		}
-		info.use()
-		w.updateFreeLocked()
-	} else {
-		worker, err := w.newFn()
-		if err != nil {
-			return nil, err
-		}
-		info = &workerInfo{
-			worker: worker,
-			wg:     w.wg,
-		}
-		info.use()
-		w.infos[info.worker] = info
-		w.mostFree = info
+// Hire hires a healthy worker and marks the worker to add a job.
+func (w *Workshop) Hire() (Worker, error) {
+	w.lock.Lock()
+	info, err := w.hireLocked()
+	w.writeStats()
+	if err != nil {
+		w.lock.Unlock()
+		return nil, err
 	}
+	w.lock.Unlock()
+	return info.worker, nil
+}
 
-	w.stats.Hire++
-
-	if !info.worker.Health() {
-		w.fireLocked(info)
-		return w.hireLocked()
-	}
-
-	return info, nil
+// Stats returns the current workshop stats.
+// Remove the overtime idle workers.
+func (w *Workshop) Stats() WorkshopStats {
+	return w.statsReader.Load().(WorkshopStats)
 }
 
 func (w *Workshop) fireLocked(info *workerInfo) {
-	w.stats.Fire++
+	w.stats.fireOne()
 	if !info.worker.Health() {
 		delete(w.infos, info.worker)
-		w.stats.Closed++
+		w.stats.Worker--
 		return
 	}
 	info.free()
@@ -201,6 +209,46 @@ func (w *Workshop) fireLocked(info *workerInfo) {
 		return
 	}
 	w.mostFree = info
+}
+
+func (w *Workshop) hireLocked() (*workerInfo, error) {
+	var info *workerInfo
+GET:
+	info = w.mostFree
+	if len(w.infos) >= w.maxQuota || (info != nil && info.jobNum == 0) {
+		if info.jobNum == 0 {
+			w.stats.Idle--
+			if coarsetime.FloorTimeNow().After(info.idleExpire) {
+				delete(w.infos, info.worker)
+				info.worker.Close()
+				w.stats.Worker--
+				w.updateFreeLocked()
+				goto GET
+			}
+		}
+		w.updateFreeLocked()
+
+	} else {
+		var err error
+		info, err = w.addFn()
+		if err != nil {
+			return nil, err
+		}
+		w.mostFree = info
+	}
+
+	if !info.worker.Health() {
+		delete(w.infos, info.worker)
+		w.stats.Worker--
+		if info.jobNum == 0 {
+			w.stats.Idle--
+		}
+		return w.hireLocked()
+	}
+
+	info.use()
+	w.stats.hireOne()
+	return info, nil
 }
 
 func (w *Workshop) updateFreeLocked() {
@@ -218,11 +266,20 @@ func (w *Workshop) updateFreeLocked() {
 	w.mostFree = mostFree
 }
 
-// Stats returns the current workshop stats.
-// Remove the overtime idle workers.
-func (w *Workshop) Stats() WorkshopStats {
-	w.lock.Lock()
-	w.stats.Doing = int32(w.stats.Hire - w.stats.Fire)
+func (w *Workshop) refreshWork() {
+	for {
+		select {
+		case <-w.closeCh:
+			return
+		case <-time.After(w.statsRefreshInterval):
+			w.lock.Lock()
+			w.refreshLocked()
+			w.lock.Unlock()
+		}
+	}
+}
+
+func (w *Workshop) refreshLocked() {
 	var max, min int32
 	var tmp int32
 	min = math.MaxInt32
@@ -231,7 +288,7 @@ func (w *Workshop) Stats() WorkshopStats {
 		if info.jobNum == 0 && coarsetime.FloorTimeNow().After(info.idleExpire) {
 			delete(w.infos, info.worker)
 			info.worker.Close()
-			w.stats.Closed++
+			w.stats.Worker--
 			w.stats.Idle--
 			shouldUpdate = true
 			continue
@@ -247,34 +304,12 @@ func (w *Workshop) Stats() WorkshopStats {
 	if shouldUpdate {
 		w.updateFreeLocked()
 	}
-	w.stats.Worker = int32(len(w.infos))
 	if min == math.MaxInt32 {
 		min = 0
 	}
 	w.stats.LeastUsed = min
 	w.stats.MostUsed = max
-	stats := *w.stats
-	w.lock.Unlock()
-	return stats
-}
-
-// Close wait for all the work to be completed and close the workshop.
-func (w *Workshop) Close() {
-	select {
-	case <-w.closeCh:
-		return
-	default:
-		close(w.closeCh)
-	}
-	w.wg.Wait()
-	w.lock.Lock()
-	defer w.lock.Unlock()
-	for _, info := range w.infos {
-		info.worker.Close()
-		w.stats.Closed++
-	}
-	w.infos = nil
-	w.stats.Idle = 0
+	w.writeStats()
 }
 
 func (info *workerInfo) use() {
@@ -285,4 +320,18 @@ func (info *workerInfo) use() {
 func (info *workerInfo) free() {
 	info.jobNum--
 	info.wg.Add(-1)
+}
+
+func (w *Workshop) writeStats() {
+	w.statsReader.Store(*w.stats)
+}
+
+func (stats *WorkshopStats) hireOne() {
+	stats.Hire++
+	stats.Doing = int32(stats.Hire - stats.Fire)
+}
+
+func (stats *WorkshopStats) fireOne() {
+	stats.Fire++
+	stats.Doing = int32(stats.Hire - stats.Fire)
 }

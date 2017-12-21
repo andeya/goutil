@@ -25,11 +25,12 @@ func TestWorkshop(t *testing.T) {
 		for {
 			select {
 			case <-closeCh:
+				t.Logf("%+v", w.Stats())
 				return
 			default:
+				t.Logf("%+v", w.Stats())
+				time.Sleep(time.Microsecond * 4)
 			}
-			t.Logf("%+v", w.Stats())
-			time.Sleep(time.Microsecond)
 		}
 	}()
 	for i := 0; i < n; i++ {
@@ -56,6 +57,6 @@ func TestWorkshop(t *testing.T) {
 	wg.Wait()
 	d := time.Since(t1)
 	close(closeCh)
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Millisecond * 1500)
 	t.Logf("stats: %+v, cost: %v, TPS: %v", w.Stats(), d, d/time.Duration(n*2))
 }
