@@ -19,17 +19,16 @@ type (
 	}
 	// Workshop working workshop
 	Workshop struct {
-		addFn                func() (*workerInfo, error)
-		maxQuota             int
-		maxIdleDuration      time.Duration
-		statsRefreshInterval time.Duration
-		infos                map[Worker]*workerInfo
-		mostFree             *workerInfo
-		stats                *WorkshopStats
-		statsReader          atomic.Value
-		lock                 sync.RWMutex
-		wg                   sync.WaitGroup
-		closeCh              chan struct{}
+		addFn           func() (*workerInfo, error)
+		maxQuota        int
+		maxIdleDuration time.Duration
+		infos           map[Worker]*workerInfo
+		mostFree        *workerInfo
+		stats           *WorkshopStats
+		statsReader     atomic.Value
+		lock            sync.RWMutex
+		wg              sync.WaitGroup
+		closeCh         chan struct{}
 	}
 	workerInfo struct {
 		worker     Worker
@@ -51,9 +50,8 @@ type (
 )
 
 const (
-	defaultWorkerMaxQuota             = 64
-	defaultWorkerMaxIdleDuration      = 3 * time.Minute
-	defaultWorkerStatsRefreshInterval = 30 * time.Second
+	defaultWorkerMaxQuota        = 64
+	defaultWorkerMaxIdleDuration = 3 * time.Minute
 )
 
 var (
@@ -77,10 +75,6 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 	w.writeStats()
 	w.maxQuota = maxQuota
 	w.maxIdleDuration = maxIdleDuration
-	w.statsRefreshInterval = maxIdleDuration / 5
-	if w.statsRefreshInterval <= 0 {
-		w.statsRefreshInterval = defaultWorkerStatsRefreshInterval
-	}
 	w.infos = make(map[Worker]*workerInfo, maxQuota)
 	w.closeCh = make(chan struct{})
 	w.addFn = func() (info *workerInfo, err error) {
@@ -102,7 +96,7 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 		w.stats.Worker++
 		return info, err
 	}
-	go w.refreshWork()
+	go w.gc()
 	return w
 }
 
@@ -187,7 +181,6 @@ func (w *Workshop) Hire() (Worker, error) {
 }
 
 // Stats returns the current workshop stats.
-// Remove the overtime idle workers.
 func (w *Workshop) Stats() WorkshopStats {
 	return w.statsReader.Load().(WorkshopStats)
 }
@@ -266,12 +259,13 @@ func (w *Workshop) updateFreeLocked() {
 	w.mostFree = mostFree
 }
 
-func (w *Workshop) refreshWork() {
+func (w *Workshop) gc() {
 	for {
 		select {
 		case <-w.closeCh:
 			return
-		case <-time.After(w.statsRefreshInterval):
+		default:
+			time.Sleep(w.maxIdleDuration)
 			w.lock.Lock()
 			w.refreshLocked()
 			w.lock.Unlock()
@@ -279,13 +273,15 @@ func (w *Workshop) refreshWork() {
 	}
 }
 
+// Remove the expired or unhealthy idle workers.
 func (w *Workshop) refreshLocked() {
 	var max, min int32
 	var tmp int32
 	min = math.MaxInt32
 	var shouldUpdate bool
 	for _, info := range w.infos {
-		if info.jobNum == 0 && coarsetime.FloorTimeNow().After(info.idleExpire) {
+		if info.jobNum == 0 &&
+			(!info.worker.Health() || coarsetime.FloorTimeNow().After(info.idleExpire)) {
 			delete(w.infos, info.worker)
 			info.worker.Close()
 			w.stats.Worker--

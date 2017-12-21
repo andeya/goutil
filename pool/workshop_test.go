@@ -29,7 +29,7 @@ func TestWorkshop(t *testing.T) {
 				return
 			default:
 				t.Logf("%+v", w.Stats())
-				time.Sleep(time.Microsecond * 4)
+				time.Sleep(time.Microsecond * 10)
 			}
 		}
 	}()
@@ -57,6 +57,6 @@ func TestWorkshop(t *testing.T) {
 	wg.Wait()
 	d := time.Since(t1)
 	close(closeCh)
-	time.Sleep(time.Millisecond * 1500)
+	time.Sleep(time.Millisecond * 2000)
 	t.Logf("stats: %+v, cost: %v, TPS: %v", w.Stats(), d, d/time.Duration(n*2))
 }
