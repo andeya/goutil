@@ -83,7 +83,7 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 	return w
 }
 
-// Callback assigns a worker to execute the function.
+// Callback assigns a healthy worker to execute the function.
 func (w *Workshop) Callback(fn func(Worker) error) error {
 	select {
 	case <-w.closeCh:
@@ -105,7 +105,7 @@ func (w *Workshop) Callback(fn func(Worker) error) error {
 	return fn(worker)
 }
 
-// Hire hires a worker and marks the worker to add a job.
+// Hire hires a healthy worker and marks the worker to add a job.
 func (w *Workshop) Hire() (Worker, error) {
 	w.lock.Lock()
 	info, err := w.hireLocked()
@@ -164,17 +164,13 @@ GET:
 	}
 
 	w.stats.Hire++
+
+	if !info.worker.Health() {
+		w.fireLocked(info)
+		return w.hireLocked()
+	}
+
 	return info, nil
-}
-
-func (info *workerInfo) use() {
-	info.jobNum++
-	info.wg.Add(1)
-}
-
-func (info *workerInfo) free() {
-	info.jobNum--
-	info.wg.Add(-1)
 }
 
 func (w *Workshop) fireLocked(info *workerInfo) {
@@ -268,4 +264,14 @@ func (w *Workshop) Close() {
 	}
 	w.infos = nil
 	w.stats.Idle = 0
+}
+
+func (info *workerInfo) use() {
+	info.jobNum++
+	info.wg.Add(1)
+}
+
+func (info *workerInfo) free() {
+	info.jobNum--
+	info.wg.Add(-1)
 }

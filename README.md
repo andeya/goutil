@@ -395,7 +395,7 @@ If the same name exists, will close and cover it.
 	func (w *Workshop) Close()
 	```
 
-- Callback assigns a worker to execute the function.
+- Callback assigns a healthy worker to execute the function.
 
 	```go
 	func (w *Workshop) Callback(fn func(Worker) error) error
@@ -407,7 +407,7 @@ If the same name exists, will close and cover it.
 	func (w *Workshop) Fire(worker Worker)
 	```
 
-- Hire hires a worker and marks the worker to add a job.
+- Hire hires a healthy worker and marks the worker to add a job.
 
 	```go
 	func (w *Workshop) Hire() (Worker, error)
