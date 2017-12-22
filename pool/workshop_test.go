@@ -14,7 +14,7 @@ func (t *testWorker) Close() error   { return nil }
 func (t *testWorker) Do()            {}
 
 func TestWorkshop(t *testing.T) {
-	w := NewWorkshop(50, time.Second, newTestWorker)
+	w := NewWorkshop(100, time.Second, newTestWorker)
 	defer w.Close()
 	n := 100000
 	wg := new(sync.WaitGroup)

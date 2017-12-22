@@ -190,13 +190,29 @@ func (w *Workshop) fireLocked(info *workerInfo) {
 		info.jobNum--
 		w.wg.Add(-1)
 	}
-
-	if info.jobNum == 0 {
+	jobNum := info.jobNum
+	if jobNum == 0 {
 		info.idleExpire = coarsetime.CeilingTimeNow().Add(w.maxIdleDuration)
 		w.stats.Idle++
 	}
 
-	w.refreshLocked(true)
+	if jobNum+1 >= w.stats.MaxLoad {
+		w.refreshLocked(true)
+		return
+	}
+
+	if !w.checkInfoLocked(info) {
+		if info == w.minLoadInfo {
+			w.refreshLocked(true)
+		}
+		return
+	}
+
+	if jobNum < w.stats.MinLoad {
+		w.stats.MinLoad = jobNum
+		w.minLoadInfo = info
+	}
+	w.writeStatsLocked()
 }
 
 func (w *Workshop) hireLocked() (*workerInfo, error) {
@@ -212,7 +228,11 @@ GET:
 			w.stats.Idle--
 		}
 		info.jobNum++
-		w.refreshLocked(false)
+		w.setMinLoadInfoLocked()
+		w.stats.MinLoad = w.minLoadInfo.jobNum
+		if w.stats.MaxLoad < info.jobNum {
+			w.stats.MaxLoad = info.jobNum
+		}
 
 	} else {
 		var err error
@@ -248,6 +268,21 @@ func (w *Workshop) gc() {
 			w.lock.Unlock()
 		}
 	}
+}
+
+func (w *Workshop) setMinLoadInfoLocked() {
+	if len(w.infos) == 0 {
+		w.minLoadInfo = nil
+		return
+	}
+	var minLoadInfo *workerInfo
+	for _, info := range w.infos {
+		if minLoadInfo != nil && info.jobNum >= minLoadInfo.jobNum {
+			continue
+		}
+		minLoadInfo = info
+	}
+	w.minLoadInfo = minLoadInfo
 }
 
 // Remove the expired or unhealthy idle workers.
