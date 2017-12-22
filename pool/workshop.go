@@ -23,7 +23,7 @@ type (
 		maxQuota        int
 		maxIdleDuration time.Duration
 		infos           map[Worker]*workerInfo
-		mostFree        *workerInfo
+		minLoadInfo     *workerInfo
 		stats           *WorkshopStats
 		statsReader     atomic.Value
 		lock            sync.Mutex
@@ -34,18 +34,16 @@ type (
 		worker     Worker
 		jobNum     int32
 		idleExpire time.Time
-		wg         sync.WaitGroup
 	}
 	// WorkshopStats workshop stats
 	WorkshopStats struct {
-		Worker    int32
-		Idle      int32
-		Created   uint64
-		Hire      uint64
-		Fire      uint64
-		Doing     int32
-		MostUsed  int32
-		LeastUsed int32
+		Worker  int32  // The current total number of workers
+		Idle    int32  // The current total number of idle workers
+		Created uint64 // Total created workers
+		Doing   int32  // The total number of tasks in progress
+		Done    uint64 // The total number of tasks completed
+		MaxLoad int32  // In the current load balancing, the maximum number of tasks
+		MinLoad int32  // In the current load balancing, the minimum number of tasks
 	}
 )
 
@@ -89,7 +87,6 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 		}
 		info = &workerInfo{
 			worker: worker,
-			wg:     w.wg,
 		}
 		w.infos[worker] = info
 		w.stats.Created++
@@ -144,7 +141,7 @@ func (w *Workshop) Close() {
 	w.infos = nil
 	w.stats.Idle = 0
 	w.stats.Worker = 0
-	w.refreshLocked()
+	w.refreshLocked(true)
 }
 
 // Fire marks the worker to reduce a job.
@@ -187,47 +184,35 @@ func (w *Workshop) Stats() WorkshopStats {
 }
 
 func (w *Workshop) fireLocked(info *workerInfo) {
-	info.free()
-	w.stats.fireOne()
-
-	if !info.worker.Health() {
-		delete(w.infos, info.worker)
-		w.stats.Worker--
-		w.setMostFreeLocked()
-		w.stats.LeastUsed = w.mostFree.jobNum
-		w.writeStatsLocked()
-		return
+	{
+		w.stats.Doing--
+		w.stats.Done++
+		info.jobNum--
+		w.wg.Add(-1)
 	}
 
-	jobNum := info.jobNum
-	if jobNum == 0 {
+	if info.jobNum == 0 {
 		info.idleExpire = coarsetime.CeilingTimeNow().Add(w.maxIdleDuration)
 		w.stats.Idle++
-		w.stats.LeastUsed = 0
-		w.writeStatsLocked()
-	} else if jobNum < w.stats.LeastUsed {
-		w.stats.LeastUsed = jobNum
-		w.writeStatsLocked()
 	}
-	if jobNum < w.mostFree.jobNum {
-		w.mostFree = info
-	}
+
+	w.refreshLocked(true)
 }
 
 func (w *Workshop) hireLocked() (*workerInfo, error) {
 	var info *workerInfo
 GET:
-	info = w.mostFree
+	info = w.minLoadInfo
 	if len(w.infos) >= w.maxQuota || (info != nil && info.jobNum == 0) {
 		if !w.checkInfoLocked(info) {
-			w.setMostFreeLocked()
+			w.refreshLocked(false)
 			goto GET
 		}
 		if info.jobNum == 0 {
 			w.stats.Idle--
 		}
-		info.use()
-		w.setMostFreeLocked()
+		info.jobNum++
+		w.refreshLocked(false)
 
 	} else {
 		var err error
@@ -235,16 +220,17 @@ GET:
 		if err != nil {
 			return nil, err
 		}
-		info.use()
-		w.mostFree = info
+		info.jobNum = 1
+		w.stats.MinLoad = 1
+		if w.stats.MaxLoad == 0 {
+			w.stats.MaxLoad = 1
+		}
+		w.minLoadInfo = info
 	}
 
-	w.stats.hireOne()
-	jobNum := info.jobNum
-	w.stats.LeastUsed = jobNum
-	if jobNum > w.stats.MostUsed {
-		w.stats.MostUsed = jobNum
-	}
+	w.wg.Add(1)
+	w.stats.Doing++
+
 	w.writeStatsLocked()
 
 	return info, nil
@@ -258,21 +244,20 @@ func (w *Workshop) gc() {
 		default:
 			time.Sleep(w.maxIdleDuration)
 			w.lock.Lock()
-			w.refreshLocked()
+			w.refreshLocked(true)
 			w.lock.Unlock()
 		}
 	}
 }
 
 // Remove the expired or unhealthy idle workers.
-func (w *Workshop) refreshLocked() {
-	var max, min int32
-	var tmp int32
+// The time complexity is O(n).
+func (w *Workshop) refreshLocked(writeStats bool) {
+	var max, min, tmp int32
 	min = math.MaxInt32
-	var shouldUpdate bool
+	var minLoadInfo *workerInfo
 	for _, info := range w.infos {
 		if !w.checkInfoLocked(info) {
-			shouldUpdate = true
 			continue
 		}
 		tmp = info.jobNum
@@ -282,31 +267,20 @@ func (w *Workshop) refreshLocked() {
 		if tmp < min {
 			min = tmp
 		}
-	}
-	if shouldUpdate {
-		w.setMostFreeLocked()
+		if minLoadInfo != nil && tmp >= minLoadInfo.jobNum {
+			continue
+		}
+		minLoadInfo = info
 	}
 	if min == math.MaxInt32 {
 		min = 0
 	}
-	w.stats.LeastUsed = min
-	w.stats.MostUsed = max
-	w.writeStatsLocked()
-}
-
-func (w *Workshop) setMostFreeLocked() {
-	if len(w.infos) == 0 {
-		w.mostFree = nil
-		return
+	w.stats.MinLoad = min
+	w.stats.MaxLoad = max
+	if writeStats {
+		w.writeStatsLocked()
 	}
-	var mostFree *workerInfo
-	for _, info := range w.infos {
-		if mostFree != nil && info.jobNum >= mostFree.jobNum {
-			continue
-		}
-		mostFree = info
-	}
-	w.mostFree = mostFree
+	w.minLoadInfo = minLoadInfo
 }
 
 func (w *Workshop) checkInfoLocked(info *workerInfo) bool {
@@ -319,32 +293,14 @@ func (w *Workshop) checkInfoLocked(info *workerInfo) bool {
 			w.stats.Idle--
 		} else {
 			w.wg.Add(-int(info.jobNum))
+			w.stats.Doing -= info.jobNum
+			w.stats.Done += uint64(info.jobNum)
 		}
 		return false
 	}
 	return true
 }
 
-func (info *workerInfo) use() {
-	info.jobNum++
-	info.wg.Add(1)
-}
-
-func (info *workerInfo) free() {
-	info.jobNum--
-	info.wg.Add(-1)
-}
-
 func (w *Workshop) writeStatsLocked() {
 	w.statsReader.Store(*w.stats)
-}
-
-func (stats *WorkshopStats) hireOne() {
-	stats.Hire++
-	stats.Doing = int32(stats.Hire - stats.Fire)
-}
-
-func (stats *WorkshopStats) fireOne() {
-	stats.Fire++
-	stats.Doing = int32(stats.Hire - stats.Fire)
 }

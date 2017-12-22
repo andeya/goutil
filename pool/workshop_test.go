@@ -14,7 +14,7 @@ func (t *testWorker) Close() error   { return nil }
 func (t *testWorker) Do()            {}
 
 func TestWorkshop(t *testing.T) {
-	w := NewWorkshop(100, time.Second, newTestWorker)
+	w := NewWorkshop(50, time.Second, newTestWorker)
 	defer w.Close()
 	n := 100000
 	wg := new(sync.WaitGroup)
@@ -25,11 +25,27 @@ func TestWorkshop(t *testing.T) {
 		for {
 			select {
 			case <-closeCh:
-				t.Logf("%+v", w.Stats())
+				stats := w.Stats()
+				if uint64(stats.Worker) > stats.Created ||
+					stats.Idle > stats.Worker ||
+					stats.MinLoad > stats.MaxLoad ||
+					stats.MaxLoad > stats.Doing {
+					t.Fatalf("stats has bug: %+v", stats)
+				} else {
+					t.Logf("%+v", stats)
+				}
 				return
 			default:
-				t.Logf("%+v", w.Stats())
-				time.Sleep(time.Microsecond * 10)
+				stats := w.Stats()
+				if uint64(stats.Worker) > stats.Created ||
+					stats.Idle > stats.Worker ||
+					stats.MinLoad > stats.MaxLoad ||
+					stats.MaxLoad > stats.Doing {
+					t.Fatalf("stats has bug: %+v", stats)
+				} else {
+					t.Logf("%+v", stats)
+				}
+				time.Sleep(time.Microsecond * 100)
 			}
 		}
 	}()
@@ -57,6 +73,6 @@ func TestWorkshop(t *testing.T) {
 	wg.Wait()
 	d := time.Since(t1)
 	close(closeCh)
-	time.Sleep(time.Millisecond * 2000)
+	time.Sleep(time.Millisecond * 2500)
 	t.Logf("stats: %+v, cost: %v, TPS: %v", w.Stats(), d, d/time.Duration(n*2))
 }
