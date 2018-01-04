@@ -29,6 +29,7 @@ type (
 		lock            sync.Mutex
 		wg              sync.WaitGroup
 		closeCh         chan struct{}
+		closeLock       sync.Mutex
 	}
 	workerInfo struct {
 		worker     Worker
@@ -126,12 +127,15 @@ func (w *Workshop) Callback(fn func(Worker) error) error {
 
 // Close wait for all the work to be completed and close the workshop.
 func (w *Workshop) Close() {
+	w.closeLock.Lock()
+	defer w.closeLock.Unlock()
 	select {
 	case <-w.closeCh:
 		return
 	default:
 		close(w.closeCh)
 	}
+
 	w.wg.Wait()
 	w.lock.Lock()
 	defer w.lock.Unlock()
