@@ -105,7 +105,7 @@ func (gp *GoPool) Stop() {
 
 var ErrLack = errors.New("lack of goroutines, because exceeded maxGoroutinesAmount limit.")
 
-// Go executes function via a goroutine.
+// Go executes the function via a goroutine.
 // If returns non-nil, the function cannot be executed because exceeded maxGoroutinesAmount limit.
 func (gp *GoPool) Go(fn func()) error {
 	ch := gp.getCh()
@@ -114,6 +114,14 @@ func (gp *GoPool) Go(fn func()) error {
 	}
 	ch.ch <- fn
 	return nil
+}
+
+// TryGo tries to execute the function via goroutine.
+// If there are no concurrent resources, execute it synchronously.
+func (gp *GoPool) TryGo(fn func()) {
+	if gp.Go(fn) != nil {
+		fn()
+	}
 }
 
 func (gp *GoPool) clean(scratch *[]*goroutineChan) {

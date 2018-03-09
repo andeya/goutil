@@ -186,11 +186,18 @@ If maxGoroutineIdleDuration<=0, will use default value.
 	func NewGoPool(maxGoroutinesAmount int, maxGoroutineIdleDuration time.Duration) *GoPool
 	```
 
-- Go executes function via a goroutine.
+- Go executes the function via a goroutine.
 If returns non-nil, the function cannot be executed because exceeded maxGoroutinesAmount limit.
 
 	```go
 	func (gp *GoPool) Go(fn func()) error
+	```
+
+- TryGo tries to execute the function via goroutine.
+If there are no concurrent resources, execute it synchronously.
+
+	```go
+	func (gp *GoPool) TryGo(fn func())
 	```
 
 - Stop starts GoPool.
