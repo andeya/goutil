@@ -508,17 +508,17 @@ It is safe for multiple goroutines to call a Map's methods concurrently.
 		// Otherwise, it stores and returns the given value.
 		// The loaded result is true if the value was loaded, false if stored.
 		LoadOrStore(key, value interface{}) (actual interface{}, loaded bool)
-		// Delete deletes the value for a key.
-		Delete(key interface{})
 		// Range calls f sequentially for each key and value present in the map.
 		// If f returns false, range stops the iteration.
 		Range(f func(key, value interface{}) bool)
-		// ClearCurrent clears all current data in the map.
-		ClearCurrent()
 		// Random returns a pair kv randomly.
 		// If exist=false, no kv data is exist.
 		Random() (key, value interface{}, exist bool)
+		// Delete deletes the value for a key.
+		Delete(key interface{})
 		// Len returns the length of the map.
+		// ClearCurrent clears all current data in the map.
+		ClearCurrent()
 		Len() int
 	}
 	```
