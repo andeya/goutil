@@ -29,9 +29,9 @@ type Map interface {
 	Random() (key, value interface{}, exist bool)
 	// Delete deletes the value for a key.
 	Delete(key interface{})
+	// Clear clears all current data in the map.
+	Clear()
 	// Len returns the length of the map.
-	// ClearCurrent clears all current data in the map.
-	ClearCurrent()
 	Len() int
 }
 
@@ -108,8 +108,8 @@ func (m *rwMap) Range(f func(key, value interface{}) bool) {
 	}
 }
 
-// ClearCurrent clears all current data in the map.
-func (m *rwMap) ClearCurrent() {
+// Clear clears all current data in the map.
+func (m *rwMap) Clear() {
 	m.rwmu.Lock()
 	for k := range m.data {
 		delete(m.data, k)
@@ -528,8 +528,8 @@ func (m *atomicMap) Range(f func(key, value interface{}) bool) {
 	}
 }
 
-// ClearCurrent clears all current data in the map.
-func (m *atomicMap) ClearCurrent() {
+// Clear clears all current data in the map.
+func (m *atomicMap) Clear() {
 	// We need to be able to iterate over all of the keys that were already
 	// present at the start of the call to Range.
 	// If read.amended is false, then read.m satisfies that property without

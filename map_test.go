@@ -20,7 +20,7 @@ func TestRwMap(t *testing.T) {
 		s[k]++
 	}
 	t.Logf("%#v", s)
-	m.ClearCurrent()
+	m.Clear()
 	if m.Len() != 0 {
 		t.Fatalf("after clear len: %d", m.Len())
 	}
@@ -37,7 +37,7 @@ func TestLoadOrStore(t *testing.T) {
 	if v, loaded := m.LoadOrStore(1, "rw-c"); v != "rw-a" || !loaded {
 		t.Fatalf("v: %v, loaded: %v", v, loaded)
 	}
-	m.ClearCurrent()
+	m.Clear()
 	if m.Len() != 0 {
 		t.Fatalf("after clear len: %d", m.Len())
 	}
@@ -51,7 +51,7 @@ func TestLoadOrStore(t *testing.T) {
 	if v, loaded := m.LoadOrStore(1, "atomic-c"); v != "atomic-a" || !loaded {
 		t.Fatalf("v: %v, loaded: %v", v, loaded)
 	}
-	m.ClearCurrent()
+	m.Clear()
 	if m.Len() != 0 {
 		t.Fatalf("after clear len: %d", m.Len())
 	}
@@ -96,7 +96,7 @@ func TestAtomicMap(t *testing.T) {
 	if m.Len() != 0 {
 		t.Fatalf("Len: expect: 0, but have: %d", m.Len())
 	}
-	m.ClearCurrent()
+	m.Clear()
 	if m.Len() != 0 {
 		t.Fatalf("after clear len: %d", m.Len())
 	}
@@ -124,7 +124,7 @@ func TestLen(t *testing.T) {
 	if a := m.Len(); a != 0 {
 		t.Fatalf("Len: expect: 0, but have: %d", a)
 	}
-	m.ClearCurrent()
+	m.Clear()
 	if m.Len() != 0 {
 		t.Fatalf("after clear len: %d", m.Len())
 	}

@@ -516,9 +516,9 @@ It is safe for multiple goroutines to call a Map's methods concurrently.
 		Random() (key, value interface{}, exist bool)
 		// Delete deletes the value for a key.
 		Delete(key interface{})
+		// Clear clears all current data in the map.
+		Clear()
 		// Len returns the length of the map.
-		// ClearCurrent clears all current data in the map.
-		ClearCurrent()
 		Len() int
 	}
 	```
