@@ -26,11 +26,17 @@ type Map interface {
 	// Range calls f sequentially for each key and value present in the map.
 	// If f returns false, range stops the iteration.
 	Range(f func(key, value interface{}) bool)
+	// ClearCurrent clears all current data in the map.
+	ClearCurrent()
 	// Random returns a pair kv randomly.
 	// If exist=false, no kv data is exist.
 	Random() (key, value interface{}, exist bool)
 	// Len returns the length of the map.
 	Len() int
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
 
 // RwMap creates a new concurrent safe map with sync.RWMutex.
@@ -102,8 +108,13 @@ func (m *rwMap) Range(f func(key, value interface{}) bool) {
 	}
 }
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
+// ClearCurrent clears all current data in the map.
+func (m *rwMap) ClearCurrent() {
+	m.rwmu.Lock()
+	for k := range m.data {
+		delete(m.data, k)
+	}
+	m.rwmu.Unlock()
 }
 
 // Random returns a pair kv randomly.
@@ -513,6 +524,40 @@ func (m *atomicMap) Range(f func(key, value interface{}) bool) {
 		}
 		if !f(k, v) {
 			break
+		}
+	}
+}
+
+// ClearCurrent clears all current data in the map.
+func (m *atomicMap) ClearCurrent() {
+	// We need to be able to iterate over all of the keys that were already
+	// present at the start of the call to Range.
+	// If read.amended is false, then read.m satisfies that property without
+	// requiring us to hold m.mu for a long time.
+	read, _ := m.read.Load().(readOnly)
+	if read.amended {
+		// m.dirty contains keys not in read.m. Fortunately, Range is already O(N)
+		// (assuming the caller does not break out early), so a call to Range
+		// amortizes an entire copy of the map: we can promote the dirty copy
+		// immediately!
+		m.mu.Lock()
+		read, _ = m.read.Load().(readOnly)
+		if read.amended {
+			read = readOnly{m: m.dirty}
+			m.read.Store(read)
+			m.dirty = nil
+			m.misses = 0
+		}
+		m.mu.Unlock()
+	}
+
+	for _, e := range read.m {
+		_, ok := e.load()
+		if !ok {
+			continue
+		}
+		if e.delete() {
+			atomic.AddInt32(&m.length, -1)
 		}
 	}
 }
