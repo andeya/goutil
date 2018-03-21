@@ -10,18 +10,18 @@ import (
 func SnakeString(s string) string {
 	data := make([]byte, 0, len(s)*2)
 	j := false
-	num := len(s)
-	for i := 0; i < num; i++ {
-		d := s[i]
-		if i > 0 && d >= 'A' && d <= 'Z' && j {
-			data = append(data, '_')
-		}
-		if d != '_' {
+	for _, d := range StringToBytes(s) {
+		if d >= 'A' && d <= 'Z' {
+			if j {
+				data = append(data, '_')
+				j = false
+			}
+		} else if d != '_' {
 			j = true
 		}
 		data = append(data, d)
 	}
-	return strings.ToLower(string(data[:]))
+	return strings.ToLower(BytesToString(data))
 }
 
 // CamelString converts the accepted string to a camel string (xx_yy to XxYy)
