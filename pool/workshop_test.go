@@ -19,7 +19,7 @@ func TestWorkshop(t *testing.T) {
 	n := 100000
 	wg := new(sync.WaitGroup)
 	wg.Add(n * 2)
-	t1 := time.Now()
+	startNano := time.Now().UnixNano()
 	var closeCh = make(chan struct{})
 	go func() {
 		for {
@@ -71,8 +71,9 @@ func TestWorkshop(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	d := time.Since(t1)
+	totalNano := time.Now().UnixNano() - startNano
 	close(closeCh)
+	// For wait workgroup done
 	time.Sleep(time.Millisecond * 2500)
-	t.Logf("stats: %+v, cost: %v, TPS: %v", w.Stats(), d, d/time.Duration(n*2))
+	t.Logf("stats: %+v, cost: %v ms for %d worker, TPS: %v", w.Stats(), totalNano/1000000, n*2, int64(n*2)*1000/(totalNano/1000000))
 }
