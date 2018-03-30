@@ -619,3 +619,19 @@ You can specify the suffix.
 	```go
 	func IntranetIP() (string, error)
 	```
+
+- AESEncrypt encrypts a piece of data.
+The cipherkey argument should be the AES key, either 16, 24, or 32 bytes
+to select AES-128, AES-192, or AES-256.
+
+	```go
+    func AESEncrypt(cipherkey, src []byte) []byte
+    ```
+
+- AESDecrypt decrypts a piece of data.
+The cipherkey argument should be the AES key, either 16, 24, or 32 bytes
+to select AES-128, AES-192, or AES-256.
+
+	```go
+    func AESDecrypt(cipherkey, ciphertext []byte) ([]byte, error)
+    ```
