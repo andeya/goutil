@@ -2,9 +2,16 @@ package goutil
 
 import (
 	"crypto/aes"
+	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"fmt"
 )
+
+// Md5 returns the MD5 checksum string of the data.
+func Md5(b []byte) string {
+	return fmt.Sprintf("%x", md5.Sum(b))
+}
 
 // AESEncrypt encrypts a piece of data.
 // The cipherkey argument should be the AES key,

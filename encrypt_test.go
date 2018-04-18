@@ -4,6 +4,11 @@ import (
 	"testing"
 )
 
+func TestMd5(t *testing.T) {
+	b := []byte("1234567890abcdef")
+	t.Logf("text: %s, md5: %s", b, Md5(b))
+}
+
 func TestEncrypt(t *testing.T) {
 	cipherkey := []byte("1234567890abcdef")
 	ciphertext := AESEncrypt(cipherkey, []byte("text1234"))

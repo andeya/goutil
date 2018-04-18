@@ -620,6 +620,12 @@ You can specify the suffix.
 	func IntranetIP() (string, error)
 	```
 
+- Md5 returns the MD5 checksum string of the data.
+	
+	```go
+	func Md5(b []byte) string
+	```
+
 - AESEncrypt encrypts a piece of data.
 The cipherkey argument should be the AES key, either 16, 24, or 32 bytes
 to select AES-128, AES-192, or AES-256.
