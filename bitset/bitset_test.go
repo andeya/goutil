@@ -62,7 +62,7 @@ func TestBitSet(t *testing.T) {
 	if bitSet.Size() != (500/8+1)*8 {
 		t.Fatalf("bitSet size: get %d, want %d", bitSet.Size(), (500/8+1)*8)
 	}
-	if sub.Size() != ((20-5+1)/8+1)*8 {
-		t.Fatalf("sub size: get %d, want %d", bitSet.Size(), ((20-5+1)/8+1)*8)
+	if sub.Size() != ((20-5)/8+1)*8 {
+		t.Fatalf("sub size: get %d, want %d", sub.Size(), ((20-5)/8+1)*8)
 	}
 }

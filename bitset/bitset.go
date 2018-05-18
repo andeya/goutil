@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/bits"
 	"strings"
 	"sync"
 )
@@ -83,6 +84,12 @@ func (b *BitSet) Get(offset int) bool {
 	return getBit(b.set[offset/8], byte(offset%8)) == 1
 }
 
+func getBit(gb, offset byte) byte {
+	var rOff = 7 - offset
+	var mask byte = 1 << rOff
+	return gb & mask >> rOff
+}
+
 // Count counts the amount of bit set to 1 within the specified range of the bit set.
 // Notes:
 //  0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on.
@@ -94,33 +101,12 @@ func (b *BitSet) Count(start, end int) int {
 		return 0
 	}
 	var n int
-	gb := b.set[sgi]
-	for i := byte(sbi); i < 8; i++ {
-		if getBit(gb, i) == 1 {
-			n++
-		}
+	n += bits.OnesCount8(b.set[sgi] << sbi)
+	for _, v := range b.set[sgi+1 : egi] {
+		n += bits.OnesCount8(v)
 	}
-	for h := sgi + 1; h < egi; h++ {
-		gb = b.set[h]
-		for i := byte(0); i < 8; i++ {
-			if getBit(gb, i) == 1 {
-				n++
-			}
-		}
-	}
-	gb = b.set[egi]
-	for i := uint(0); i <= ebi; i++ {
-		if getBit(gb, byte(i)) == 1 {
-			n++
-		}
-	}
+	n += bits.OnesCount8(b.set[egi] >> (7 - ebi) << (7 - ebi))
 	return n
-}
-
-func getBit(gb, offset byte) byte {
-	var rOff = 7 - offset
-	var mask byte = 1 << rOff
-	return gb & mask >> rOff
 }
 
 func (b *BitSet) validRange(start, end int) (sgi, sbi, egi, ebi uint, valid bool) {
@@ -167,15 +153,19 @@ func (b *BitSet) size() int {
 
 // Bytes returns the bit set copy bytes.
 func (b *BitSet) Bytes() []byte {
+	b.mu.RLock()
 	set := make([]byte, len(b.set))
 	copy(set, b.set)
+	b.mu.RUnlock()
 	return set
 }
 
-// Binary returns the bit binary by hex type.
+// Binary returns the bit set by binary type.
 // Notes:
-//  Paramter sep is the separator between bytes.
+//  Paramter sep is the separator between chars.
 func (b *BitSet) Binary(sep string) string {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
 	if len(b.set) == 0 {
 		return ""
 	}
@@ -188,6 +178,8 @@ func (b *BitSet) Binary(sep string) string {
 
 // String returns the bit set by hex type.
 func (b *BitSet) String() string {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
 	return hex.EncodeToString(b.set)
 }
 
@@ -195,11 +187,11 @@ func (b *BitSet) String() string {
 // Notes:
 //  0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on.
 func (b *BitSet) Sub(start, end int) *BitSet {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
 	newBitSet := &BitSet{
 		set: make([]byte, 0, len(b.set)),
 	}
-	b.mu.RLock()
-	defer b.mu.RUnlock()
 	sgi, sbi, egi, ebi, valid := b.validRange(start, end)
 	if !valid {
 		return newBitSet
@@ -209,7 +201,10 @@ func (b *BitSet) Sub(start, end int) *BitSet {
 		newBitSet.set = append(newBitSet.set, pre|v>>(7-sbi))
 		pre = v << sbi
 	}
-	last := b.set[egi] >> (7 - ebi) << ebi
-	newBitSet.set = append(newBitSet.set, pre|last>>(7-sbi), last<<sbi)
+	last := b.set[egi] >> (7 - ebi) << (7 - ebi)
+	newBitSet.set = append(newBitSet.set, pre|last>>(7-sbi))
+	if sbi < ebi {
+		newBitSet.set = append(newBitSet.set, last<<sbi)
+	}
 	return newBitSet
 }

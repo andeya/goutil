@@ -79,9 +79,9 @@ and returns the value of before setting.
     func (b *BitSet) Bytes() []byte
     ```
 
-- Binary returns the bit binary by hex type.
+- Binary returns the bit set by binary type.
 <br>Notes:
-<br>Paramter sep is the separator between bytes.
+<br>Paramter sep is the separator between chars.
 
     ```go
     func (b *BitSet) Binary(sep string) string
