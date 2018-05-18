@@ -10,17 +10,96 @@ Common and useful utils for the Go project development.
 
 ## 2. Contents
 
+- [BitSet](#bitset) A bit set
 - [Calendar](#calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
 - [CoarseTime](#coarsetime) Current time truncated to the nearest 100ms
 - [Errors](#errors) Improved errors package.
 - [Graceful](#graceful) Shutdown or reboot current process gracefully.
 - [GoPool](#gopool) Goroutines' pool
 - [ResPool](#respool) Resources' pool
-- [Workshop](#workshop) working workshop
+- [Workshop](#workshop) Working workshop
 - [Various](#various) Various small functions
 
 
 ## 3. UtilsAPI
+
+### BitSet
+
+A bit set.
+
+- import it
+
+    ```go
+    "github.com/henrylee2cn/goutil/bitset"
+    ```
+
+- NewBitSet creates a bit set object.
+
+    ```go
+    func NewBitSet(init ...byte) *BitSet
+    ```
+
+- Set sets the bit bool value on the specified offset,
+and returns the value of before setting.
+<br>Notes:
+<br>0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on;
+<br>If offset>=len(b.set), automatically grow the bit set;
+<br>If the bit offset is out of the left range, returns error.
+
+    ```go
+    func (b *BitSet) Set(offset int, value bool) (bool, error)
+    ```
+
+- Get gets the bit bool value on the specified offset.
+<br>Notes:
+<br>0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on;
+<br>If offset>=len(b.set), returns false.
+
+    ```go
+    func (b *BitSet) Get(offset int) bool
+    ```
+
+- Count counts the amount of bit set to 1 within the specified range of the bit set.
+<br>Notes:
+<br>0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on.
+
+    ```go
+    func (b *BitSet) Count(start, end int) int
+    ```
+
+- Size returns the bits size.
+
+    ```go
+    func (b *BitSet) Size() int
+    ```
+
+- Bytes returns the bit set copy bytes.
+
+    ```go
+    func (b *BitSet) Bytes() []byte
+    ```
+
+- Binary returns the bit binary by hex type.
+<br>Notes:
+<br>Paramter sep is the separator between bytes.
+
+    ```go
+    func (b *BitSet) Binary(sep string) string
+    ```
+
+- String returns the bit set by hex type.
+
+    ```go
+    func (b *BitSet) String() string
+    ```
+
+- Sub returns the bit subset within the specified range of the bit set.
+<br>Notes:
+<br>0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on.
+
+    ```go
+    func (b *BitSet) Sub(start, end int) *BitSet
+    ```
 
 ### Calendar
 
@@ -127,16 +206,17 @@ Parameter timeout is used to reset time-out period for the process shutdown.
     ```
 
 - Reboot all the frame process gracefully.
-Notes: Windows system are not supported!
+<br>Notes:
+<br>Windows system are not supported!
 
     ```go
     func Reboot(timeout ...time.Duration)
     ```
 
 - AddInherited adds the files and envs to be inherited by the new process.
-Notes:
- Only for reboot!
- Windows system are not supported!
+<br>Notes:
+<br>Only for reboot!
+<br>Windows system are not supported!
 
     ```go
     func AddInherited(procFiles []*os.File, envs []*Env)
@@ -364,6 +444,8 @@ If the same name exists, will close and cover it.
 
 ### Workshop
 
+Working workshop
+
 - import it
 
     ```go
@@ -390,7 +472,8 @@ If the same name exists, will close and cover it.
 - NewWorkshop creates a new workshop.
 <br>If maxQuota<=0, will use default value.
 <br>If maxIdleDuration<=0, will use default value.
-<br>Note: Worker can not be implemented using empty structures(struct{})!
+<br>Notes:
+<br>Worker can not be implemented using empty structures(struct{})!
 
     ```go
     func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func() (Worker, error)) *Workshop
@@ -643,6 +726,7 @@ to select AES-128, AES-192, or AES-256.
     ```
 
 - WritePidFile writes the current PID to the specified file.
+
     ```go
     func WritePidFile(pidFile ...string)
     ```
