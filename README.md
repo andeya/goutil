@@ -33,10 +33,55 @@ A bit set.
     "github.com/henrylee2cn/goutil/bitset"
     ```
 
-- NewBitSet creates a bit set object.
+- New creates a bit set object.
 
     ```go
-    func NewBitSet(init ...byte) *BitSet
+    func New(init ...byte) *BitSet
+    ```
+
+- NewFromHex creates a bit set object from hex string.
+
+    ```go
+    func NewFromHex(s string) (*BitSet, error)
+    ```
+
+- Not returns ^b.
+
+    ```go
+    func (b *BitSet) Not() *BitSet
+    ```
+
+- And returns all the "AND" bit sets.
+<br>Notes:
+<br>If the bitSets are empty, returns b.
+
+    ```go
+    func (b *BitSet) And(bitSets ...*BitSet) *BitSet
+    ```
+
+- Or returns all the "OR" bit sets.
+<br>Notes:
+<br>If the bitSets are empty, returns b.
+
+    ```go
+    func (b *BitSet) Or(bitSet ...*BitSet) *BitSet
+    ```
+
+- Xor returns all the "XOR" bit sets.
+<br>Notes:
+<br>If the bitSets are empty, returns b.
+
+    ```go
+    func (b *BitSet) Xor(bitSet ...*BitSet) *BitSet
+    ```
+
+
+- AndNot returns all the "&^" bit sets.
+<br>Notes:
+<br>If the bitSets are empty, returns b.
+
+    ```go
+    func (b *BitSet) AndNot(bitSet ...*BitSet) *BitSet
     ```
 
 - Set sets the bit bool value on the specified offset,

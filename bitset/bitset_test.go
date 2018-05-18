@@ -1,13 +1,14 @@
 package bitset_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/henrylee2cn/goutil/bitset"
 )
 
 func TestBitSet(t *testing.T) {
-	bitSet := bitset.NewBitSet(1, 1, 1)
+	bitSet := bitset.New(1, 1, 1)
 	t.Log(bitSet.Set(0, true))
 	t.Log(bitSet.Set(1, true))
 	t.Log(bitSet.Set(2, true))
@@ -48,6 +49,7 @@ func TestBitSet(t *testing.T) {
 
 	sub := bitSet.Sub(5, 20)
 	t.Log(sub.Binary(" "))
+	t.Log(sub)
 	count = sub.Count(0, -1)
 	if count != 3 {
 		t.Fatalf("[0,-1] bit count: get %d, want %d", count, 3)
@@ -72,4 +74,22 @@ func TestBitSet(t *testing.T) {
 	if count != 0 {
 		t.Fatalf("sub size: get %d, want %d", count, 0)
 	}
+}
+
+func ExampleBitSet() {
+	bs, _ := bitset.NewFromHex("c020")
+	fmt.Println("Origin:", bs.Binary(" "))
+	not := bs.Not()
+	fmt.Println("Not:", not.Binary(" "))
+	fmt.Println("AndNot:", not.AndNot(bitset.New(1, 1)).Binary(" "))
+	fmt.Println("And:", not.And(bitset.New(1<<1, 1<<1)).Binary(" "))
+	fmt.Println("Or:", not.Or(bitset.New(1<<7, 1<<7)).Binary(" "))
+	fmt.Println("Xor:", not.Xor(bitset.New(1<<7, 1<<7)).Binary(" "))
+	// Output:
+	// Origin: 11000000 00100000
+	// Not: 00111111 11011111
+	// AndNot: 00111110 11011110
+	// And: 00000010 00000010
+	// Or: 10111111 11011111
+	// Xor: 10111111 01011111
 }

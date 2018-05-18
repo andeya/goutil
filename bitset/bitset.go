@@ -15,9 +15,18 @@ type BitSet struct {
 	mu  sync.RWMutex
 }
 
-// NewBitSet creates a bit set object.
-func NewBitSet(init ...byte) *BitSet {
+// New creates a bit set object.
+func New(init ...byte) *BitSet {
 	return &BitSet{set: init}
+}
+
+// NewFromHex creates a bit set object from hex string.
+func NewFromHex(s string) (*BitSet, error) {
+	init, err := hex.DecodeString(s)
+	if err != nil {
+		return nil, err
+	}
+	return &BitSet{set: init}, nil
 }
 
 // Set sets the bit bool value on the specified offset,
@@ -135,10 +144,119 @@ func (b *BitSet) validRange(start, end int) (sgi, sbi, egi, ebi uint, valid bool
 	return
 }
 
+// Not returns ^b.
+func (b *BitSet) Not() *BitSet {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	rBitSet := &BitSet{
+		set: make([]byte, len(b.set)),
+	}
+	for i, gb := range b.set {
+		rBitSet.set[i] = ^gb
+	}
+	return rBitSet
+}
+
+// And returns all the "AND" bit sets.
+// Notes:
+//  If the bitSets are empty, returns b.
+func (b *BitSet) And(bitSets ...*BitSet) *BitSet {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	if len(bitSets) == 0 {
+		return b
+	}
+	var (
+		maxLen  = len(b.set)
+		minLen  = maxLen
+		currLen int
+	)
+	for _, g := range bitSets {
+		g.mu.RLock()
+		defer g.mu.RUnlock()
+
+		currLen = len(g.set)
+		if currLen > maxLen {
+			maxLen = currLen
+		} else if currLen < minLen {
+			minLen = currLen
+		}
+	}
+	rBitSet := &BitSet{
+		set: make([]byte, maxLen),
+	}
+	for i := range rBitSet.set[:minLen] {
+		rBitSet.set[i] = b.set[i]
+		for _, g := range bitSets {
+			rBitSet.set[i] &= g.set[i]
+		}
+	}
+	return rBitSet
+}
+
+// Or returns all the "OR" bit sets.
+// Notes:
+//  If the bitSets are empty, returns b.
+func (b *BitSet) Or(bitSet ...*BitSet) *BitSet {
+	return b.op("|", bitSet)
+}
+
+// Xor returns all the "XOR" bit sets.
+// Notes:
+//  If the bitSets are empty, returns b.
+func (b *BitSet) Xor(bitSet ...*BitSet) *BitSet {
+	return b.op("^", bitSet)
+}
+
+// AndNot returns all the "&^" bit sets.
+// Notes:
+//  If the bitSets are empty, returns b.
+func (b *BitSet) AndNot(bitSet ...*BitSet) *BitSet {
+	return b.op("&^", bitSet)
+}
+
+func (b *BitSet) op(op string, bitSets []*BitSet) *BitSet {
+	if len(bitSets) == 0 {
+		return b
+	}
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	var (
+		maxLen, currLen = len(b.set), 0
+	)
+	for _, g := range bitSets {
+		g.mu.RLock()
+		defer g.mu.RUnlock()
+		currLen = len(g.set)
+		if currLen > maxLen {
+			maxLen = currLen
+		}
+	}
+	rBitSet := &BitSet{
+		set: make([]byte, maxLen),
+	}
+	copy(rBitSet.set, b.set)
+	for _, g := range bitSets {
+		for i, gb := range g.set {
+			switch op {
+			case "|":
+				rBitSet.set[i] = rBitSet.set[i] | gb
+			case "^":
+				rBitSet.set[i] = rBitSet.set[i] ^ gb
+			case "&^":
+				rBitSet.set[i] = rBitSet.set[i] &^ gb
+			}
+		}
+	}
+	return rBitSet
+}
+
 // Clear clears the bit set.
 func (b *BitSet) Clear() {
 	b.mu.Lock()
-	b.set = make([]byte, len(b.set))
+	for i := range b.set {
+		b.set[i] = 0
+	}
 	b.mu.Unlock()
 }
 
