@@ -135,6 +135,13 @@ func (b *BitSet) validRange(start, end int) (sgi, sbi, egi, ebi uint, valid bool
 	return
 }
 
+// Clear clears the bit set.
+func (b *BitSet) Clear() {
+	b.mu.Lock()
+	b.set = make([]byte, len(b.set))
+	b.mu.Unlock()
+}
+
 // Size returns the bits size.
 func (b *BitSet) Size() int {
 	b.mu.RLock()
@@ -146,7 +153,7 @@ func (b *BitSet) Size() int {
 func (b *BitSet) size() int {
 	size := len(b.set) * 8
 	if size/8 != len(b.set) {
-		panic("overflows when calculating the bit set size")
+		panic("overflow when calculating the bit set size")
 	}
 	return size
 }

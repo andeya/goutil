@@ -65,4 +65,11 @@ func TestBitSet(t *testing.T) {
 	if sub.Size() != ((20-5)/8+1)*8 {
 		t.Fatalf("sub size: get %d, want %d", sub.Size(), ((20-5)/8+1)*8)
 	}
+
+	sub.Clear()
+	t.Log("cleared:", sub.Binary(" "))
+	count = sub.Count(0, -1)
+	if count != 0 {
+		t.Fatalf("sub size: get %d, want %d", count, 0)
+	}
 }

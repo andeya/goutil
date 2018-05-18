@@ -67,6 +67,12 @@ and returns the value of before setting.
     func (b *BitSet) Count(start, end int) int
     ```
 
+- Clear clears the bit set.
+
+    ```go
+    func (b *BitSet) Clear()
+    ```
+
 - Size returns the bits size.
 
     ```go
