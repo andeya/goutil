@@ -95,7 +95,6 @@ func (b *BitSet) Get(offset int) bool {
 
 // Range calls f sequentially for each bit present in the bit set.
 // If f returns false, range stops the iteration.
-// parameter bit's possible values: 0, 1
 func (b *BitSet) Range(f func(offset int, truth bool) bool) {
 	b.mu.RLock()
 	defer b.mu.RUnlock()

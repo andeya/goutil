@@ -105,7 +105,6 @@ and returns the value of before setting.
     ```
 - Range calls f sequentially for each bit present in the bit set.
 <br>If f returns false, range stops the iteration.
-<br>parameter bit's possible values: 0, 1
 
     ```go
     func (b *BitSet) Range(f func(offset int, truth bool) bool) 
