@@ -103,6 +103,13 @@ and returns the value of before setting.
     ```go
     func (b *BitSet) Get(offset int) bool
     ```
+- Range calls f sequentially for each bit present in the bit set.
+<br>If f returns false, range stops the iteration.
+<br>parameter bit's possible values: 0, 1
+
+    ```go
+    func (b *BitSet) Range(f func(offset int, truth bool) bool) 
+    ```
 
 - Count counts the amount of bit set to 1 within the specified range of the bit set.
 <br>Notes:

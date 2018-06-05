@@ -92,4 +92,28 @@ func ExampleBitSet() {
 	// And: 00000010 00000010
 	// Or: 10111111 11011111
 	// Xor: 10111111 01011111
+
+	not.Range(func(k int, v bool) bool {
+		fmt.Println(v)
+		return true
+	})
+	// 00111111 11011111
+
+	// Output:
+	// false
+	// false
+	// true
+	// true
+	// true
+	// true
+	// true
+	// true
+	// true
+	// true
+	// false
+	// true
+	// true
+	// true
+	// true
+	// true
 }

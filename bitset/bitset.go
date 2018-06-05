@@ -93,6 +93,23 @@ func (b *BitSet) Get(offset int) bool {
 	return getBit(b.set[offset/8], byte(offset%8)) == 1
 }
 
+// Range calls f sequentially for each bit present in the bit set.
+// If f returns false, range stops the iteration.
+// parameter bit's possible values: 0, 1
+func (b *BitSet) Range(f func(offset int, truth bool) bool) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	size := b.size()
+	if size == 0 {
+		return
+	}
+	for offset := 0; offset < size; offset++ {
+		if !f(offset, getBit(b.set[offset/8], byte(offset%8)) == 1) {
+			return
+		}
+	}
+}
+
 func getBit(gb, offset byte) byte {
 	var rOff = 7 - offset
 	var mask byte = 1 << rOff
