@@ -17,6 +17,7 @@ package graceful
 
 import (
 	"context"
+	"os"
 	"time"
 )
 
@@ -61,6 +62,7 @@ func SetShutdown(timeout time.Duration, firstSweepFunc, beforeExitingFunc func()
 // Shutdown closes all the frame process gracefully.
 // Parameter timeout is used to reset time-out period for the process shutdown.
 func Shutdown(timeout ...time.Duration) {
+	defer os.Exit(0)
 	log.Infof("shutting down process...")
 	contextExec(timeout, "shutdown", func(ctxTimeout context.Context) <-chan struct{} {
 		endCh := make(chan struct{})

@@ -26,9 +26,6 @@ func graceSignal() {
 	// subscribe to SIGINT signals
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, os.Kill)
-	defer func() {
-		os.Exit(0)
-	}()
 	<-ch // wait for SIGINT
 	signal.Stop(ch)
 	Shutdown()
@@ -37,6 +34,7 @@ func graceSignal() {
 // Reboot all the frame process gracefully.
 // Notes: Windows system are not supported!
 func Reboot(timeout ...time.Duration) {
+	defer os.Exit(0)
 	log.Infof("windows system doesn't support reboot! call Shutdown() is recommended.")
 }
 

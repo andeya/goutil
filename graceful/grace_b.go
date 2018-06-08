@@ -30,9 +30,6 @@ func graceSignal() {
 	// subscribe to SIGINT signals
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2)
-	defer func() {
-		os.Exit(0)
-	}()
 	sig := <-ch
 	signal.Stop(ch)
 	switch sig {
@@ -46,6 +43,7 @@ func graceSignal() {
 // Reboot all the frame process gracefully.
 // Notes: Windows system are not supported!
 func Reboot(timeout ...time.Duration) {
+	defer os.Exit(0)
 	log.Infof("rebooting process...")
 
 	var (
