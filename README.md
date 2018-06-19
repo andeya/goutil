@@ -590,17 +590,27 @@ NOTE: panic if modify the member value of the []byte.
     func StringToBytes(s string) []byte
     ```
 
+- NewRandom creates a new padded Encoding defined by the given alphabet,
+<br>which must be a 64-byte string that does not contain the padding character
+<br>or CR / LF ('\r', '\n').
+
+    ```go
+    func NewRandom(encoderSeed string, ignore ...byte) *Random
+    ```
+
 - RandomBytes returns securely generated random bytes. It will panic if the system's secure random number generator fails to function correctly.
 
     ```go
     func RandomBytes(n int) []byte
     ```
 
-- RandomString returns a URL-safe, base64 encoded securely generated random string. It will panic if the system's secure random number generator fails to function correctly.
-The length n must be an integer multiple of 4, otherwise the last character will be padded with `=`.
+- URLRandomString returns a URL-safe, base64 encoded securely generated
+<br>random string. It will panic if the system's secure random number generator
+<br>fails to function correctly.
+<br>The length n must be an integer multiple of 4, otherwise the last character will be padded with `=`.
 
     ```go
-    func RandomString(n int) string
+    func URLRandomString(n int) string
     ```
 
 - CamelString converts the accepted string to a camel string (xx_yy to XxYy)

@@ -6,7 +6,9 @@ import (
 	mrand "math/rand"
 )
 
-// NewRandom creates a new padded Encoding defined by the given alphabet.
+// NewRandom creates a new padded Encoding defined by the given alphabet,
+// which must be a 64-byte string that does not contain the padding character
+// or CR / LF ('\r', '\n').
 func NewRandom(encoderSeed string, ignore ...byte) *Random {
 	r := new(Random)
 	r.encoding = base64.NewEncoding(encoderSeed)
