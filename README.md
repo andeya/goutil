@@ -797,3 +797,33 @@ to select AES-128, AES-192, or AES-256.
     ```go
     func WritePidFile(pidFile ...string)
     ```
+
+- SetStrings sets a element to the string set.
+
+    ```go
+    func SetStrings(set []string, a string) []string
+    ```
+
+- SetInts sets a element to the int set.
+
+    ```go
+    func SetInts(set []int, a int) []int
+    ```
+
+- SetInt32s sets a element to the int32 set.
+
+    ```go
+    func SetInt32s(set []int32, a int32) []int32
+    ```
+
+- SetInt64s sets a element to the int64 set.
+
+    ```go
+    func SetInt64s(set []int64, a int64) []int64
+    ```
+
+- SetInterfaces sets a element to the interface{} set.
+
+    ```go
+    func SetInterfaces(set []interface{}, a interface{}) []interface{}
+    ```
