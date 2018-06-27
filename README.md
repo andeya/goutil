@@ -798,32 +798,92 @@ to select AES-128, AES-192, or AES-256.
     func WritePidFile(pidFile ...string)
     ```
 
-- SetStrings sets a element to the string set.
+- SetToStrings sets a element to the string set.
 
     ```go
-    func SetStrings(set []string, a string) []string
+    func SetToStrings(set []string, a string) []string
     ```
 
-- SetInts sets a element to the int set.
+- RemoveFromStrings removes a element from the string set.
 
     ```go
-    func SetInts(set []int, a int) []int
+    func RemoveFromStrings(set []string, a string) []string
     ```
 
-- SetInt32s sets a element to the int32 set.
+- RemoveAllFromStrings removes all the a element from the string set.
 
     ```go
-    func SetInt32s(set []int32, a int32) []int32
+    func RemoveAllFromStrings(set []string, a string) []string
     ```
 
-- SetInt64s sets a element to the int64 set.
+- SetToInts sets a element to the int set.
 
     ```go
-    func SetInt64s(set []int64, a int64) []int64
+    func SetToInts(set []int, a int) []int
     ```
 
-- SetInterfaces sets a element to the interface{} set.
+- RemoveFromInts removes a element from the int set.
 
     ```go
-    func SetInterfaces(set []interface{}, a interface{}) []interface{}
+    func RemoveFromInts(set []int, a int) []int
+    ```
+
+- RemoveAllFromInts removes all the a element from the int set.
+
+    ```go
+    func RemoveAllFromInts(set []int, a int) []int
+    ```
+
+- SetToInt32s sets a element to the int32 set.
+
+    ```go
+    func SetToInt32s(set []int32, a int32) []int32
+    ```
+
+- RemoveFromInt32s removes a element from the int32 set.
+
+    ```go
+    func RemoveFromInt32s(set []int32, a int32) []int32
+    ```
+
+- RemoveAllFromInt32s removes all the a element from the int32 set.
+
+    ```go
+    func RemoveAllFromInt32s(set []int32, a int32) []int32
+    ```
+
+- SetToInt64s sets a element to the int64 set.
+
+    ```go
+    func SetToInt64s(set []int64, a int64) []int64
+    ```
+
+- RemoveFromInt64s removes a element from the int64 set.
+
+    ```go
+    func RemoveFromInt64s(set []int64, a int64) []int64
+    ```
+
+- RemoveAllFromInt64s removes all the a element from the int64 set.
+
+    ```go
+    func RemoveAllFromInt64s(set []int64, a int64) []int64
+    ```
+
+- SetToInterfaces sets a element to the interface{} set.
+
+    ```go
+    func SetToInterfaces(set []interface{}, a interface{}) []interface{}
+    ```
+
+- RemoveFromInterfaces removes a element from the interface{} set.
+
+    ```go
+    func RemoveFromInterfaces(set []interface{}, a interface{}) []interface{}
+    ```
+
+- RemoveAllFromInterfaces removes all the a element from the interface{} set.
+
+    ```go
+    func RemoveAllFromInterfaces(set []interface{}, a interface{}) []interface{}
     ```
