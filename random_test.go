@@ -37,7 +37,7 @@ func TestRandomBytes(t *testing.T) {
 }
 
 func TestRandomString(t *testing.T) {
-	r := NewRandom("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_", '-', '_')
+	r := NewRandom("0123456789")
 	m := map[string]bool{}
 	var lock sync.Mutex
 	var group sync.WaitGroup
@@ -60,7 +60,7 @@ func TestRandomString(t *testing.T) {
 	t.Log("print the top ten...")
 	for id := range m {
 		i++
-		if i > 10 {
+		if i > 50 {
 			break
 		}
 		t.Log(id)

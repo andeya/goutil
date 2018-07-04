@@ -1,44 +1,36 @@
 package goutil
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	mrand "math/rand"
 )
 
-// NewRandom creates a new padded Encoding defined by the given alphabet,
-// which must be a 64-byte string that does not contain the padding character
-// or CR / LF ('\r', '\n').
-func NewRandom(encoderSeed string, ignore ...byte) *Random {
+// NewRandom creates a new padded Encoding defined by the given alphabet string.
+func NewRandom(alphabet string) *Random {
 	r := new(Random)
-	r.encoding = base64.NewEncoding(encoderSeed)
-	r.ignoreMap = map[byte]struct{}{}
-	if len(ignore) > 0 {
-		bMap := map[byte]struct{}{}
-		for i := 0; i < len(encoderSeed); i++ {
-			bMap[encoderSeed[i]] = struct{}{}
-		}
-		for _, b := range ignore {
-			r.ignoreMap[b] = struct{}{}
-			delete(bMap, b)
-		}
-		r.encoder = r.encoder[:0]
-		for b := range bMap {
-			r.encoder = append(r.encoder, b)
-		}
+	diff := 64 - len(alphabet)
+	if diff < 0 {
+		r.substitute = []byte(alphabet[64:])
+		r.substituteLen = len(r.substitute)
+		alphabet = alphabet[:64]
 	} else {
-		r.encoder = []byte(encoderSeed)
+		r.substitute = []byte(alphabet)
+		r.substituteLen = len(r.substitute)
+		if diff > 0 {
+			alphabet += string(bytes.Repeat([]byte{0x00}, diff))
+		}
 	}
-	r.encoderLen = len(r.encoder)
+	r.encoding = base64.NewEncoding(alphabet).WithPadding(base64.NoPadding)
 	return r
 }
 
 // Random random string creater.
 type Random struct {
-	encoding   *base64.Encoding
-	encoder    []byte
-	encoderLen int
-	ignoreMap  map[byte]struct{}
+	encoding      *base64.Encoding
+	substitute    []byte
+	substituteLen int
 }
 
 // RandomString returns a base64 encoded securely generated
@@ -47,18 +39,12 @@ type Random struct {
 // The length n must be an integer multiple of 4, otherwise the last character will be padded with `=`.
 func (r *Random) RandomString(n int) string {
 	d := r.encoding.DecodedLen(n)
-	buf := make([]byte, r.encoding.EncodedLen(d), n)
+	buf := make([]byte, n)
 	r.encoding.Encode(buf, RandomBytes(d))
-	if len(r.ignoreMap) > 0 {
-		var ok bool
-		for i, b := range buf {
-			if _, ok = r.ignoreMap[b]; ok {
-				buf[i] = r.encoder[mrand.Intn(r.encoderLen)]
-			}
+	for k, v := range buf {
+		if v == 0x00 {
+			buf[k] = r.substitute[mrand.Intn(r.substituteLen)]
 		}
-	}
-	for i := n - len(buf); i > 0; i-- {
-		buf = append(buf, r.encoder[mrand.Intn(r.encoderLen)])
 	}
 	return BytesToString(buf)
 }
@@ -66,10 +52,9 @@ func (r *Random) RandomString(n int) string {
 const urlEncoder = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
 var urlRandom = &Random{
-	encoding:   base64.URLEncoding,
-	encoder:    []byte(urlEncoder),
-	encoderLen: len(urlEncoder),
-	ignoreMap:  map[byte]struct{}{},
+	encoding:      base64.URLEncoding,
+	substitute:    []byte(urlEncoder),
+	substituteLen: len(urlEncoder),
 }
 
 // URLRandomString returns a URL-safe, base64 encoded securely generated

@@ -590,12 +590,10 @@ NOTE: panic if modify the member value of the []byte.
     func StringToBytes(s string) []byte
     ```
 
-- NewRandom creates a new padded Encoding defined by the given alphabet,
-<br>which must be a 64-byte string that does not contain the padding character
-<br>or CR / LF ('\r', '\n').
+- NewRandom creates a new padded Encoding defined by the given alphabet string.
 
     ```go
-    func NewRandom(encoderSeed string, ignore ...byte) *Random
+    func NewRandom(alphabet string) *Random
     ```
 
 - RandomBytes returns securely generated random bytes. It will panic if the system's secure random number generator fails to function correctly.
