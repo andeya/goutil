@@ -28,7 +28,6 @@ import (
 
 func graceSignal() {
 	// subscribe to SIGINT signals
-	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2)
 	sig := <-ch
 	signal.Stop(ch)
@@ -111,6 +110,8 @@ var (
 //  Only for reboot!
 //  Windows system are not supported!
 func AddInherited(procFiles []*os.File, envs []*Env) {
+	locker.Lock()
+	defer locker.Unlock()
 	for _, f := range procFiles {
 		var had bool
 		for _, ff := range allInheritedProcFiles {

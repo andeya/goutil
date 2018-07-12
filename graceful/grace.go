@@ -18,6 +18,7 @@ package graceful
 import (
 	"context"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -33,6 +34,8 @@ var (
 	shutdownTimeout time.Duration
 	firstSweep      = func() error { return nil }
 	beforeExiting   = func() error { return nil }
+	locker          sync.Mutex
+	ch              = make(chan os.Signal)
 )
 
 // SetShutdown sets the function which is called after the process shutdown,

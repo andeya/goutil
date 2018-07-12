@@ -24,7 +24,6 @@ import (
 
 func graceSignal() {
 	// subscribe to SIGINT signals
-	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, os.Kill)
 	<-ch // wait for SIGINT
 	signal.Stop(ch)
