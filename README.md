@@ -18,6 +18,7 @@ Common and useful utils for the Go project development.
 - [GoPool](#gopool) Goroutines' pool
 - [ResPool](#respool) Resources' pool
 - [Workshop](#workshop) Working workshop
+- [Password](#password) Check password
 - [Various](#various) Various small functions
 
 
@@ -565,6 +566,22 @@ Working workshop
 
     ```go
     func (w *Workshop) Stats() *WorkshopStats
+    ```
+
+### Password
+
+Password check password.
+
+- import it
+
+    ```go
+    "github.com/henrylee2cn/goutil/password"
+    ```
+
+- CheckPassword checks if the password matches the format requirements.
+
+    ```go
+    func CheckPassword(pw string, flag Flag, minLen int, maxLen ...int) bool
     ```
 
 ### Various
