@@ -1,6 +1,6 @@
 package password
 
-// Flag password
+// Flag password material requirement
 type Flag uint8
 
 const (
@@ -13,8 +13,8 @@ const (
 	// U Uppercase letter
 	U Flag = 1 << 3
 	// S Symbols found on the keyboard (all keyboard characters not defined as letters or numerals) and spaces
-	S     Flag = 1 << 4
-	clean      = ^Flag(0x1f)
+	S    Flag = 1 << 4
+	mask      = Flag(0x1f)
 )
 
 // CheckPassword checks if the password matches the format requirements.
@@ -23,7 +23,7 @@ func CheckPassword(pw string, flag Flag, minLen int, maxLen ...int) bool {
 		(len(maxLen) > 0 && len(pw) > maxLen[0]) {
 		return false
 	}
-	flag &^= clean
+	flag &= mask
 	if flag == flag|L || flag == flag|U {
 		flag |= L_OR_U
 	}
