@@ -13,8 +13,9 @@ const (
 	// U Uppercase letter
 	U Flag = 1 << 3
 	// S Symbols found on the keyboard (all keyboard characters not defined as letters or numerals) and spaces
-	S    Flag = 1 << 4
-	mask      = Flag(0x1f)
+	S Flag = 1 << 4
+
+	mask Flag = 0x1f
 )
 
 // CheckPassword checks if the password matches the format requirements.
