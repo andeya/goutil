@@ -601,7 +601,7 @@ Various small functions.
     ```
 
 - StringToBytes convert string type to []byte type.
-NOTE: panic if modify the member value of the []byte.
+<br>NOTE: panic if modify the member value of the []byte.
 
     ```go
     func StringToBytes(s string) []byte
@@ -652,14 +652,15 @@ NOTE: panic if modify the member value of the []byte.
     func JsQueryEscape(s string) string
     ```
 
-- JsQueryUnescape does the inverse transformation of JsQueryEscape, converting %AB into the byte 0xAB and '+' into ' ' (space). It returns an error if any % is not followed by two hexadecimal digits.
+- JsQueryUnescape does the inverse transformation of JsQueryEscape, converting %AB into the byte 0xAB and '+' into ' ' (space).
+<br>It returns an error if any % is not followed by two hexadecimal digits.
 
     ```go
     func JsQueryUnescape(s string) (string, error)
     ```
 
 - Map is a concurrent map with loads, stores, and deletes.
-It is safe for multiple goroutines to call a Map's methods concurrently.
+<br>It is safe for multiple goroutines to call a Map's methods concurrently.
 
     ```go
     type Map interface {
@@ -689,14 +690,14 @@ It is safe for multiple goroutines to call a Map's methods concurrently.
     ```
 
 - RwMap creates a new concurrent safe map with sync.RWMutex.
-The normal Map is high-performance mapping under low concurrency conditions.
+<br>The normal Map is high-performance mapping under low concurrency conditions.
 
     ```go
     func RwMap(capacity ...int) Map
     ```
 
 - AtomicMap creates a concurrent map with amortized-constant-time loads, stores, and deletes.
-It is safe for multiple goroutines to call a atomicMap's methods concurrently.
+<br>It is safe for multiple goroutines to call a atomicMap's methods concurrently.
 From go v1.9 sync.Map.
 
     ```go
@@ -734,14 +735,14 @@ From go v1.9 sync.Map.
     ```
 
 - SearchFile Search a file in paths.
-This is often used in search config file in `/etc` `~/`
+<br>This is often used in search config file in `/etc` `~/`
 
     ```go
     func SearchFile(filename string, paths ...string) (fullpath string, err error)
     ```
 
 - GrepFile like command grep -E.
-For example: GrepFile(`^hello`, "hello.txt").
+<br>For example: GrepFile(`^hello`, "hello.txt").
 `\n` is striped while read
 
     ```go
@@ -749,7 +750,7 @@ For example: GrepFile(`^hello`, "hello.txt").
     ```
 
 - WalkDirs traverses the directory, return to the relative path.
-You can specify the suffix.
+<br>You can specify the suffix.
 
     ```go
     func WalkDirs(targpath string, suffixes ...string) (dirlist []string)
@@ -774,6 +775,7 @@ You can specify the suffix.
     ```
 
 - ExtranetIP get external IP addr.
+<br>NOTE: Query IP information from the service API: http://pv.sohu.com/cityjson?ie=utf-8
 
     ```go
     func ExtranetIP() (ip string, err error)
@@ -792,7 +794,7 @@ You can specify the suffix.
     ```
 
 - AESEncrypt encrypts a piece of data.
-The cipherkey argument should be the AES key, either 16, 24, or 32 bytes
+<br>The cipherkey argument should be the AES key, either 16, 24, or 32 bytes
 to select AES-128, AES-192, or AES-256.
 
     ```go
@@ -800,7 +802,7 @@ to select AES-128, AES-192, or AES-256.
     ```
 
 - AESDecrypt decrypts a piece of data.
-The cipherkey argument should be the AES key, either 16, 24, or 32 bytes
+<br>The cipherkey argument should be the AES key, either 16, 24, or 32 bytes
 to select AES-128, AES-192, or AES-256.
 
     ```go

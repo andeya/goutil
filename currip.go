@@ -10,6 +10,7 @@ import (
 )
 
 // ExtranetIP get external IP addr.
+// NOTE: Query IP information from the service API: http://pv.sohu.com/cityjson?ie=utf-8
 func ExtranetIP() (ip string, err error) {
 	defer func() {
 		if p := recover(); p != nil {
