@@ -87,7 +87,7 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 	}
 	w := new(Workshop)
 	w.stats = new(WorkshopStats)
-	w.writeStatsLocked()
+	w.reportStatsLocked()
 	w.maxQuota = maxQuota
 	w.maxIdleDuration = maxIdleDuration
 	w.infos = make(map[Worker]*workerInfo, maxQuota)
@@ -232,7 +232,7 @@ func (w *Workshop) fireLocked(info *workerInfo) {
 		w.stats.MinLoad = jobNum
 		w.minLoadInfo = info
 	}
-	w.writeStatsLocked()
+	w.reportStatsLocked()
 }
 
 func (w *Workshop) hireLocked() (*workerInfo, error) {
@@ -271,7 +271,7 @@ GET:
 	w.wg.Add(1)
 	w.stats.Doing++
 
-	w.writeStatsLocked()
+	w.reportStatsLocked()
 
 	return info, nil
 }
@@ -307,7 +307,7 @@ func (w *Workshop) setMinLoadInfoLocked() {
 
 // Remove the expired or unhealthy idle workers.
 // The time complexity is O(n).
-func (w *Workshop) refreshLocked(writeStats bool) {
+func (w *Workshop) refreshLocked(reportStats bool) {
 	var max, min, tmp int32
 	min = math.MaxInt32
 	var minLoadInfo *workerInfo
@@ -332,8 +332,8 @@ func (w *Workshop) refreshLocked(writeStats bool) {
 	}
 	w.stats.MinLoad = min
 	w.stats.MaxLoad = max
-	if writeStats {
-		w.writeStatsLocked()
+	if reportStats {
+		w.reportStatsLocked()
 	}
 	w.minLoadInfo = minLoadInfo
 }
@@ -356,6 +356,6 @@ func (w *Workshop) checkInfoLocked(info *workerInfo) bool {
 	return true
 }
 
-func (w *Workshop) writeStatsLocked() {
+func (w *Workshop) reportStatsLocked() {
 	w.statsReader.Store(*w.stats)
 }
