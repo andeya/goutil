@@ -115,7 +115,7 @@ func NewWorkshop(maxQuota int, maxIdleDuration time.Duration, newWorkerFunc func
 }
 
 // Callback assigns a healthy worker to execute the function.
-func (w *Workshop) Callback(fn func(Worker) error) error {
+func (w *Workshop) Callback(fn func(Worker) error) (err error) {
 	select {
 	case <-w.closeCh:
 		return ErrWorkshopClosed
@@ -129,6 +129,9 @@ func (w *Workshop) Callback(fn func(Worker) error) error {
 	}
 	worker := info.worker
 	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("%v", p)
+		}
 		w.lock.Lock()
 		_, ok := w.infos[worker]
 		if !ok {
