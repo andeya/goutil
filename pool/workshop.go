@@ -10,6 +10,20 @@ import (
 	"github.com/henrylee2cn/goutil/coarsetime"
 )
 
+/**
+ * Conditions of Use:
+ * - Limited resources
+ * - Resources can be multiplexed
+ * - Typical application scenarios, such as connection pooling
+ *
+ * Performance:
+ * - At least 4 times the exclusive resource pool,
+ * and the longer the business is,
+ * the more obvious the performance improvement
+ * - The average time spent on each operation will not change significantly,
+ * but the overall throughput is greatly improved
+ */
+
 type (
 	// Worker woker interface
 	// Note: Worker can not be implemented using empty structures(struct{})!

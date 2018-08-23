@@ -504,6 +504,19 @@ If the same name exists, will close and cover it.
 
 Working workshop
 
+Conditions of Use:
+- Limited resources
+- Resources can be multiplexed
+- Typical application scenarios, such as connection pooling
+
+Performance:
+
+- At least 4 times the exclusive resource pool,
+<br>and the longer the business is,
+<br>the more obvious the performance improvement
+- The average time spent on each operation will not change significantly,
+<br>but the overall throughput is greatly improved
+
 - import it
 
     ```go
