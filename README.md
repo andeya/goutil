@@ -507,7 +507,7 @@ Non-blocking asynchronous multiplex resource pool.
 Conditions of Use:
 - Limited resources
 - Resources can be multiplexed non-blockingly and asynchronously
-- Typical application scenarios, such as connection pooling
+- Typical application scenarios, such as connection pool for asynchronous communication
 
 Performance:
 
