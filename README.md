@@ -17,7 +17,7 @@ Common and useful utils for the Go project development.
 - [Graceful](#graceful) Shutdown or reboot current process gracefully.
 - [GoPool](#gopool) Goroutines' pool
 - [ResPool](#respool) Resources' pool
-- [Workshop](#workshop) Working workshop
+- [Workshop](#workshop) Multiplexed resource pool
 - [Password](#password) Check password
 - [Various](#various) Various small functions
 
@@ -502,7 +502,7 @@ If the same name exists, will close and cover it.
 
 ### Workshop
 
-Working workshop
+Multiplexed resource pool
 
 Conditions of Use:
 - Limited resources

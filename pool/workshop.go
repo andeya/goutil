@@ -11,6 +11,8 @@ import (
 )
 
 /**
+ * Workshop is multiplexed resource pool.
+ *
  * Conditions of Use:
  * - Limited resources
  * - Resources can be multiplexed
