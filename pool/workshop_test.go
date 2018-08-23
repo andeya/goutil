@@ -10,10 +10,18 @@ import (
 go test -v -run=^TestChanPool$ -bench=^$ && go test -v -run=^TestWorkshop$ -bench=^$ && go test -v -run=^$ -bench=^Benchmark
 */
 
+// // Scene A
+// const (
+// 	poolSize      = 50
+// 	requests    = 1000000
+// 	oneLogicCostTime = time.Millisecond
+// )
+
+// Scene B
 const (
-	poolSize      = 50
-	operations    = 1000000
-	logicCostTime = time.Millisecond
+	poolSize         = 50
+	requests         = 100000
+	oneLogicCostTime = time.Millisecond * 10
 )
 
 type testWorker struct{ int }
@@ -21,7 +29,19 @@ type testWorker struct{ int }
 func newTestWorker() (Worker, error) { return &testWorker{}, nil }
 func (t *testWorker) Health() bool   { return true }
 func (t *testWorker) Close() error   { return nil }
-func (t *testWorker) Do()            { time.Sleep(logicCostTime) }
+func (t *testWorker) Do()            { time.Sleep(oneLogicCostTime) }
+
+func reportStat(t *testing.T, startNano int64) {
+	totalNano := time.Now().UnixNano() - startNano
+	t.Logf(
+		"pool_size:%d, requests:%d, one_logic_cost:%v, total_cost:%v, QPS:%d",
+		poolSize,
+		requests,
+		oneLogicCostTime,
+		time.Duration(totalNano),
+		int64(requests*time.Second)/totalNano,
+	)
+}
 
 func TestChanPool(t *testing.T) {
 	var workerPool = make(chan *testWorker, poolSize)
@@ -30,9 +50,9 @@ func TestChanPool(t *testing.T) {
 	}
 
 	wg := new(sync.WaitGroup)
-	wg.Add(operations)
+	wg.Add(requests)
 	startNano := time.Now().UnixNano()
-	for i := 0; i < operations; i++ {
+	for i := 0; i < requests; i++ {
 		go func() {
 			defer wg.Done()
 			worker := <-workerPool
@@ -41,23 +61,16 @@ func TestChanPool(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	totalNano := time.Now().UnixNano() - startNano
-	t.Logf(
-		"Worker: %d, Created: %[1]d, cost: %v ms for %d operations, TPS: %v",
-		poolSize,
-		totalNano/int64(time.Millisecond),
-		operations,
-		int64(operations)/(totalNano/int64(time.Second)),
-	)
+	reportStat(t, startNano)
 }
 
 func TestWorkshop(t *testing.T) {
 	w := NewWorkshop(poolSize, time.Second, newTestWorker)
 	defer w.Close()
 	wg := new(sync.WaitGroup)
-	wg.Add(operations)
+	wg.Add(requests)
 	startNano := time.Now().UnixNano()
-	for i := 0; i < operations; i++ {
+	for i := 0; i < requests; i++ {
 		go func() {
 			defer wg.Done()
 			err := w.Callback(func(worker Worker) error {
@@ -70,14 +83,8 @@ func TestWorkshop(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	totalNano := time.Now().UnixNano() - startNano
-	t.Logf(
-		"stats: %+v, cost: %v ms for %d operations, TPS: %v",
-		w.Stats(),
-		totalNano/int64(time.Millisecond),
-		operations,
-		int64(operations)/(totalNano/int64(time.Second)),
-	)
+	t.Logf("workshop stats: %+v", w.Stats())
+	reportStat(t, startNano)
 }
 
 func BenchmarkChanPool(b *testing.B) {

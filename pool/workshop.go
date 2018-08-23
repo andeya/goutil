@@ -19,9 +19,9 @@ import (
  * - Typical application scenarios, such as connection pooling
  *
  * Performance:
- * - At least 4 times the exclusive resource pool,
- * and the longer the business is,
- * the more obvious the performance improvement
+ * - The longer the business is, the more obvious the performance improvement.
+ * If the service is executed for 1ms each time, the performance is improved by about 4 times;
+ * If the business is executed for 10ms each time, the performance is improved by about 28 times
  * - The average time spent on each operation will not change significantly,
  * but the overall throughput is greatly improved
  */

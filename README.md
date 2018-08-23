@@ -511,9 +511,9 @@ Conditions of Use:
 
 Performance:
 
-- At least 4 times the exclusive resource pool,
-<br>and the longer the business is,
-<br>the more obvious the performance improvement
+- The longer the business is, the more obvious the performance improvement.
+<br>If the service is executed for 1ms each time, the performance is improved by about 4 times;
+<br>If the business is executed for 10ms each time, the performance is improved by about 28 times
 - The average time spent on each operation will not change significantly,
 <br>but the overall throughput is greatly improved
 
