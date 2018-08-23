@@ -178,7 +178,6 @@ func (w *Workshop) Fire(worker Worker) {
 	}
 	w.fireLocked(info)
 	w.lock.Unlock()
-
 }
 
 // Hire hires a healthy worker and marks the worker to add a job.
