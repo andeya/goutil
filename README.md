@@ -17,7 +17,7 @@ Common and useful utils for the Go project development.
 - [Graceful](#graceful) Shutdown or reboot current process gracefully.
 - [GoPool](#gopool) Goroutines' pool
 - [ResPool](#respool) Resources' pool
-- [Workshop](#workshop) Multiplexed resource pool
+- [Workshop](#workshop) Non-blocking asynchronous multiplex resource pool
 - [Password](#password) Check password
 - [Various](#various) Various small functions
 
@@ -502,7 +502,7 @@ If the same name exists, will close and cover it.
 
 ### Workshop
 
-Multiplexed resource pool
+Non-blocking asynchronous multiplex resource pool.
 
 Conditions of Use:
 - Limited resources
@@ -540,7 +540,7 @@ Performance:
     )
     ```
     
-- NewWorkshop creates a new workshop.
+- NewWorkshop creates a new workshop(non-blocking asynchronous multiplex resource pool).
 <br>If maxQuota<=0, will use default value.
 <br>If maxIdleDuration<=0, will use default value.
 <br>Notes:

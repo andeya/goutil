@@ -11,7 +11,7 @@ import (
 )
 
 /**
- * Workshop is multiplexed resource pool.
+ * Non-blocking asynchronous multiplex resource pool.
  *
  * Conditions of Use:
  * - Limited resources
@@ -74,7 +74,7 @@ var (
 	ErrWorkshopClosed = fmt.Errorf("%s", "workshop is closed")
 )
 
-// NewWorkshop creates a new workshop.
+// NewWorkshop creates a new workshop(non-blocking asynchronous multiplex resource pool).
 // If maxQuota<=0, will use default value.
 // If maxIdleDuration<=0, will use default value.
 // Note: Worker can not be implemented using empty structures(struct{})!
