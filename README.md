@@ -659,6 +659,12 @@ Various small functions.
     func ObjectName(obj interface{}) string
     ```
 
+- GetCallLine gets caller line information.
+
+    ```go
+    func GetCallLine(calldepth int) string 
+    ```
+
 - JsQueryEscape escapes the string in javascript standard so it can be safely placed inside a URL query.
 
     ```go

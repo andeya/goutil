@@ -3,6 +3,8 @@ package goutil
 import (
 	"bytes"
 	"runtime"
+	"strconv"
+	"strings"
 )
 
 // PanicTrace trace panic stack info.
@@ -26,4 +28,14 @@ func PanicTrace(kb int) []byte {
 	}
 	stack = bytes.TrimRight(stack, "\n")
 	return stack
+}
+
+// GetCallLine gets caller line information.
+func GetCallLine(calldepth int) string {
+	_, file, line, ok := runtime.Caller(calldepth + 1)
+	if !ok {
+		return "???:0"
+	}
+	return file[strings.LastIndex(file, "/src/")+5:] + ":" + strconv.Itoa(line)
+
 }
