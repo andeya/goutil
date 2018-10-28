@@ -95,9 +95,9 @@ func Reboot(timeout ...time.Duration) {
 	}
 
 	if graceful {
-		log.Infof("process are rebooted gracefully.")
+		log.Infof("process is rebooted gracefully.")
 	} else {
-		log.Infof("process are rebooted, but not gracefully.")
+		log.Infof("process is rebooted, but not gracefully.")
 	}
 	log.Flush()
 }
