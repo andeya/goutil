@@ -86,6 +86,7 @@ func Shutdown(timeout ...time.Duration) {
 			} else {
 				log.Infof("process are shutted down, but not gracefully!")
 			}
+			log.Flush()
 		}()
 		return endCh
 	})

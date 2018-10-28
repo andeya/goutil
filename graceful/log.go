@@ -20,15 +20,24 @@ import (
 	logPkg "log"
 )
 
-var log Logger = new(logger)
+var log LoggerWithFlusher = loggerWithFlusher{new(logger)}
 
 type (
 	// Logger logger interface
 	Logger interface {
+		// Infof logs a message using INFO as log level.
 		Infof(format string, v ...interface{})
+		// Errorf logs a message using ERROR as log level.
 		Errorf(format string, v ...interface{})
 	}
-	logger struct{}
+	// LoggerWithFlusher logger interface with flusher
+	LoggerWithFlusher interface {
+		Logger
+		// Flush writes any buffered log to the underlying io.Writer.
+		Flush() error
+	}
+	logger            struct{}
+	loggerWithFlusher struct{ Logger }
 )
 
 func (l *logger) Infof(format string, v ...interface{}) {
@@ -39,7 +48,22 @@ func (l *logger) Errorf(format string, v ...interface{}) {
 	logPkg.Printf("[E] "+format, v...)
 }
 
+func (l loggerWithFlusher) Flush() error {
+	nl, ok := l.Logger.(LoggerWithFlusher)
+	if ok {
+		return nl.Flush()
+	}
+	return nil
+}
+
 // SetLog resets logger.
+// NOTE:
+//  the logger is best to implement LoggerWithFlusher interface
 func SetLog(logger Logger) {
-	log = logger
+	l, ok := logger.(LoggerWithFlusher)
+	if ok {
+		log = l
+	} else {
+		log = loggerWithFlusher{logger}
+	}
 }

@@ -78,6 +78,7 @@ func Reboot(timeout ...time.Duration) {
 				} else {
 					log.Errorf("process reboot failed, and did not shut down gracefully!")
 				}
+				log.Flush()
 				os.Exit(-1)
 			}
 		}()
@@ -98,6 +99,7 @@ func Reboot(timeout ...time.Duration) {
 	} else {
 		log.Infof("process are rebooted, but not gracefully.")
 	}
+	log.Flush()
 }
 
 var (
