@@ -923,3 +923,9 @@ to select AES-128, AES-192, or AES-256.
     ```go
     func RemoveAllFromInterfaces(set []interface{}, a interface{}) []interface{}
     ```
+
+- GetFirstGopath gets the first $GOPATH value.
+
+    ```go
+    func GetFirstGopath(allowAutomaticGuessing bool) (goPath string, err error)
+    ```
