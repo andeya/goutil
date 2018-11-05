@@ -2,13 +2,15 @@ package goutil
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
 func TestGetFirstGopath(t *testing.T) {
+	targetGoPath := os.Getenv("GOPATH")
+	targetGoPath = strings.SplitN(strings.SplitN(targetGoPath, ":", 1)[0], ";", 1)[0]
+	targetGoPath = strings.TrimRight(strings.TrimRight(targetGoPath, "/"), "\\") + string(os.PathSeparator)
 	os.Setenv("GOPATH", "")
-	targetGoPath := os.Args[0] + string(os.PathSeparator)
-	os.Args[0] = os.Args[0] + "/src/"
 	goPath, err := GetFirstGopath(false)
 	if err == nil {
 		t.FailNow()

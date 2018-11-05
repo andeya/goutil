@@ -2,7 +2,6 @@ package goutil
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -20,11 +19,10 @@ func GetFirstGopath(allowAutomaticGuessing bool) (goPath string, err error) {
 			err = errors.New("not found GOPATH")
 			return
 		}
-		p, _ := filepath.Abs(os.Args[0])
+		p, _ := os.Getwd()
 		p = strings.Replace(p, "\\", "/", -1) + "/"
 		i := strings.Index(p, "/src/")
 		if i == -1 {
-			fmt.Println(p)
 			err = errors.New("not found GOPATH")
 			return
 		}
