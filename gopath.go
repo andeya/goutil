@@ -21,7 +21,7 @@ func GetFirstGopath(allowAutomaticGuessing bool) (goPath string, err error) {
 		}
 		p, _ := os.Getwd()
 		p = strings.Replace(p, "\\", "/", -1) + "/"
-		i := strings.Index(p, "/src/")
+		i := strings.LastIndex(p, "/src/")
 		if i == -1 {
 			err = errors.New("not found GOPATH")
 			return
