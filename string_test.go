@@ -52,3 +52,27 @@ func TestCamelString(t *testing.T) {
 		}
 	}
 }
+
+func TestSpaceInOne(t *testing.T) {
+	a := struct {
+		input  string
+		output string
+	}{
+		input: `# authenticate method 
+
+		//  comment2	
+
+		/*  some other 
+			  comments */
+		`,
+		output: `# authenticate method
+	// comment2
+	/* some other
+	comments */
+	`,
+	}
+	r := SpaceInOne(a.input)
+	if r != a.output {
+		t.Fatalf("want: %q, got: %q", a.output, r)
+	}
+}

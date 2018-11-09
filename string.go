@@ -46,3 +46,31 @@ func CamelString(s string) string {
 	}
 	return string(data[:])
 }
+
+var spaceReplacer = strings.NewReplacer(
+	"  ", " ",
+	"\n\n", "\n",
+	"\r\r", "\r",
+	"\t\t", "\t",
+	"\r\n\r\n", "\r\n",
+	" \n", "\n",
+	"\t\n", "\n",
+	" \t", "\t",
+	"\t ", "\t",
+	"\v\v", "\v",
+	"\f\f", "\f",
+	string(0x85)+string(0x85),
+	string(0x85),
+	string(0xA0)+string(0xA0),
+	string(0xA0),
+)
+
+// SpaceInOne combines multiple consecutive space characters into one.
+func SpaceInOne(s string) string {
+	var old string
+	for old != s {
+		old = s
+		s = spaceReplacer.Replace(s)
+	}
+	return s
+}

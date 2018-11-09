@@ -620,6 +620,12 @@ Various small functions.
     func StringToBytes(s string) []byte
     ```
 
+- SpaceInOne combines multiple consecutive space characters into one.
+
+    ```go
+    func SpaceInOne(s string) string
+    ```
+
 - NewRandom creates a new padded Encoding defined by the given alphabet string.
 
     ```go
