@@ -35,6 +35,7 @@ func graceSignal() {
 func Reboot(timeout ...time.Duration) {
 	defer os.Exit(0)
 	log.Infof("windows system doesn't support reboot! call Shutdown() is recommended.")
+	log.Flush()
 }
 
 // AddInherited adds the files and envs to be inherited by the new process.
