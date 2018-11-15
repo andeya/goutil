@@ -356,7 +356,7 @@ HTTP body builder.
     "github.com/henrylee2cn/goutil/httpbody"
     ```
 
-- NewFormBody returns request content type and body reader.
+- NewFormBody returns form request content type and body reader.
 <br> NOTE:
 <br>  @values format: \<fieldName,[value]\>
 <br>  @files format: \<fieldName,[fileName]\>
@@ -365,7 +365,7 @@ HTTP body builder.
     func NewFormBody(values, files url.Values) (contentType string, bodyReader io.Reader, err error)
     ```
 
-- NewFormBody2 returns request content type and body reader.
+- NewFormBody2 returns form request content type and body reader.
 <br> NOTE:
 <br>  @values format: \<fieldName,[value]\>
 <br>  @files format: \<fieldName,[File]\>
@@ -378,6 +378,18 @@ HTTP body builder.
 
     ```go
     func NewFile(name string, bodyReader io.Reader) File
+    ```
+
+- NewJSONBody returns JSON request content type and body reader.
+
+    ```go
+    NewJSONBody(v interface{}) (contentType string, bodyReader io.Reader, err error)
+    ```
+
+- NewXMLBody returns XML request content type and body reader.
+
+    ```go
+    NewXMLBody(v interface{}) (contentType string, bodyReader io.Reader, err error)
     ```
 
 ### ResPool

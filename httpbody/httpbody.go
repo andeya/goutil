@@ -16,6 +16,8 @@ package httpbody
 
 import (
 	"bytes"
+	"encoding/json"
+	"encoding/xml"
 	"io"
 	"mime/multipart"
 	"net/url"
@@ -23,7 +25,7 @@ import (
 	"strings"
 )
 
-// NewFormBody returns request content type and body reader.
+// NewFormBody returns form request content type and body reader.
 // NOTE:
 //  @values format: <fieldName,[value]>
 //  @files format: <fieldName,[fileName]>
@@ -76,7 +78,7 @@ type (
 	}
 )
 
-// NewFormBody2 returns request content type and body reader.
+// NewFormBody2 returns form request content type and body reader.
 // NOTE:
 //  @values format: <fieldName,[value]>
 //  @files format: <fieldName,[File]>
@@ -123,4 +125,22 @@ func (f *fileReader) Name() string {
 
 func (f *fileReader) Read(p []byte) (int, error) {
 	return f.bodyReader.Read(p)
+}
+
+// NewJSONBody returns JSON request content type and body reader.
+func NewJSONBody(v interface{}) (contentType string, bodyReader io.Reader, err error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return
+	}
+	return "application/json;charset=utf-8", bytes.NewReader(b), nil
+}
+
+// NewXMLBody returns XML request content type and body reader.
+func NewXMLBody(v interface{}) (contentType string, bodyReader io.Reader, err error) {
+	b, err := xml.Marshal(v)
+	if err != nil {
+		return
+	}
+	return "application/xml;charset=utf-8", bytes.NewReader(b), nil
 }
