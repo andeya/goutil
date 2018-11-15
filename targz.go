@@ -9,8 +9,23 @@ import (
 	"strings"
 )
 
-// TarGz compresses and archives tar.gz .
+// TarGz compresses and archives tar.gz file.
 func TarGz(src, dst string, includePrefix bool, logOutput func(string, ...interface{}), ignoreBaseName ...string) (err error) {
+	// Create dst file
+	fw, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	err = TarGzTo(src, fw, includePrefix, logOutput, ignoreBaseName...)
+	fw.Close()
+	if err != nil {
+		os.Remove(dst)
+	}
+	return err
+}
+
+// TarGzTo compresses and archives tar.gz to dst writer.
+func TarGzTo(src string, dstWriter io.Writer, includePrefix bool, logOutput func(string, ...interface{}), ignoreBaseName ...string) (err error) {
 	src, err = filepath.Abs(src)
 	if err != nil {
 		return
@@ -20,14 +35,7 @@ func TarGz(src, dst string, includePrefix bool, logOutput func(string, ...interf
 		return
 	}
 
-	// Create dst file
-	fw, err := os.Create(dst)
-	if err != nil {
-		return
-	}
-	defer fw.Close()
-
-	gw := gzip.NewWriter(fw)
+	gw := gzip.NewWriter(dstWriter)
 	defer gw.Close()
 	tw := tar.NewWriter(gw)
 	defer tw.Close()

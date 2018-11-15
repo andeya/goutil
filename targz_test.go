@@ -1,14 +1,14 @@
 package goutil
 
 import (
-	"fmt"
+	"bytes"
 	"testing"
 )
 
-func TestTarGz(t *testing.T) {
+func TestTarGzTo(t *testing.T) {
 	var src = "pool"
-	var dst = fmt.Sprintf("%s.tar.gz", src)
-	if err := TarGz(src, dst, false, t.Logf, ".git"); err != nil {
+	var dstWriter = bytes.NewBuffer(nil)
+	if err := TarGzTo(src, dstWriter, false, t.Logf, ".git"); err != nil {
 		t.Fatal(err)
 	}
 }

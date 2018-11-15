@@ -983,8 +983,14 @@ to select AES-128, AES-192, or AES-256.
     func GetFirstGopath(allowAutomaticGuessing bool) (goPath string, err error)
     ```
 
-- TarGz compresses and archives tar.gz .
+- TarGz compresses and archives tar.gz file.
 
     ```go
     func TarGz(src, dst string, includePrefix bool, logOutput func(string, ...interface{}), ignoreBaseName ...string) (err error)
+    ```
+
+- TarGzTo compresses and archives tar.gz to dst writer.
+
+    ```go
+    TarGzTo(src string, dstWriter io.Writer, includePrefix bool, logOutput func(string, ...interface{}), ignoreBaseName ...string) (err error)
     ```
