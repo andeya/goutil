@@ -16,6 +16,7 @@ Common and useful utils for the Go project development.
 - [Errors](#errors) Improved errors package.
 - [Graceful](#graceful) Shutdown or reboot current process gracefully.
 - [GoPool](#gopool) Goroutines' pool
+- [HTTPBody](#httpbody) HTTP body builder
 - [ResPool](#respool) Resources' pool
 - [Workshop](#workshop) Non-blocking asynchronous multiplex resource pool
 - [Password](#password) Check password
@@ -343,6 +344,40 @@ If calling 'Go' after calling 'Stop', will no longer reuse goroutine.
 
     ```go
     func (gp *GoPool) Stop()
+    ```
+
+### HTTPBody
+
+HTTP body builder.
+
+- import it
+
+    ```go
+    "github.com/henrylee2cn/goutil/httpbody"
+    ```
+
+- NewFormBody returns request content type and body reader.
+<br> NOTE:
+<br>  @values format: \<fieldName,[value]\>
+<br>  @files format: \<fieldName,[fileName]\>
+
+    ```go
+    func NewFormBody(values, files url.Values) (contentType string, bodyReader io.Reader, err error)
+    ```
+
+- NewFormBody2 returns request content type and body reader.
+<br> NOTE:
+<br>  @values format: \<fieldName,[value]\>
+<br>  @files format: \<fieldName,[File]\>
+
+    ```go
+    func NewFormBody2(values url.Values, files Files) (contentType string, bodyReader io.Reader)
+    ```
+
+- NewFile creates a file for HTTP form.
+
+    ```go
+    func NewFile(name string, bodyReader io.Reader) File
     ```
 
 ### ResPool
