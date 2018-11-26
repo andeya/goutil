@@ -14,7 +14,7 @@ func TestGanZhi(t *testing.T) {
 	fmt.Println(lunarNow.Year(),lunarNow.Month(),lunarNow.Day())
 	ganzhiY,ganzhiM,ganzhiD:=GanZhiYMD(solarNow.Year(),int(solarNow.Month()),solarNow.Day())
 	fmt.Println(ganzhiY,ganzhiM,ganzhiD)
-	JieQiDay(2018,11)
+	fmt.Println(JieQiDay(2018,11))
 	JieQiDay(2012,1)
 	JieQiDay(2012,2)
 	JieQiDay(2012,3)
@@ -27,4 +27,12 @@ func TestGanZhi(t *testing.T) {
 	JieQiDay(1993,3)
 	JieQiDay(1980,1)
 	JieQiDay(1991,5)
+	//command := "docker ps -a"
+	//cmd := exec.Command("/bin/bash", "-c", command)
+	//bytes,err := cmd.Output()
+	//if err != nil {
+	//	log.Println(err)
+	//}
+	//resp := string(bytes)
+	//log.Println(resp)
 }

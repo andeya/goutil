@@ -43,6 +43,11 @@ func (s *Solar) Festival(fm FestivalMap) (string, error) {
 	return fm.Get(m + d)
 }
 
+func (s *Solar)GanzhiYMD() (year,month,day string){
+	year,month,day = GanZhiYMD(s.Year(),int(s.Month()),s.Day())
+	return
+}
+
 // Convert converts to a lunar calendar time.
 func (s *Solar) Convert() *Lunar {
 	var i int
