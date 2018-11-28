@@ -29,6 +29,14 @@ func NewSolar(year, month, day, hour, min, sec int, nsec int, loc *time.Location
 	return &Solar{t.In(CST)}
 }
 
+func (s *Solar) DiffWithYMD(year, month, day int) int {
+	return int((time.Date(year, time.Month(month), day, 0, 0, 0, 0, CST).Unix() - s.Time.Unix()) / 86400)
+}
+
+func DiffYMD(year, month, day,targetYear,targetMonth,targetDay int) int {
+	return int((time.Date(year, time.Month(month), day, 0, 0, 0, 0, CST).Unix() - time.Date(targetYear, time.Month(targetMonth), targetDay, 0, 0, 0, 0, CST).Unix()) / 86400)
+}
+
 // String formats time.
 func (s *Solar) String() string {
 	return fmt.Sprintf("%d年%02d月%02d日 %2d时%2d分%2d秒",
@@ -43,8 +51,8 @@ func (s *Solar) Festival(fm FestivalMap) (string, error) {
 	return fm.Get(m + d)
 }
 
-func (s *Solar)GanzhiYMD() (year,month,day string){
-	year,month,day = GanZhiYMD(s.Year(),int(s.Month()),s.Day())
+func (s *Solar) GanzhiYMD() (year, month, day string) {
+	year, month, day = GanZhiYMD(s.Year(), int(s.Month()), s.Day())
 	return
 }
 
