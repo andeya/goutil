@@ -34,7 +34,7 @@ func (s *Solar) DiffWithYMD(year, month, day int) int {
 }
 
 func DiffYMD(year, month, day,targetYear,targetMonth,targetDay int) int {
-	return int((time.Date(year, time.Month(month), day, 0, 0, 0, 0, CST).Unix() - time.Date(targetYear, time.Month(targetMonth), targetDay, 0, 0, 0, 0, CST).Unix()) / 86400)
+	return int((time.Date(targetYear, time.Month(targetMonth), targetDay, 0, 0, 0, 0, CST).Unix() - time.Date(year, time.Month(month), day, 0, 0, 0, 0, CST).Unix()) / 86400)
 }
 
 // String formats time.
