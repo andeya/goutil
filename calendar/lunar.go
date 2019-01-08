@@ -55,6 +55,8 @@ var (
 	monthStr1           = []string{"初", "十", "廿", "卅"}
 	monthStr2           = []string{"日", "一", "二", "三", "四", "五", "六", "七", "八", "九"}
 
+	weekday = []string{"星期日","星期一","星期二","星期三","星期四","星期五","星期六"}
+
 	base = time.Date(MinYear, 1, 31, 0, 0, 0, 0, CST)
 
 	// CST  CST China Standard Time UT 8:00
@@ -320,6 +322,11 @@ func (l *Lunar) Month() int {
 	return l.month
 }
 
+//Month returns month string
+func (l *Lunar) MonthStr() string {
+	return LunarMonthString(l.Month(), l.IsLeapMonth())
+}
+
 // LeapMonth returns leap month number.
 func (l *Lunar) LeapMonth() int {
 	return l.leapMonth
@@ -335,9 +342,18 @@ func (l *Lunar) Day() int {
 	return l.day
 }
 
+// Day returns day string.
+func (l *Lunar) DayStr() string {
+	return LunarDayString(l.Day())
+}
+
 // Weekday returns weekday.
 func (l *Lunar) Weekday() time.Weekday {
 	return l.Convert().Weekday()
+}
+
+func (l *Lunar) WeekdayStr() string {
+	return weekday[int(l.Convert().Weekday())]
 }
 
 // Hour returns hour.
@@ -358,6 +374,11 @@ func (l *Lunar) Second() int {
 // Nanosecond returns nanosecond.
 func (l *Lunar) Nanosecond() int {
 	return l.nanosecond
+}
+
+func (l *Lunar) AnimalYear() string{
+	ganzhiY,_,_ := l.Convert().GanzhiYMD()
+	return fmt.Sprintf("%s%s",ganzhiY,AnimalYear(l.year))
 }
 
 // SetHour sets hour.
