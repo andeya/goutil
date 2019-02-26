@@ -22,7 +22,7 @@ func init() {
 	}
 }
 
-// Run exec cmd and catch the log the result.
+// Run exec cmd and catch the result.
 func Run(cmdLine string) *Result {
 	cmd := exec.Command(cmdArg[0], cmdArg[1], cmdLine)
 	var ret = new(Result)
