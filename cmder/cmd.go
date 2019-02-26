@@ -1,5 +1,5 @@
-// Package cmdwrapper exec cmd and catch the log the result.
-package cmdwrapper
+// Package cmder exec cmd and catch the log the result.
+package cmder
 
 import (
 	"bytes"
