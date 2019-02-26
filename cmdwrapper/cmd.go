@@ -52,9 +52,12 @@ func (r *Result) Err() error {
 // String returns the exec log.
 func (r *Result) String() string {
 	if r.str == nil {
-		b := append(bytes.TrimSpace(r.buf.Bytes()), ' ', '(')
-		b = append(b, r.err.Error()...)
-		b = append(b, ')')
+		b := bytes.TrimSpace(r.buf.Bytes())
+		if r.err != nil {
+			b = append(b, ' ', '(')
+			b = append(b, r.err.Error()...)
+			b = append(b, ')')
+		}
 		r.str = (*string)(unsafe.Pointer(&b))
 	}
 	return *r.str
