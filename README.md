@@ -12,7 +12,7 @@ Common and useful utils for the Go project development.
 
 - [BitSet](#bitset) A bit set
 - [Calendar](#calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
-- [Cmder](#cmder) Cmder exec cmd and catch the log the result
+- [Cmder](#cmder) Cmder exec cmd and catch the result
 - [CoarseTime](#coarsetime) Current time truncated to the nearest 100ms
 - [Errors](#errors) Improved errors package.
 - [Graceful](#graceful) Shutdown or reboot current process gracefully.
@@ -175,7 +175,7 @@ Chinese Lunar Calendar, Solar Calendar and cron time rules.
 
 ### Cmder
 
-Exec cmd and catch the log the result.
+Exec cmd and catch the result.
 
 
 - import it
@@ -184,7 +184,7 @@ Exec cmd and catch the log the result.
     "github.com/henrylee2cn/goutil/cmder"
     ```
 
-- Run exec cmd and catch the log the result.
+- Run exec cmd and catch the result.
 
     ```go
     func Run(cmdLine string) *Result

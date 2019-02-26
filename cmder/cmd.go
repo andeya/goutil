@@ -1,4 +1,4 @@
-// Package cmder exec cmd and catch the log the result.
+// Package cmder exec cmd and catch the result.
 package cmder
 
 import (
