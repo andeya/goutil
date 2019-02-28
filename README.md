@@ -185,9 +185,11 @@ Exec cmd and catch the result.
     ```
 
 - Run exec cmd and catch the result.
+<br>Waits for the given command to finish with a timeout.
+<br>If the command times out, it attempts to kill the process.
 
     ```go
-    func Run(cmdLine string) *Result
+    func Run(cmdLine string, timeout ...time.Duration) *Result
     ```
 
 ### CoarseTime
