@@ -10,8 +10,12 @@ func TestGetTypeID(t *testing.T) {
 	type (
 		GoTime = time.Time
 		Time   time.Time
-		I      interface {
+		I2     interface {
+			String() string
+		}
+		I1 interface {
 			UnixNano() int64
+			I2
 		}
 	)
 	t0 := new(time.Time)
@@ -23,7 +27,7 @@ func TestGetTypeID(t *testing.T) {
 	e1 := Unpack(e0).TypeID()
 	e2 := Unpack(GoTime{}).TypeID()
 	e3 := Unpack(Time{}).TypeID()
-	i := Unpack(I(&GoTime{})).TypeID()
+	i := Unpack(I2(I1(&GoTime{}))).TypeID()
 	if t1 != t2 || t1 != e1 || t1 != e2 || t1 != i || t3 != e3 {
 		t.FailNow()
 	}
