@@ -36,3 +36,4 @@ _testmain.go
 *.log
 *.sublime-project
 *.sublime-workspace
+.DS_Store

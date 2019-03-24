@@ -19,6 +19,7 @@ Common and useful utils for the Go project development.
 - [GoPool](#gopool) Goroutines' pool
 - [HTTPBody](#httpbody) HTTP body builder
 - [ResPool](#respool) Resources' pool
+- [Tpack](#tpack) Go underlying type data
 - [Workshop](#workshop) Non-blocking asynchronous multiplex resource pool
 - [Password](#password) Check password
 - [Various](#various) Various small functions
@@ -565,6 +566,42 @@ If the same name exists, will close and cover it.
 
     ```go
     func (c *ResPools) Set(pool ResPool)
+    ```
+
+### Tpack
+
+Go underlying type data.
+
+- import it
+
+    ```go
+    "github.com/henrylee2cn/goutil/tpack"
+    ```
+
+- doc
+
+    ```go
+    // T go underlying type data
+    type T struct {
+        // Has unexported fields.
+    }
+
+    // Unpack unpack i to go underlying type data.
+    func Unpack(i interface{}) T
+
+    // TypeID returns the underlying type ID.
+    // It is 60 times performance of reflect.TypeOf(i).String()
+    func (t T) TypeID() int32
+
+    // TypeOf is equivalent to reflect.TypeOf.
+    func (t T) TypeOf() reflect.Type
+
+    // ValueOf is equivalent to reflect.ValueOf.
+    func (t T) ValueOf() reflect.Value
+
+    // TypeID get underlying type ID from reflect.Type.
+    // It is 60 times performance of t.String()
+    func TypeID(t reflect.Type) int32
     ```
 
 ### Workshop
