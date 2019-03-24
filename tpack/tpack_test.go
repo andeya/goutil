@@ -39,7 +39,7 @@ func BenchmarkUnpack_tpack(b *testing.B) {
 	type T struct {
 		a int
 	}
-	var t T
+	var t = new(T)
 	b.ReportAllocs()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
@@ -47,15 +47,15 @@ func BenchmarkUnpack_tpack(b *testing.B) {
 	}
 }
 
-func BenchmarkValueOf_go(b *testing.B) {
+func BenchmarkTypeOf_go(b *testing.B) {
 	b.StopTimer()
 	type T struct {
 		a int
 	}
-	var t T
+	var t = new(T)
 	b.ReportAllocs()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		_ = reflect.ValueOf(t).String()
+		_ = reflect.TypeOf(t).Elem().String()
 	}
 }

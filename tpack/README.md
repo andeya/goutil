@@ -20,7 +20,7 @@ Go underlying type data.
     func Unpack(i interface{}) T
 
     // TypeID returns the underlying type ID.
-    // It is 60 times performance of reflect.TypeOf(i).String()
+    // It is 10 times performance of reflect.TypeOf(i).String()
     func (t T) TypeID() int32
 
     // TypeOf is equivalent to reflect.TypeOf.
@@ -30,7 +30,7 @@ Go underlying type data.
     func (t T) ValueOf() reflect.Value
 
     // TypeID get underlying type ID from reflect.Type.
-    // It is 60 times performance of t.String()
+    // It is 10 times performance of t.String()
     func TypeID(t reflect.Type) int32
     ```
 
@@ -40,6 +40,6 @@ Go underlying type data.
 goos: darwin
 goarch: amd64
 pkg: github.com/henrylee2cn/goutil/tpack
-BenchmarkUnpack_tpack-4   	2000000000	         0.85 ns/op	       0 B/op	       0 allocs/op
-BenchmarkValueOf_go-4     	30000000	        51.0 ns/op	      16 B/op	       1 allocs/op
+BenchmarkUnpack_tpack-4   	2000000000	         0.79 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTypeOf_go-4      	200000000	        10.3 ns/op	       0 B/op	       0 allocs/op
 ```
