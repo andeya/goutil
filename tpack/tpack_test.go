@@ -34,7 +34,7 @@ func TestGetTypeID(t *testing.T) {
 	t.Log(e1, e2, e3, i, TypeID(reflect.TypeOf(t0)))
 }
 
-func BenchmarkUnpack_pointer(b *testing.B) {
+func BenchmarkUnpack_tpack(b *testing.B) {
 	b.StopTimer()
 	type T struct {
 		a int
@@ -53,10 +53,9 @@ func BenchmarkValueOf_go(b *testing.B) {
 		a int
 	}
 	var t T
-	v := reflect.ValueOf(t)
 	b.ReportAllocs()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		_ = v.String()
+		_ = reflect.ValueOf(t).String()
 	}
 }
