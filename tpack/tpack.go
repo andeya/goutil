@@ -5,25 +5,25 @@ import (
 	"unsafe"
 )
 
-// T go underlying type data
-type T struct {
+// U go underlying type data
+type U struct {
 	typPtr uintptr
 	ptr    unsafe.Pointer
 	_iPtr  unsafe.Pointer // avoid being GC
 }
 
 // Unpack unpacks i to go underlying type data.
-func Unpack(i interface{}) T {
+func Unpack(i interface{}) U {
 	return newT(unsafe.Pointer(&i))
 }
 
 // From gets go underlying type data from reflect.Value.
-func From(v reflect.Value) T {
+func From(v reflect.Value) U {
 	return newT(unsafe.Pointer(&v))
 }
 
-func newT(iPtr unsafe.Pointer) T {
-	return T{
+func newT(iPtr unsafe.Pointer) U {
+	return U{
 		typPtr: *(*uintptr)(iPtr),
 		ptr:    pointerElem(unsafe.Pointer(uintptr(iPtr) + ptrOffset)),
 		_iPtr:  iPtr,
@@ -43,62 +43,62 @@ func RuntimeTypeID(t reflect.Type) int32 {
 // NOTE:
 //  *A and A gets the same runtime type ID;
 //  It is 10 times performance of reflect.TypeOf(i).String().
-func (t T) RuntimeTypeID() int32 {
-	return *(*int32)(unsafe.Pointer(t.typPtr + rtypeStrOffset))
+func (u U) RuntimeTypeID() int32 {
+	return *(*int32)(unsafe.Pointer(u.typPtr + rtypeStrOffset))
 }
 
 // Kind gets the reflect.Kind fastly.
-func (t T) Kind() reflect.Kind {
-	return kind(t.typPtr)
+func (u U) Kind() reflect.Kind {
+	return kind(u.typPtr)
 }
 
 // UnderlyingKind gets the underlying reflect.Kind fastly.
-func (t T) UnderlyingKind() reflect.Kind {
-	k := t.Kind()
-	typPtr := t.typPtr
+func (u U) UnderlyingKind() reflect.Kind {
+	k := u.Kind()
+	typPtr := u.typPtr
 	for k == reflect.Ptr || k == reflect.Interface {
 		k, typPtr = underlying(k, typPtr)
 	}
 	return k
 }
 
-// Elem returns the value T that the interface i contains
+// Elem returns the U that the interface i contains
 // or that the pointer i points to.
-func (t T) Elem() T {
-	k := t.Kind()
+func (u U) Elem() U {
+	k := u.Kind()
 	if k != reflect.Ptr && k != reflect.Interface {
-		return t
+		return u
 	}
-	k, t.typPtr = underlying(k, t.typPtr)
+	k, u.typPtr = underlying(k, u.typPtr)
 	if k == reflect.Ptr || k == reflect.Interface {
-		t.ptr = pointerElem(t.ptr)
+		u.ptr = pointerElem(u.ptr)
 	}
-	return t
+	return u
 }
 
-// UnderlyingElem returns the underlying value T that the interface i contains
+// UnderlyingElem returns the underlying U that the interface i contains
 // or that the pointer i points to.
-func (t T) UnderlyingElem() T {
-	for r := t.Elem(); r != t; r = t.Elem() {
-		t = r
+func (u U) UnderlyingElem() U {
+	for r := u.Elem(); r != u; r = u.Elem() {
+		u = r
 	}
-	return t
+	return u
 }
 
 // Pointer gets the pointer of i.
 // NOTE:
-//  *A and A, gets diffrent pointer
-func (t T) Pointer() uintptr {
-	k := t.Kind()
+//  *T and T, gets diffrent pointer
+func (u U) Pointer() uintptr {
+	k := u.Kind()
 	switch k {
 	case reflect.Invalid:
 		return 0
 	case reflect.Func:
-		return uintptr(*(*unsafe.Pointer)(t.ptr))
+		return uintptr(*(*unsafe.Pointer)(u.ptr))
 	case reflect.Slice:
-		return uintptrElem(uintptr(t.ptr)) + sliceDataOffset
+		return uintptrElem(uintptr(u.ptr)) + sliceDataOffset
 	default:
-		return uintptr(t.ptr)
+		return uintptr(u.ptr)
 	}
 }
 

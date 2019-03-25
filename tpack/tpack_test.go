@@ -129,12 +129,12 @@ func TestFrom(t *testing.T) {
 	}
 	x := &X{A: 12345, B: "test"}
 	v := reflect.ValueOf(&x)
-	c := From(v).Elem()
+	u := From(v).Elem()
 	v = v.Elem()
-	if c.RuntimeTypeID() != RuntimeTypeID(v.Type()) {
+	if u.RuntimeTypeID() != RuntimeTypeID(v.Type()) {
 		t.FailNow()
 	}
-	elemPtr := c.Pointer()
+	elemPtr := u.Pointer()
 	a := *(*int16)(unsafe.Pointer(elemPtr))
 	if a != x.A {
 		t.FailNow()
@@ -143,7 +143,7 @@ func TestFrom(t *testing.T) {
 	if b != x.B {
 		t.FailNow()
 	}
-	if c.Pointer() != reflect.ValueOf(x).Pointer() {
+	if u.Pointer() != reflect.ValueOf(x).Pointer() {
 		t.FailNow()
 	}
 }

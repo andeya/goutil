@@ -11,16 +11,16 @@ Go underlying type data.
 - doc
 
     ```go
-    // T go underlying type data
-    type T struct {
+    // U go underlying type data
+    type U struct {
         // Has unexported fields.
     }
 
     // Unpack unpacks i to go underlying type data.
-    func Unpack(i interface{}) T
+    func Unpack(i interface{}) U
    
     // From gets go underlying type data from reflect.Value.
-    func From(v reflect.Value) T
+    func From(v reflect.Value) U
     
     // RuntimeTypeID gets the underlying type ID in current runtime from reflect.Type.
     // NOTE:
@@ -32,26 +32,26 @@ Go underlying type data.
     // NOTE:
     //  *A and A gets the same runtime type ID;
     //  It is 10 times performance of reflect.TypeOf(i).String().
-    func (t T) RuntimeTypeID() int32
+    func (u U) RuntimeTypeID() int32
 
     // Kind gets the reflect.Kind fastly.
-    func (t T) Kind() reflect.Kind
+    func (u U) Kind() reflect.Kind
 
     // UnderlyingKind gets the underlying reflect.Kind fastly.
-    func (t T) UnderlyingKind() reflect.Kind
+    func (u U) UnderlyingKind() reflect.Kind
 
-    // Elem returns the value T that the interface i contains
+    // Elem returns the U that the interface i contains
     // or that the pointer i points to.
-    func (t T) Elem() T
+    func (u U) Elem() U
 
-    // UnderlyingElem returns the underlying value T that the interface i contains
+    // UnderlyingElem returns the underlying U that the interface i contains
     // or that the pointer i points to.
-    func (t T) UnderlyingElem() T
+    func (u U) UnderlyingElem() U
 
     // Pointer gets the pointer of i.
     // NOTE:
-    //  *A and A, gets diffrent pointer
-    func (t T) Pointer() uintptr
+    //  *T and T, gets diffrent pointer
+    func (u U) Pointer() uintptr
     ```
 
 ## Benchmark
