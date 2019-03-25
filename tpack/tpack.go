@@ -7,24 +7,51 @@ import (
 
 // T go underlying type data
 type T struct {
-	typeID int32
-	i      interface{}
+	rtypePtr uintptr
+	p        unsafe.Pointer
+	i        interface{}
 }
 
 // Unpack unpack i to go underlying type data.
 func Unpack(i interface{}) T {
-	p := *(*uintptr)(unsafe.Pointer(&i))
-	v := T{
-		typeID: *(*int32)((unsafe.Pointer(p + rtypeStrOffset))),
-		i:      i,
+	p := unsafe.Pointer(&i)
+	return T{
+		rtypePtr: *(*uintptr)(p),
+		p:        p,
+		i:        i,
 	}
-	return v
 }
 
-// TypeID returns the underlying type ID in current runtime.
-// It is 10 times performance of reflect.TypeOf(i).String()
-func (t T) TypeID() int32 {
-	return t.typeID
+// RuntimeTypeID gets the underlying type ID in current runtime.
+// NOTE:
+//  *A and A gets the same runtime type ID;
+//  It is 10 times performance of reflect.TypeOf(i).String().
+func (t T) RuntimeTypeID() int32 {
+	return *(*int32)(unsafe.Pointer(t.rtypePtr + rtypeStrOffset))
+}
+
+// Kind gets the reflect.Kind fastly.
+func (t T) Kind() reflect.Kind {
+	k := *(*uint8)(unsafe.Pointer(t.rtypePtr + kindOffset))
+	return reflect.Kind(k & kindMask)
+}
+
+// Pointer gets the pointer of i.
+// NOTE:
+//  *A and A, gets diffrent pointer
+func (t T) Pointer() uintptr {
+	p := *(*unsafe.Pointer)(unsafe.Pointer(uintptr(t.p) + ptrOffset))
+	k := t.Kind()
+	switch k {
+	case reflect.Invalid:
+		return 0
+	case reflect.Func:
+		return uintptr(*(*unsafe.Pointer)(p))
+	case reflect.Slice:
+		return (*reflect.SliceHeader)(p).Data
+	default:
+		return uintptr(p)
+	}
 }
 
 // TypeOf is equivalent to reflect.TypeOf.
@@ -37,32 +64,39 @@ func (t T) ValueOf() reflect.Value {
 	return reflect.ValueOf(t.i)
 }
 
-// TypeID returns the underlying type ID in current runtime from reflect.Type.
-// It is 10 times performance of t.String()
-func TypeID(t reflect.Type) int32 {
+// RuntimeTypeID returns the underlying type ID in current runtime from reflect.Type.
+// NOTE:
+//  *A and A returns the same runtime type ID;
+//  It is 10 times performance of t.String().
+func RuntimeTypeID(t reflect.Type) int32 {
 	ptr := elemUintptr(uintptr(unsafe.Pointer(&t)) + ptrOffset)
-	return *(*int32)((unsafe.Pointer(ptr + rtypeStrOffset)))
+	return *(*int32)(unsafe.Pointer(ptr + rtypeStrOffset))
 }
 
 func elemUintptr(ptr uintptr) uintptr {
 	return *(*uintptr)(unsafe.Pointer(ptr))
 }
 
-// func getTypeIDReference(i interface{}) int32 {
+// func getRuntimeTypeIDReference(i interface{}) int32 {
 // 	return int32((*(*reflectValue)(unsafe.Pointer(&i))).typ.str)
 // }
 
 var (
+	ptrOffset = func() uintptr {
+		return unsafe.Offsetof(e.ptr)
+	}()
 	rtypeStrOffset = func() uintptr {
 		return unsafe.Offsetof(e.typ.str)
 	}()
-	ptrOffset = func() uintptr {
-		return unsafe.Offsetof(e.ptr)
+	kindOffset = func() uintptr {
+		return unsafe.Offsetof(e.typ.kind)
 	}()
 	e = reflectValue{typ: new(rtype)}
 )
 
-type tflag uint8
+const (
+	kindMask = (1 << 5) - 1
+)
 
 type (
 	reflectValue struct {
@@ -90,4 +124,5 @@ type (
 	nameOff int32 // offset to a name
 	typeOff int32 // offset to an *rtype
 	flag    uintptr
+	tflag   uint8
 )

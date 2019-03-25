@@ -19,9 +19,19 @@ Go underlying type data.
     // Unpack unpack i to go underlying type data.
     func Unpack(i interface{}) T
 
-    // TypeID returns the underlying type ID in current runtime.
-    // It is 10 times performance of reflect.TypeOf(i).String()
-    func (t T) TypeID() int32
+    // RuntimeTypeID gets the underlying type ID in current runtime.
+    // NOTE:
+    //  *A and A gets the same runtime type ID;
+    //  It is 10 times performance of reflect.TypeOf(i).String().
+    func (t T) RuntimeTypeID() int32
+
+    // Kind gets the reflect.Kind fastly.
+    func (t T) Kind() reflect.Kind
+
+    // Pointer gets the pointer of i.
+    // NOTE:
+    //  *A and A, gets diffrent pointer
+    func (t T) Pointer() uintptr
 
     // TypeOf is equivalent to reflect.TypeOf.
     func (t T) TypeOf() reflect.Type
@@ -29,9 +39,11 @@ Go underlying type data.
     // ValueOf is equivalent to reflect.ValueOf.
     func (t T) ValueOf() reflect.Value
 
-    // TypeID returns the underlying type ID in current runtime from reflect.Type.
-    // It is 10 times performance of t.String()
-    func TypeID(t reflect.Type) int32
+    // RuntimeTypeID gets the underlying type ID in current runtime from reflect.Type.
+    // NOTE:
+    //  *A and A gets the same runtime type ID;
+    //  It is 10 times performance of t.String().
+    func RuntimeTypeID(t reflect.Type) int32
     ```
 
 ## Benchmark
