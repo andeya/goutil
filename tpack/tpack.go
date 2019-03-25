@@ -56,8 +56,12 @@ func (u U) Kind() reflect.Kind {
 func (u U) UnderlyingKind() reflect.Kind {
 	k := u.Kind()
 	typPtr := u.typPtr
+	var has bool
 	for k == reflect.Ptr || k == reflect.Interface {
-		k, typPtr = underlying(k, typPtr)
+		k, typPtr, has = underlying(k, typPtr)
+		if !has {
+			return k
+		}
 	}
 	return k
 }
@@ -69,7 +73,11 @@ func (u U) Elem() U {
 	if k != reflect.Ptr && k != reflect.Interface {
 		return u
 	}
-	k, u.typPtr = underlying(k, u.typPtr)
+	var has bool
+	k, u.typPtr, has = underlying(k, u.typPtr)
+	if !has {
+		return u
+	}
 	if k == reflect.Ptr || k == reflect.Interface {
 		u.ptr = pointerElem(u.ptr)
 	}
@@ -102,12 +110,19 @@ func (u U) Pointer() uintptr {
 	}
 }
 
-func underlying(k reflect.Kind, typPtr uintptr) (reflect.Kind, uintptr) {
-	typPtr = uintptrElem(typPtr + elemOffset)
-	return kind(typPtr), typPtr
+func underlying(k reflect.Kind, typPtr uintptr) (reflect.Kind, uintptr, bool) {
+	typPtr2 := uintptrElem(typPtr + elemOffset)
+	k2 := kind(typPtr2)
+	if k2 == reflect.Invalid {
+		return k, typPtr, false
+	}
+	return k2, typPtr2, true
 }
 
 func kind(typPtr uintptr) reflect.Kind {
+	if unsafe.Pointer(typPtr) == nil {
+		return reflect.Invalid
+	}
 	k := *(*uint8)(unsafe.Pointer(typPtr + kindOffset))
 	return reflect.Kind(k & kindMask)
 }

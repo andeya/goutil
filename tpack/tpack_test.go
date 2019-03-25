@@ -98,6 +98,11 @@ func TestPointer(t *testing.T) {
 }
 
 func TestElem(t *testing.T) {
+	type I interface{}
+	var i I
+	u := From(reflect.ValueOf(i))
+	u.Elem()
+
 	type X struct {
 		A int16
 		B string
@@ -120,6 +125,7 @@ func TestElem(t *testing.T) {
 			t.FailNow()
 		}
 	}
+
 }
 
 func TestFrom(t *testing.T) {
