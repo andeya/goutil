@@ -41,25 +41,27 @@ func TestKind(t *testing.T) {
 		B string
 	}
 	var x X
-	k := Unpack(&x).Kind()
-	t.Log(k)
-	if k != reflect.Ptr {
+	if Unpack(&x).Kind() != reflect.Ptr {
 		t.FailNow()
 	}
-	k = Unpack(x).Kind()
-	t.Log(k)
-	if k != reflect.Struct {
+
+	if Unpack(&x).UnderlyingKind() != reflect.Struct {
 		t.FailNow()
 	}
+
+	if Unpack(x).Kind() != reflect.Struct {
+		t.FailNow()
+	}
+	if Unpack(x).UnderlyingKind() != reflect.Struct {
+		t.FailNow()
+	}
+
 	f := func() {}
-	k = Unpack(f).Kind()
-	t.Log(k)
-	if k != reflect.Func {
+	if Unpack(f).Kind() != reflect.Func {
 		t.FailNow()
 	}
-	k = Unpack(t.Name).Kind()
-	t.Log(k)
-	if k != reflect.Func {
+
+	if Unpack(t.Name).Kind() != reflect.Func {
 		t.FailNow()
 	}
 }
@@ -92,6 +94,31 @@ func TestPointer(t *testing.T) {
 	s := []string{""}
 	if Unpack(s).Pointer() != reflect.ValueOf(s).Pointer() {
 		t.FailNow()
+	}
+}
+
+func TestElem(t *testing.T) {
+	type X struct {
+		A int16
+		B string
+	}
+	x := &X{A: 12345, B: "test"}
+	xx := &x
+	var elemPtr uintptr
+	for i, v := range []interface{}{&xx, x, *x, &x} {
+		if i == 0 {
+			elemPtr = Unpack(v).UnderlyingElem().Pointer()
+		} else {
+			elemPtr = Unpack(v).Elem().Pointer()
+		}
+		a := *(*int16)(unsafe.Pointer(elemPtr))
+		if a != x.A {
+			t.FailNow()
+		}
+		b := *(*string)(unsafe.Pointer(elemPtr + unsafe.Offsetof(x.B)))
+		if b != x.B {
+			t.FailNow()
+		}
 	}
 }
 

@@ -580,7 +580,7 @@ Go underlying type data.
 
 - doc
 
-    ```go
+     ```go
     // T go underlying type data
     type T struct {
         // Has unexported fields.
@@ -598,16 +598,21 @@ Go underlying type data.
     // Kind gets the reflect.Kind fastly.
     func (t T) Kind() reflect.Kind
 
+    // UnderlyingKind gets the underlying reflect.Kind fastly.
+    func (t T) UnderlyingKind() reflect.Kind
+
+    // Elem returns the value T that the interface i contains
+    // or that the pointer i points to.
+    func (t T) Elem() T
+
+    // UnderlyingElem returns the underlying value T that the interface i contains
+    // or that the pointer i points to.
+    func (t T) UnderlyingElem() T
+
     // Pointer gets the pointer of i.
     // NOTE:
     //  *A and A, gets diffrent pointer
     func (t T) Pointer() uintptr
-
-    // TypeOf is equivalent to reflect.TypeOf.
-    func (t T) TypeOf() reflect.Type
-
-    // ValueOf is equivalent to reflect.ValueOf.
-    func (t T) ValueOf() reflect.Value
 
     // RuntimeTypeID gets the underlying type ID in current runtime from reflect.Type.
     // NOTE:
