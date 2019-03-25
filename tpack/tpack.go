@@ -52,29 +52,18 @@ func (u U) Kind() reflect.Kind {
 	return kind(u.typPtr)
 }
 
-// UnderlyingKind gets the underlying reflect.Kind fastly.
-func (u U) UnderlyingKind() reflect.Kind {
-	k := u.Kind()
-	typPtr := u.typPtr
-	var has bool
-	for k == reflect.Ptr || k == reflect.Interface {
-		k, typPtr, has = underlying(k, typPtr)
-		if !has {
-			return k
-		}
-	}
-	return k
-}
-
 // Elem returns the U that the interface i contains
 // or that the pointer i points to.
 func (u U) Elem() U {
 	k := u.Kind()
-	if k != reflect.Ptr && k != reflect.Interface {
+	if k == reflect.Interface {
+		return newT(u.ptr)
+	}
+	if k != reflect.Ptr {
 		return u
 	}
 	var has bool
-	k, u.typPtr, has = underlying(k, u.typPtr)
+	k, u.typPtr, has = ptrUnderlying(k, u.typPtr)
 	if !has {
 		return u
 	}
@@ -110,7 +99,7 @@ func (u U) Pointer() uintptr {
 	}
 }
 
-func underlying(k reflect.Kind, typPtr uintptr) (reflect.Kind, uintptr, bool) {
+func ptrUnderlying(k reflect.Kind, typPtr uintptr) (reflect.Kind, uintptr, bool) {
 	typPtr2 := uintptrElem(typPtr + elemOffset)
 	k2 := kind(typPtr2)
 	if k2 == reflect.Invalid {

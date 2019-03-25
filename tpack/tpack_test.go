@@ -45,14 +45,14 @@ func TestKind(t *testing.T) {
 		t.FailNow()
 	}
 
-	if Unpack(&x).UnderlyingKind() != reflect.Struct {
+	if Unpack(&x).UnderlyingElem().Kind() != reflect.Struct {
 		t.FailNow()
 	}
 
 	if Unpack(x).Kind() != reflect.Struct {
 		t.FailNow()
 	}
-	if Unpack(x).UnderlyingKind() != reflect.Struct {
+	if Unpack(x).UnderlyingElem().Kind() != reflect.Struct {
 		t.FailNow()
 	}
 

@@ -607,9 +607,6 @@ Go underlying type data.
     // Kind gets the reflect.Kind fastly.
     func (u U) Kind() reflect.Kind
 
-    // UnderlyingKind gets the underlying reflect.Kind fastly.
-    func (u U) UnderlyingKind() reflect.Kind
-
     // Elem returns the U that the interface i contains
     // or that the pointer i points to.
     func (u U) Elem() U
