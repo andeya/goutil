@@ -19,7 +19,7 @@ Go underlying type data.
     // Unpack unpack i to go underlying type data.
     func Unpack(i interface{}) T
 
-    // TypeID returns the underlying type ID.
+    // TypeID returns the underlying type ID in current runtime.
     // It is 10 times performance of reflect.TypeOf(i).String()
     func (t T) TypeID() int32
 
@@ -29,7 +29,7 @@ Go underlying type data.
     // ValueOf is equivalent to reflect.ValueOf.
     func (t T) ValueOf() reflect.Value
 
-    // TypeID get underlying type ID from reflect.Type.
+    // TypeID returns the underlying type ID in current runtime from reflect.Type.
     // It is 10 times performance of t.String()
     func TypeID(t reflect.Type) int32
     ```

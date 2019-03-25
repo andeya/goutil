@@ -21,7 +21,7 @@ func Unpack(i interface{}) T {
 	return v
 }
 
-// TypeID returns the underlying type ID.
+// TypeID returns the underlying type ID in current runtime.
 // It is 10 times performance of reflect.TypeOf(i).String()
 func (t T) TypeID() int32 {
 	return t.typeID
@@ -37,7 +37,7 @@ func (t T) ValueOf() reflect.Value {
 	return reflect.ValueOf(t.i)
 }
 
-// TypeID get underlying type ID from reflect.Type.
+// TypeID returns the underlying type ID in current runtime from reflect.Type.
 // It is 10 times performance of t.String()
 func TypeID(t reflect.Type) int32 {
 	ptr := elemUintptr(uintptr(unsafe.Pointer(&t)) + ptrOffset)
