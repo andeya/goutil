@@ -105,7 +105,7 @@ func TestElem(t *testing.T) {
 	x := &X{A: 12345, B: "test"}
 	xx := &x
 	var elemPtr uintptr
-	for i, v := range []interface{}{&xx, x, *x, &x} {
+	for i, v := range []interface{}{&xx, xx, x, *x} {
 		if i == 0 {
 			elemPtr = Unpack(v).UnderlyingElem().Pointer()
 		} else {
@@ -119,6 +119,32 @@ func TestElem(t *testing.T) {
 		if b != x.B {
 			t.FailNow()
 		}
+	}
+}
+
+func TestFrom(t *testing.T) {
+	type X struct {
+		A int16
+		B string
+	}
+	x := &X{A: 12345, B: "test"}
+	v := reflect.ValueOf(&x)
+	c := From(v).Elem()
+	v = v.Elem()
+	if c.RuntimeTypeID() != RuntimeTypeID(v.Type()) {
+		t.FailNow()
+	}
+	elemPtr := c.Pointer()
+	a := *(*int16)(unsafe.Pointer(elemPtr))
+	if a != x.A {
+		t.FailNow()
+	}
+	b := *(*string)(unsafe.Pointer(elemPtr + unsafe.Offsetof(x.B)))
+	if b != x.B {
+		t.FailNow()
+	}
+	if c.Pointer() != reflect.ValueOf(x).Pointer() {
+		t.FailNow()
 	}
 }
 

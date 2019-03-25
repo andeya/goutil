@@ -580,15 +580,24 @@ Go underlying type data.
 
 - doc
 
-     ```go
+    ```go
     // T go underlying type data
     type T struct {
         // Has unexported fields.
     }
 
-    // Unpack unpack i to go underlying type data.
+    // Unpack unpacks i to go underlying type data.
     func Unpack(i interface{}) T
-
+   
+    // From gets go underlying type data from reflect.Value.
+    func From(v reflect.Value) T
+    
+    // RuntimeTypeID gets the underlying type ID in current runtime from reflect.Type.
+    // NOTE:
+    //  *A and A gets the same runtime type ID;
+    //  It is 10 times performance of t.String().
+    func RuntimeTypeID(t reflect.Type) int32
+    
     // RuntimeTypeID gets the underlying type ID in current runtime.
     // NOTE:
     //  *A and A gets the same runtime type ID;
@@ -613,12 +622,6 @@ Go underlying type data.
     // NOTE:
     //  *A and A, gets diffrent pointer
     func (t T) Pointer() uintptr
-
-    // RuntimeTypeID gets the underlying type ID in current runtime from reflect.Type.
-    // NOTE:
-    //  *A and A gets the same runtime type ID;
-    //  It is 10 times performance of t.String().
-    func RuntimeTypeID(t reflect.Type) int32
     ```
 
 ### Workshop

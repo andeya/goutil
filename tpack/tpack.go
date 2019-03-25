@@ -12,14 +12,31 @@ type T struct {
 	_iPtr  unsafe.Pointer // avoid being GC
 }
 
-// Unpack unpack i to go underlying type data.
+// Unpack unpacks i to go underlying type data.
 func Unpack(i interface{}) T {
-	iPtr := unsafe.Pointer(&i)
+	return newT(unsafe.Pointer(&i))
+}
+
+// From gets go underlying type data from reflect.Value.
+func From(v reflect.Value) T {
+	return newT(unsafe.Pointer(&v))
+}
+
+func newT(iPtr unsafe.Pointer) T {
 	return T{
 		typPtr: *(*uintptr)(iPtr),
-		ptr:    *(*unsafe.Pointer)(unsafe.Pointer(uintptr(iPtr) + ptrOffset)),
+		ptr:    pointerElem(unsafe.Pointer(uintptr(iPtr) + ptrOffset)),
 		_iPtr:  iPtr,
 	}
+}
+
+// RuntimeTypeID returns the underlying type ID in current runtime from reflect.Type.
+// NOTE:
+//  *A and A returns the same runtime type ID;
+//  It is 10 times performance of t.String().
+func RuntimeTypeID(t reflect.Type) int32 {
+	typPtr := uintptrElem(uintptr(unsafe.Pointer(&t)) + ptrOffset)
+	return *(*int32)(unsafe.Pointer(typPtr + rtypeStrOffset))
 }
 
 // RuntimeTypeID gets the underlying type ID in current runtime.
@@ -85,15 +102,6 @@ func (t T) Pointer() uintptr {
 	}
 }
 
-// RuntimeTypeID returns the underlying type ID in current runtime from reflect.Type.
-// NOTE:
-//  *A and A returns the same runtime type ID;
-//  It is 10 times performance of t.String().
-func RuntimeTypeID(t reflect.Type) int32 {
-	ptr := uintptrElem(uintptr(unsafe.Pointer(&t)) + ptrOffset)
-	return *(*int32)(unsafe.Pointer(ptr + rtypeStrOffset))
-}
-
 func underlying(k reflect.Kind, typPtr uintptr) (reflect.Kind, uintptr) {
 	typPtr = uintptrElem(typPtr + elemOffset)
 	return kind(typPtr), typPtr
@@ -114,7 +122,7 @@ func pointerElem(p unsafe.Pointer) unsafe.Pointer {
 
 var (
 	ptrOffset = func() uintptr {
-		return unsafe.Offsetof(e.ptr)
+		return unsafe.Offsetof(e.word)
 	}()
 	rtypeStrOffset = func() uintptr {
 		return unsafe.Offsetof(e.typ.str)
@@ -131,7 +139,7 @@ var (
 	sliceDataOffset = func() uintptr {
 		return unsafe.Offsetof(new(reflect.SliceHeader).Data)
 	}()
-	e = reflectValue{typ: new(rtype)}
+	e = emptyInterface{typ: new(rtype)}
 )
 
 const (
@@ -139,10 +147,14 @@ const (
 )
 
 type (
-	reflectValue struct {
-		typ *rtype
-		ptr unsafe.Pointer
-		flag
+	// reflectValue struct {
+	// 	typ *rtype
+	// 	ptr unsafe.Pointer
+	// 	flag
+	// }
+	emptyInterface struct {
+		typ  *rtype
+		word unsafe.Pointer
 	}
 	rtype struct {
 		size       uintptr
