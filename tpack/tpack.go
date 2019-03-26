@@ -8,6 +8,7 @@ import (
 // U go underlying type data
 type U struct {
 	typPtr uintptr
+	kind   reflect.Kind
 	ptr    unsafe.Pointer
 	_iPtr  unsafe.Pointer // avoid being GC
 }
@@ -23,8 +24,10 @@ func From(v reflect.Value) U {
 }
 
 func newT(iPtr unsafe.Pointer) U {
+	typPtr := *(*uintptr)(iPtr)
 	return U{
-		typPtr: *(*uintptr)(iPtr),
+		typPtr: typPtr,
+		kind:   kind(typPtr),
 		ptr:    pointerElem(unsafe.Pointer(uintptr(iPtr) + ptrOffset)),
 		_iPtr:  iPtr,
 	}
@@ -49,35 +52,36 @@ func (u U) RuntimeTypeID() int32 {
 
 // Kind gets the reflect.Kind fastly.
 func (u U) Kind() reflect.Kind {
-	return kind(u.typPtr)
+	return u.kind
 }
 
 // Elem returns the U that the interface i contains
 // or that the pointer i points to.
 func (u U) Elem() U {
-	k := u.Kind()
-	if k == reflect.Interface {
+	k := u.kind
+	switch k {
+	default:
+		return u
+	case reflect.Interface:
 		return newT(u.ptr)
-	}
-	if k != reflect.Ptr {
+	case reflect.Ptr:
+		var has bool
+		u.kind, u.typPtr, has = typeUnderlying(k, u.typPtr)
+		if !has {
+			return u
+		}
+		if u.kind == reflect.Ptr {
+			u.ptr = pointerElem(u.ptr)
+		}
 		return u
 	}
-	var has bool
-	k, u.typPtr, has = ptrUnderlying(k, u.typPtr)
-	if !has {
-		return u
-	}
-	if k == reflect.Ptr || k == reflect.Interface {
-		u.ptr = pointerElem(u.ptr)
-	}
-	return u
 }
 
 // UnderlyingElem returns the underlying U that the interface i contains
 // or that the pointer i points to.
 func (u U) UnderlyingElem() U {
-	for r := u.Elem(); r != u; r = u.Elem() {
-		u = r
+	for u.kind == reflect.Ptr || u.kind == reflect.Interface {
+		u = u.Elem()
 	}
 	return u
 }
@@ -86,8 +90,7 @@ func (u U) UnderlyingElem() U {
 // NOTE:
 //  *T and T, gets diffrent pointer
 func (u U) Pointer() uintptr {
-	k := u.Kind()
-	switch k {
+	switch u.Kind() {
 	case reflect.Invalid:
 		return 0
 	case reflect.Func:
@@ -99,12 +102,12 @@ func (u U) Pointer() uintptr {
 	}
 }
 
-// IsNil reports whether its argument v is nil.
+// IsNil reports whether its argument i is nil.
 func (u U) IsNil() bool {
 	return unsafe.Pointer(u.Pointer()) == nil
 }
 
-func ptrUnderlying(k reflect.Kind, typPtr uintptr) (reflect.Kind, uintptr, bool) {
+func typeUnderlying(k reflect.Kind, typPtr uintptr) (reflect.Kind, uintptr, bool) {
 	typPtr2 := uintptrElem(typPtr + elemOffset)
 	k2 := kind(typPtr2)
 	if k2 == reflect.Invalid {

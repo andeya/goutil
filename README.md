@@ -620,7 +620,7 @@ Go underlying type data.
     //  *T and T, gets diffrent pointer
     func (u U) Pointer() uintptr
 
-    // IsNil reports whether its argument v is nil.
+    // IsNil reports whether its argument i is nil.
     func (u U) IsNil() bool
     ```
 

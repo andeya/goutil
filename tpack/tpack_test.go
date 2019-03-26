@@ -127,8 +127,8 @@ func TestElem(t *testing.T) {
 	}
 
 	var y *X
-	u = Unpack(y)
-	if !u.IsNil() {
+	u = Unpack(&y)
+	if u.IsNil() {
 		t.FailNow()
 	}
 	u = u.UnderlyingElem()
@@ -166,12 +166,12 @@ func TestFrom(t *testing.T) {
 	}
 }
 
-func BenchmarkUnpack_tpack(b *testing.B) {
+func Benchmark_tpack(b *testing.B) {
 	b.StopTimer()
 	type T struct {
 		a int
 	}
-	var t = new(T)
+	t := new(T)
 	b.ReportAllocs()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
@@ -179,15 +179,15 @@ func BenchmarkUnpack_tpack(b *testing.B) {
 	}
 }
 
-func BenchmarkTypeOf_go(b *testing.B) {
+func Benchmark_reflect(b *testing.B) {
 	b.StopTimer()
 	type T struct {
 		a int
 	}
-	var t = new(T)
+	t := new(T)
 	b.ReportAllocs()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		_ = reflect.TypeOf(t).Elem().String()
+		_ = reflect.TypeOf(t).String()
 	}
 }
