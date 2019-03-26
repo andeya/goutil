@@ -174,8 +174,9 @@ func Benchmark_tpack(b *testing.B) {
 	t := new(T)
 	b.ReportAllocs()
 	b.StartTimer()
+	u := Unpack(t).Elem()
 	for i := 0; i < b.N; i++ {
-		_ = Unpack(t).RuntimeTypeID()
+		_ = u.RuntimeTypeID()
 	}
 }
 
@@ -187,7 +188,8 @@ func Benchmark_reflect(b *testing.B) {
 	t := new(T)
 	b.ReportAllocs()
 	b.StartTimer()
+	u := reflect.TypeOf(t).Elem()
 	for i := 0; i < b.N; i++ {
-		_ = reflect.TypeOf(t).String()
+		_ = u.String()
 	}
 }
