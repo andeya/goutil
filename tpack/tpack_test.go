@@ -126,6 +126,18 @@ func TestElem(t *testing.T) {
 		}
 	}
 
+	var y *X
+	u = Unpack(y)
+	if !u.IsNil() {
+		t.FailNow()
+	}
+	u = u.UnderlyingElem()
+	if u.Kind() != reflect.Struct {
+		t.FailNow()
+	}
+	if !u.IsNil() {
+		t.FailNow()
+	}
 }
 
 func TestFrom(t *testing.T) {

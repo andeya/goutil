@@ -99,6 +99,11 @@ func (u U) Pointer() uintptr {
 	}
 }
 
+// IsNil reports whether its argument v is nil.
+func (u U) IsNil() bool {
+	return unsafe.Pointer(u.Pointer()) == nil
+}
+
 func ptrUnderlying(k reflect.Kind, typPtr uintptr) (reflect.Kind, uintptr, bool) {
 	typPtr2 := uintptrElem(typPtr + elemOffset)
 	k2 := kind(typPtr2)
