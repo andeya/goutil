@@ -167,13 +167,12 @@ func TestFrom(t *testing.T) {
 }
 
 func Benchmark_tpack(b *testing.B) {
-	b.StopTimer()
 	type T struct {
 		a int
 	}
 	t := new(T)
 	b.ReportAllocs()
-	b.StartTimer()
+	b.ResetTimer()
 	u := Unpack(t).Elem()
 	for i := 0; i < b.N; i++ {
 		_ = u.RuntimeTypeID()
@@ -181,13 +180,12 @@ func Benchmark_tpack(b *testing.B) {
 }
 
 func Benchmark_reflect(b *testing.B) {
-	b.StopTimer()
 	type T struct {
 		a int
 	}
 	t := new(T)
 	b.ReportAllocs()
-	b.StartTimer()
+	b.ResetTimer()
 	u := reflect.TypeOf(t).Elem()
 	for i := 0; i < b.N; i++ {
 		_ = u.String()
