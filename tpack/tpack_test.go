@@ -84,11 +84,15 @@ func TestPointer(t *testing.T) {
 	if b != x.B {
 		t.FailNow()
 	}
-	f := func() {}
-	if Unpack(f).Pointer() != reflect.ValueOf(f).Pointer() {
+	f := func() bool { return true }
+	prt := Unpack(f).Pointer()
+	f = *(*func() bool)(unsafe.Pointer(&prt))
+	if !f() {
 		t.FailNow()
 	}
-	if Unpack(t.Name).Pointer() != reflect.ValueOf(t.Name).Pointer() {
+	prt = Unpack(t.Name).Pointer()
+	tName := *(*func() string)(unsafe.Pointer(&prt))
+	if tName() != "TestPointer" {
 		t.FailNow()
 	}
 	s := []string{""}

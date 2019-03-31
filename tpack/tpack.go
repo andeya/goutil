@@ -94,7 +94,8 @@ func (u U) Pointer() uintptr {
 	case reflect.Invalid:
 		return 0
 	case reflect.Func:
-		return uintptr(*(*unsafe.Pointer)(u.ptr))
+		return uintptr(u.Elem().ptr)
+		// return uintptr(*(*unsafe.Pointer)(u.ptr))
 	case reflect.Slice:
 		return uintptrElem(uintptr(u.ptr)) + sliceDataOffset
 	default:
