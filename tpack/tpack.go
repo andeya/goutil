@@ -2,6 +2,7 @@ package tpack
 
 import (
 	"reflect"
+	"runtime"
 	"unsafe"
 )
 
@@ -93,9 +94,6 @@ func (u U) Pointer() uintptr {
 	switch u.Kind() {
 	case reflect.Invalid:
 		return 0
-	case reflect.Func:
-		return uintptr(u.Elem().ptr)
-		// return uintptr(*(*unsafe.Pointer)(u.ptr))
 	case reflect.Slice:
 		return uintptrElem(uintptr(u.ptr)) + sliceDataOffset
 	default:
@@ -106,6 +104,18 @@ func (u U) Pointer() uintptr {
 // IsNil reports whether its argument i is nil.
 func (u U) IsNil() bool {
 	return unsafe.Pointer(u.Pointer()) == nil
+}
+
+// FuncForPC returns a *Func describing the function that contains the
+// given program counter address, or else nil.
+//
+// If pc represents multiple functions because of inlining, it returns
+// the a *Func describing the innermost function, but with an entry
+// of the outermost function.
+//
+// NOTE: Its kind must be a reflect.Func, otherwise it returns nil
+func (u U) FuncForPC() *runtime.Func {
+	return runtime.FuncForPC(*(*uintptr)(u.ptr))
 }
 
 func typeUnderlying(k reflect.Kind, typPtr uintptr) (reflect.Kind, uintptr, bool) {

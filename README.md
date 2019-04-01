@@ -622,6 +622,16 @@ Go underlying type data.
 
     // IsNil reports whether its argument i is nil.
     func (u U) IsNil() bool
+    
+    // FuncForPC returns a *Func describing the function that contains the
+    // given program counter address, or else nil.
+    //
+    // If pc represents multiple functions because of inlining, it returns
+    // the a *Func describing the innermost function, but with an entry
+    // of the outermost function.
+    //
+    // NOTE: Its kind must be a reflect.Func, otherwise it returns nil
+    func (u U) FuncForPC() *runtime.Func
     ```
 
 ### Workshop
