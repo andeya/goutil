@@ -53,7 +53,7 @@ func Test(t *testing.T) {
 		if !reflect.DeepEqual(*semVer, c.semVer) {
 			t.Fatal(c.ver)
 		}
-		if semVer.String() != c.ver {
+		if semVer.String() != c.ver || c.semVer.Compare(semVer) != 0 {
 			t.Fatalf("expect:%s, got:%s", c.ver, semVer.String())
 		}
 	}

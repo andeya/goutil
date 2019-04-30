@@ -72,19 +72,22 @@ func Parse(semVer string) *SemVer {
 
 // Compare compares 'a' and 'b'.
 // The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
-func Compare(a, b string) bool {
+func Compare(a, b string) int {
 	return Parse(a).Compare(Parse(b))
 }
 
 // Compare compares whether 's' and 'semVer'.
 // The result will be 0 if s==semVer, -1 if s < semVer, and +1 if s > semVer.
-func (s *SemVer) Compare(semVer *SemVer) bool {
+func (s *SemVer) Compare(semVer *SemVer) int {
 	for k, v := range s.nums {
-		if v < semVer.nums[k] {
-			return true
+		v2 := semVer.nums[k]
+		if v < v2 {
+			return -1
+		} else if v > v2 {
+			return 1
 		}
 	}
-	return false
+	return 0
 }
 
 // Major returns the version major.
