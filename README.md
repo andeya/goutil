@@ -1109,16 +1109,18 @@ Version comparison tool that conforms to semantic version 2.0.0.
 
 - Compare compares 'a' and 'b'.
 <br>The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
+<br>If compareMetadata==nil, will not compare metadata.
 
     ```go
-    func Compare(a, b string) int
+    func Compare(a, b string, compareMetadata func(aMeta, bMeta string) int) int
     ```
 
 - Compare compares whether 's' and 'semVer'.
 <br>The result will be 0 if s==semVer, -1 if s < semVer, and +1 if s > semVer.
+<br>If compareMetadata==nil, will not compare metadata.
 
     ```go
-    func (s *SemVer) Compare(semVer *SemVer) int
+    func (s *SemVer) Compare(semVer *SemVer, compareMetadata func(sMeta, semVerMeta string) int) int
     ```
 
 - Major returns the version major.

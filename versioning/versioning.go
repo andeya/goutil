@@ -74,13 +74,15 @@ func Parse(semVer string) *SemVer {
 
 // Compare compares 'a' and 'b'.
 // The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
-func Compare(a, b string) int {
-	return Parse(a).Compare(Parse(b))
+// If compareMetadata==nil, will not compare metadata.
+func Compare(a, b string, compareMetadata func(aMeta, bMeta string) int) int {
+	return Parse(a).Compare(Parse(b), compareMetadata)
 }
 
 // Compare compares whether 's' and 'semVer'.
 // The result will be 0 if s==semVer, -1 if s < semVer, and +1 if s > semVer.
-func (s *SemVer) Compare(semVer *SemVer) int {
+// If compareMetadata==nil, will not compare metadata.
+func (s *SemVer) Compare(semVer *SemVer, compareMetadata func(sMeta, semVerMeta string) int) int {
 	for k, v := range s.nums {
 		v2 := semVer.nums[k]
 		if v < v2 {
@@ -88,6 +90,9 @@ func (s *SemVer) Compare(semVer *SemVer) int {
 		} else if v > v2 {
 			return 1
 		}
+	}
+	if compareMetadata != nil {
+		return compareMetadata(s.Metadata(), semVer.Metadata())
 	}
 	return 0
 }

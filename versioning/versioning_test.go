@@ -71,7 +71,7 @@ func TestParse(t *testing.T) {
 		if !reflect.DeepEqual(*semVer, c.semVer) {
 			t.Fatal(c.ver)
 		}
-		if semVer.String() != c.ver || c.semVer.Compare(semVer) != 0 {
+		if semVer.String() != c.ver || c.semVer.Compare(semVer, nil) != 0 {
 			t.Fatalf("expect:%s, got:%s", c.ver, semVer.String())
 		}
 	}

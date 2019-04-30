@@ -20,7 +20,7 @@ type U struct {
 func init() {
 	miniVersion := versioning.Create(1, 9, 0, "")
 	version := versioning.Parse(strings.TrimPrefix(runtime.Version(), "go"))
-	if version.Compare(miniVersion) < 0 {
+	if version.Compare(miniVersion, nil) < 0 {
 		panic("Required go version ≥1.9, but current version is " + version.String())
 	}
 }
