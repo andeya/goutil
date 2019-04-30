@@ -23,6 +23,7 @@ Common and useful utils for the Go project development.
 - [Workshop](#workshop) Non-blocking asynchronous multiplex resource pool
 - [Password](#password) Check password
 - [Various](#various) Various small functions
+- [Versioning](#versioning) Version comparison tool that conforms to semantic version 2.0.0
 
 
 ## 3. UtilsAPI
@@ -1080,4 +1081,79 @@ to select AES-128, AES-192, or AES-256.
 
     ```go
     TarGzTo(src string, dstWriter io.Writer, includePrefix bool, logOutput func(string, ...interface{}), ignoreBaseName ...string) (err error)
+    ```
+
+### Versioning
+
+Version comparison tool that conforms to semantic version 2.0.0.
+
+- import it
+
+    ```go
+    "github.com/henrylee2cn/goutil/versioning"
+    ```
+
+- Create creates a semantic version object.
+
+    ```go
+    func Create(major, minor, patch uint32, metadata string) *SemVer
+    ```
+
+- Parse parses the semantic version string to object.
+<br>NOTE:
+<br>If metadata part exists, the separator must not be a number.
+
+    ```go
+    func Parse(semVer string) *SemVer
+    ```
+
+- Compare compares 'a' and 'b'.
+<br>The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
+
+    ```go
+    func Compare(a, b string) bool
+    ```
+
+- Compare compares whether 's' and 'semVer'.
+<br>The result will be 0 if s==semVer, -1 if s < semVer, and +1 if s > semVer.
+
+    ```go
+    func (s *SemVer) Compare(semVer *SemVer) bool
+    ```
+
+- Major returns the version major.
+
+    ```go
+    func (s *SemVer) Major() string
+    ```
+
+
+- Minor returns the version minor.
+
+    ```go
+    func (s *SemVer) Minor() string
+    ```
+
+- Patch returns the version patch.
+
+    ```go
+    func (s *SemVer) Patch() string
+    ```
+
+- Metadata returns the version metadata.
+<br>Examples:
+<br> 1.0.0-alpha+001 => -alpha+001
+<br> 1.0.0+20130313144700 => +20130313144700
+<br> 1.0.0-beta+exp.sha.5114f85 => -beta+exp.sha.5114f85
+<br> 1.0.0rc => rc
+
+    ```go
+    func (s *SemVer) Metadata() string
+    ```
+
+
+- Metadata returns the version metadata.
+
+    ```go
+    func (s *SemVer) String() string
     ```
