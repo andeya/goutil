@@ -5,7 +5,25 @@ import (
 	"testing"
 )
 
-func Test(t *testing.T) {
+func TestCreate(t *testing.T) {
+	cases := []struct {
+		ver    string
+		semVer *SemVer
+	}{
+		{
+			"1.9.0",
+			Create(1, 9, 0, ""),
+		},
+	}
+
+	for _, c := range cases {
+		if c.ver != c.semVer.String() {
+			t.Fatalf("expect:%s, got:%s", c.ver, c.semVer.String())
+		}
+	}
+}
+
+func TestParse(t *testing.T) {
 	cases := []struct {
 		ver    string
 		semVer SemVer

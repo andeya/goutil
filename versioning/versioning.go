@@ -16,6 +16,8 @@
 //
 package versioning
 
+import "strconv"
+
 // SemVer semantic version object
 type SemVer struct {
 	major    string
@@ -28,10 +30,10 @@ type SemVer struct {
 // Create creates a semantic version object.
 func Create(major, minor, patch uint32, metadata string) *SemVer {
 	return &SemVer{
-		major:    string(major),
-		minor:    string(minor),
-		patch:    string(patch),
-		metadata: string(metadata),
+		major:    uint32ToString(major),
+		minor:    uint32ToString(minor),
+		patch:    uint32ToString(patch),
+		metadata: metadata,
 		nums: [3]uint32{
 			major, minor, patch,
 		},
@@ -125,6 +127,10 @@ func (s *SemVer) String() string {
 		ver += "." + s.patch
 	}
 	return ver + s.metadata
+}
+
+func uint32ToString(u uint32) string {
+	return strconv.FormatUint(uint64(u), 10)
 }
 
 func runeToUint32(r []rune) uint32 {
