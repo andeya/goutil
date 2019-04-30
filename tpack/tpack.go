@@ -3,7 +3,10 @@ package tpack
 import (
 	"reflect"
 	"runtime"
+	"strings"
 	"unsafe"
+
+	"github.com/henrylee2cn/goutil/versioning"
 )
 
 // U go underlying type data
@@ -12,6 +15,14 @@ type U struct {
 	kind   reflect.Kind
 	ptr    unsafe.Pointer
 	_iPtr  unsafe.Pointer // avoid being GC
+}
+
+func init() {
+	miniVersion := versioning.Create(1, 9, 0, "")
+	version := versioning.Parse(strings.TrimPrefix(runtime.Version(), "go"))
+	if version.Compare(miniVersion) < 0 {
+		panic("Required go version ≥1.9, but current version is " + version.String())
+	}
 }
 
 // Unpack unpacks i to go underlying type data.
