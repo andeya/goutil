@@ -13,7 +13,7 @@ import (
 // Status a handling status, similar to an error info
 type Status struct {
 	// Code status code
-	// 0 means no error
+	// 0 means no error, -1 means unknown error
 	Code int32 `json:"code"`
 	// Message the status message displayed to the user (optional)
 	Message string `json:"message"`
