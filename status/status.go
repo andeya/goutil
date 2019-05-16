@@ -1,5 +1,5 @@
-// Package rerror is an abstract object of erroneous result.
-package rerror
+// Package status is a handling status, similar to an error message.
+package status
 
 import (
 	"encoding/json"
@@ -11,14 +11,14 @@ import (
 )
 
 const (
-	// CodeUnknown unknown error code
-	CodeUnknown = -1
-	// CodeNoError no error code
-	CodeNoError = 0 // nil error (ok)
+	// UnknownError unknown error status code
+	UnknownError = -1
+	// OK no error status code
+	OK = 0
 )
 
-// Rerror an abstract object of erroneous result
-type Rerror struct {
+// Status a handling status, similar to an error message
+type Status struct {
 	// Code error code
 	Code int32 `json:"code"`
 	// Message the error message displayed to the user (optional)
@@ -28,62 +28,62 @@ type Rerror struct {
 }
 
 var (
-	_ json.Marshaler   = new(Rerror)
-	_ json.Unmarshaler = new(Rerror)
+	_ json.Marshaler   = new(Status)
+	_ json.Unmarshaler = new(Status)
 
 	reA = []byte(`{"code":`)
 	reB = []byte(`,"message":`)
 	reC = []byte(`,"reason":`)
 
-	rerrUnknown = New(CodeUnknown, "Unknown Error", "")
+	statUnknown = New(UnknownError, "Unknown Error", "")
 )
 
-// New creates a *Rerror.
-func New(code int32, message, reason string) *Rerror {
-	return &Rerror{
+// New creates a *Status.
+func New(code int32, message, reason string) *Status {
+	return &Status{
 		Code:    code,
 		Message: message,
 		Reason:  reason,
 	}
 }
 
-// To converts error to *Rerror
-func To(err error) *Rerror {
+// To converts error to *Status
+func To(err error) *Status {
 	if err == nil {
 		return nil
 	}
-	r, ok := err.(*rerror)
+	r, ok := err.(*serror)
 	if ok {
-		return r.toRerror()
+		return r.toStatus()
 	}
-	rerr := rerrUnknown.Copy().SetReason(err.Error())
-	return rerr
+	stat := statUnknown.Copy().SetReason(err.Error())
+	return stat
 }
 
-// HasError returns true if there are no error.
-func (r *Rerror) HasError() bool {
-	return r != nil && r.Code != CodeNoError
-}
-
-// Copy returns the copy of Rerror
-func (r Rerror) Copy() *Rerror {
+// Copy returns the copy of Status
+func (r Status) Copy() *Status {
 	return &r
 }
 
+// IsOK returns true if there is no error.
+func (r *Status) IsOK() bool {
+	return r == nil || r.Code == OK
+}
+
 // SetMessage sets the error message displayed to the user.
-func (r *Rerror) SetMessage(message string) *Rerror {
+func (r *Status) SetMessage(message string) *Status {
 	r.Message = message
 	return r
 }
 
 // SetReason sets the cause of the error for debugging.
-func (r *Rerror) SetReason(reason string) *Rerror {
+func (r *Status) SetReason(reason string) *Status {
 	r.Reason = reason
 	return r
 }
 
 // String prints error info.
-func (r *Rerror) String() string {
+func (r *Status) String() string {
 	if r == nil {
 		return "<nil>"
 	}
@@ -91,8 +91,8 @@ func (r *Rerror) String() string {
 	return goutil.BytesToString(b)
 }
 
-// MarshalJSON marshals Rerror into JSON, implements json.Marshaler interface.
-func (r *Rerror) MarshalJSON() ([]byte, error) {
+// MarshalJSON marshals Status into JSON, implements json.Marshaler interface.
+func (r *Status) MarshalJSON() ([]byte, error) {
 	if r == nil {
 		return []byte{}, nil
 	}
@@ -110,7 +110,7 @@ func (r *Rerror) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON unmarshals a JSON description of self.
-func (r *Rerror) UnmarshalJSON(b []byte) error {
+func (r *Status) UnmarshalJSON(b []byte) error {
 	if r == nil {
 		return nil
 	}
@@ -122,20 +122,20 @@ func (r *Rerror) UnmarshalJSON(b []byte) error {
 }
 
 // ToError converts to error
-func (r *Rerror) ToError() error {
-	if r == nil || r.Code == CodeNoError {
+func (r *Status) ToError() error {
+	if r == nil || r.Code == OK {
 		return nil
 	}
-	return (*rerror)(unsafe.Pointer(r))
+	return (*serror)(unsafe.Pointer(r))
 }
 
-type rerror Rerror
+type serror Status
 
-func (r *rerror) Error() string {
-	b, _ := r.toRerror().MarshalJSON()
+func (r *serror) Error() string {
+	b, _ := r.toStatus().MarshalJSON()
 	return goutil.BytesToString(b)
 }
 
-func (r *rerror) toRerror() *Rerror {
-	return (*Rerror)(unsafe.Pointer(r))
+func (r *serror) toStatus() *Status {
+	return (*Status)(unsafe.Pointer(r))
 }
