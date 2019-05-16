@@ -18,6 +18,7 @@ Common and useful utils for the Go project development.
 - [Graceful](#graceful) Shutdown or reboot current process gracefully.
 - [GoPool](#gopool) Goroutines' pool
 - [HTTPBody](#httpbody) HTTP body builder
+- [Rerror](#rerror) Abstract object of erroneous result
 - [ResPool](#respool) Resources' pool
 - [Tpack](#tpack) Go underlying type data
 - [Workshop](#workshop) Non-blocking asynchronous multiplex resource pool
@@ -414,6 +415,39 @@ HTTP body builder.
     NewXMLBody(v interface{}) (contentType string, bodyReader io.Reader, err error)
     ```
 
+### Rerror
+
+Abstract object of erroneous result.
+
+- import it
+
+    ```go
+    "github.com/henrylee2cn/goutil/rerror"
+    ```
+
+    ```go
+    type Rerror struct {
+        // Code error code
+        Code int32 `json:"code"`
+        // Message the error message displayed to the user (optional)
+        Message string `json:"message"`
+        // Reason the cause of the error for debugging (optional)
+        Reason string `json:"reason"`
+    }
+    ```
+
+- New creates a *Rerror.
+
+    ```go
+    func New(code int32, message, reason string) *Rerror
+    ```
+
+- To converts error to *Rerror
+
+    ```go
+    func To(err error) *Rerror
+    ```
+    
 ### ResPool
 
 ResPool is a high availability/high concurrent resource pool, which automatically manages the number of resources.
