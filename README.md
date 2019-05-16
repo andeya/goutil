@@ -761,6 +761,12 @@ Various small functions.
     func SpaceInOne(s string) string
     ```
 
+- StringMarshalJSON converts the string to JSON byte stream.
+
+    ```go
+    func StringMarshalJSON(s string, escapeHTML bool) []byte
+    ```
+
 - NewRandom creates a new padded Encoding defined by the given alphabet string.
 
     ```go

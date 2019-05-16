@@ -1,6 +1,7 @@
 package goutil
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -75,4 +76,13 @@ func TestSpaceInOne(t *testing.T) {
 	if r != a.output {
 		t.Fatalf("want: %q, got: %q", a.output, r)
 	}
+}
+
+func ExampleStringMarshalJSON() {
+	s := `<>&{}""`
+	fmt.Printf("%s\n", StringMarshalJSON(s, true))
+	fmt.Printf("%s\n", StringMarshalJSON(s, false))
+	// Output:
+	// "\u003c\u003e\u0026{}\"\""
+	// "<>&{}\"\""
 }
