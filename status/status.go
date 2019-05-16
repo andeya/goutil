@@ -1,4 +1,4 @@
-// Package status is a handling status, similar to an error message.
+// Package status is a handling status, similar to an error info.
 package status
 
 import (
@@ -17,13 +17,13 @@ const (
 	OK = 0
 )
 
-// Status a handling status, similar to an error message
+// Status a handling status, similar to an error info
 type Status struct {
-	// Code error code
+	// Code status code
 	Code int32 `json:"code"`
-	// Message the error message displayed to the user (optional)
+	// Message the status message displayed to the user (optional)
 	Message string `json:"message"`
-	// Reason the cause of the error for debugging (optional)
+	// Reason the cause of the status for debugging (optional)
 	Reason string `json:"reason"`
 }
 
@@ -70,19 +70,19 @@ func (r *Status) IsOK() bool {
 	return r == nil || r.Code == OK
 }
 
-// SetMessage sets the error message displayed to the user.
+// SetMessage sets the status message displayed to the user.
 func (r *Status) SetMessage(message string) *Status {
 	r.Message = message
 	return r
 }
 
-// SetReason sets the cause of the error for debugging.
+// SetReason sets the cause of the status for debugging.
 func (r *Status) SetReason(reason string) *Status {
 	r.Reason = reason
 	return r
 }
 
-// String prints error info.
+// String prints status info.
 func (r *Status) String() string {
 	if r == nil {
 		return "<nil>"
@@ -121,7 +121,7 @@ func (r *Status) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// ToError converts to error
+// ToError converts to error interface.
 func (r *Status) ToError() error {
 	if r == nil || r.Code == OK {
 		return nil

@@ -15,11 +15,11 @@ Common and useful utils for the Go project development.
 - [Cmder](#cmder) Cmder exec cmd and catch the result
 - [CoarseTime](#coarsetime) Current time truncated to the nearest 100ms
 - [Errors](#errors) Improved errors package.
-- [Graceful](#graceful) Shutdown or reboot current process gracefully.
+- [Graceful](#graceful) Shutdown or reboot current process gracefully
 - [GoPool](#gopool) Goroutines' pool
 - [HTTPBody](#httpbody) HTTP body builder
 - [ResPool](#respool) Resources' pool
-- [Status](#status) A handling status, similar to an error message
+- [Status](#status) A handling status, similar to an error info
 - [Tpack](#tpack) Go underlying type data
 - [Workshop](#workshop) Non-blocking asynchronous multiplex resource pool
 - [Password](#password) Check password
@@ -572,7 +572,7 @@ If the same name exists, will close and cover it.
 
 ### Status
 
-A handling status, similar to an error message.
+A handling status, similar to an error info.
 
 - import it
 
@@ -582,11 +582,11 @@ A handling status, similar to an error message.
 
     ```go
     type Status struct {
-        // Code error code
+        // Code status code
         Code int32 `json:"code"`
-        // Message the error message displayed to the user (optional)
+        // Message the status message displayed to the user (optional)
         Message string `json:"message"`
-        // Reason the cause of the error for debugging (optional)
+        // Reason the cause of the status for debugging (optional)
         Reason string `json:"reason"`
     }
     ```
