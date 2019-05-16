@@ -10,22 +10,23 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const (
-	// UnknownError unknown error status code
-	UnknownError = -1
-	// OK no error status code
-	OK = 0
-)
-
 // Status a handling status, similar to an error info
 type Status struct {
 	// Code status code
+	// 0 means no error
 	Code int32 `json:"code"`
 	// Message the status message displayed to the user (optional)
 	Message string `json:"message"`
 	// Reason the cause of the status for debugging (optional)
 	Reason string `json:"reason"`
 }
+
+const (
+	// UnknownError unknown error status code
+	UnknownError = -1
+	// OK no error status code
+	OK = 0
+)
 
 var (
 	_ json.Marshaler   = new(Status)
@@ -39,6 +40,8 @@ var (
 )
 
 // New creates a *Status.
+// NOTE:
+//  code=0 means no error
 func New(code int32, message, reason string) *Status {
 	return &Status{
 		Code:    code,
@@ -48,6 +51,8 @@ func New(code int32, message, reason string) *Status {
 }
 
 // To converts error to *Status
+// NOTE:
+//  code must be -1, means unknown error status
 func To(err error) *Status {
 	if err == nil {
 		return nil
