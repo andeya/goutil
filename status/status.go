@@ -41,7 +41,7 @@ var (
 
 // New creates a *Status.
 // NOTE:
-//  code=0 means no error
+//  code=0 means no error, code=-1 means unknown error
 func New(code int32, message, reason string) *Status {
 	return &Status{
 		Code:    code,

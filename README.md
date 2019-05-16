@@ -593,6 +593,7 @@ A handling status, similar to an error info.
     ```
 
 - New creates a *Status.
+<br>code=0 means no error, code=-1 means unknown error
 
     ```go
     func New(code int32, message, reason string) *Status
