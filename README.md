@@ -584,14 +584,14 @@ A handling status with code, msg, cause and stack.
 <br>code=0 means no error
 
     ```go
-    func New(code int32, msg string, cause error) *Status
+    func New(code int32, msg string, cause interface{}) *Status
     ```
 
-- WithStack creates a handling status with code, msg, cause and stack.
+- NewWithStack creates a handling status with code, msg and cause and stack.
 <br>code=0 means no error
 
     ```go
-    WithStack(code int32, msg string, cause error) *Status
+    func NewWithStack(code int32, msg string, cause interface{}) *Status
     ```
 
 ### Tpack

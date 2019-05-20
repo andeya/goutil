@@ -25,38 +25,46 @@ const OK int32 = 0
 // New creates a handling status with code, msg and cause.
 // NOTE:
 //  code=0 means no error
-func New(code int32, msg string, cause error) *Status {
-	return &Status{
-		code:  code,
-		msg:   msg,
-		cause: cause,
+func New(code int32, msg string, cause interface{}) *Status {
+	s := &Status{
+		code: code,
+		msg:  msg,
 	}
+	switch v := cause.(type) {
+	case nil:
+	case error:
+		s.cause = v
+	case string:
+		s.cause = errors.New(v)
+	default:
+		s.cause = fmt.Errorf("%v", v)
+	}
+	return s
 }
 
-// WithStack creates a handling status with code, msg, cause and stack.
+// NewWithStack creates a handling status with code, msg and cause and stack.
 // NOTE:
 //  code=0 means no error
-func WithStack(code int32, msg string, cause error) *Status {
+func NewWithStack(code int32, msg string, cause interface{}) *Status {
 	s := New(code, msg, cause)
 	s.stack = callers()
 	return s
 }
 
 // Copy returns the copy of Status.
-func (s *Status) Copy(withStack bool, newCause ...error) *Status {
+func (s *Status) Copy(withStack bool, newCause ...interface{}) *Status {
 	if s == nil {
 		return nil
 	}
-	copy := *s
+	var cause interface{} = s.cause
+	if len(newCause) > 0 {
+		cause = newCause[0]
+	}
+	copy := New(s.code, s.msg, cause)
 	if withStack {
 		copy.stack = callers()
-	} else {
-		copy.stack = nil
 	}
-	if len(newCause) > 0 {
-		copy.cause = newCause[0]
-	}
-	return &copy
+	return copy
 }
 
 // Code returns the status code.

@@ -9,23 +9,24 @@ import (
 func Test(t *testing.T) {
 	stat := New(
 		400,
-		"msg",
-		errors.New("bala...bala..."),
+		"msg...",
+		"bala...bala...",
 	)
 	t.Logf("%v", stat)
 
-	stat = testWithStack()
+	err := errors.New("xxxxxxxxxx")
+	stat = testWithStack(err)
 	t.Logf("%+v", stat)
 
 	stat = new(Status)
-	err := json.Unmarshal([]byte(`{"code":404,"msg":"Not Found","cause":"xxxxxxxxxx"}`), stat)
+	err = json.Unmarshal([]byte(`{"code":404,"msg":"Not Found","cause":"xxxxxxxxxx"}`), stat)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("%+v", stat)
-	t.Logf("%+v", stat.Copy(true, errors.New("zzzzzzzzz")))
+	t.Logf("%+v", stat.Copy(true, "zzzzzzzzz"))
 }
 
-func testWithStack() *Status {
-	return WithStack(404, "Not Found", errors.New("xxxxxxxxxx"))
+func testWithStack(err error) *Status {
+	return NewWithStack(404, "Not Found", err)
 }
