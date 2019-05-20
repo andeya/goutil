@@ -11,14 +11,12 @@ import (
 )
 
 // Status a handling status, similar to an error info
+// NOTE:
+//  code: 0 means no error, -1 means unknown error
 type Status struct {
-	// Code status code
-	// 0 means no error, -1 means unknown error
-	Code int32 `json:"code"`
-	// Message the status message displayed to the user (optional)
-	Message string `json:"message"`
-	// Reason the cause of the status for debugging (optional)
-	Reason string `json:"reason"`
+	code    int32
+	message string
+	reason  string
 }
 
 const (
@@ -44,9 +42,9 @@ var (
 //  code=0 means no error, code=-1 means unknown error
 func New(code int32, message, reason string) *Status {
 	return &Status{
-		Code:    code,
-		Message: message,
-		Reason:  reason,
+		code:    code,
+		message: message,
+		reason:  reason,
 	}
 }
 
@@ -66,72 +64,94 @@ func To(err error) *Status {
 }
 
 // Copy returns the copy of Status
-func (r Status) Copy() *Status {
-	return &r
+func (s Status) Copy() *Status {
+	return &s
 }
 
 // IsOK returns true if there is no error.
-func (r *Status) IsOK() bool {
-	return r == nil || r.Code == OK
+func (s *Status) IsOK() bool {
+	return s == nil || s.code == OK
+}
+
+// Code returns the status code.
+// 0 means no error, -1 means unknown error
+func (s *Status) Code() int32 {
+	return s.code
+}
+
+// SetCode sets the status code.
+func (s *Status) SetCode(code int32) *Status {
+	s.code = code
+	return s
+}
+
+// Message returns the status message displayed to the user (optional).
+func (s *Status) Message() string {
+	return s.message
 }
 
 // SetMessage sets the status message displayed to the user.
-func (r *Status) SetMessage(message string) *Status {
-	r.Message = message
-	return r
+func (s *Status) SetMessage(message string) *Status {
+	s.message = message
+	return s
+}
+
+// Reason returns the cause of the status for debugging (optional).
+func (s *Status) Reason() string {
+	return s.reason
 }
 
 // SetReason sets the cause of the status for debugging.
-func (r *Status) SetReason(reason string) *Status {
-	r.Reason = reason
-	return r
+func (s *Status) SetReason(reason string) *Status {
+	s.reason = reason
+	return s
 }
 
 // String prints status info.
-func (r *Status) String() string {
-	if r == nil {
+func (s *Status) String() string {
+	if s == nil {
 		return "<nil>"
 	}
-	b, _ := r.MarshalJSON()
+	b, _ := s.MarshalJSON()
 	return goutil.BytesToString(b)
 }
 
 // MarshalJSON marshals Status into JSON, implements json.Marshaler interface.
-func (r *Status) MarshalJSON() ([]byte, error) {
-	if r == nil {
+func (s *Status) MarshalJSON() ([]byte, error) {
+	if s == nil {
 		return []byte{}, nil
 	}
-	var b = append(reA, strconv.FormatInt(int64(r.Code), 10)...)
-	if len(r.Message) > 0 {
+	var b = append(reA, strconv.FormatInt(int64(s.code), 10)...)
+	if len(s.message) > 0 {
 		b = append(b, reB...)
-		b = append(b, goutil.StringMarshalJSON(r.Message, false)...)
+		b = append(b, goutil.StringMarshalJSON(s.message, false)...)
 	}
-	if len(r.Reason) > 0 {
+	if len(s.reason) > 0 {
 		b = append(b, reC...)
-		b = append(b, goutil.StringMarshalJSON(r.Reason, false)...)
+		b = append(b, goutil.StringMarshalJSON(s.reason, false)...)
 	}
 	b = append(b, '}')
 	return b, nil
 }
 
 // UnmarshalJSON unmarshals a JSON description of self.
-func (r *Status) UnmarshalJSON(b []byte) error {
-	if r == nil {
+func (s *Status) UnmarshalJSON(b []byte) error {
+	if s == nil {
 		return nil
 	}
-	s := goutil.BytesToString(b)
-	r.Code = int32(gjson.Get(s, "code").Int())
-	r.Message = gjson.Get(s, "message").String()
-	r.Reason = gjson.Get(s, "reason").String()
+	str := goutil.BytesToString(b)
+	s.code = int32(gjson.Get(str, "code").Int())
+	s.message = gjson.Get(str, "message").String()
+	s.reason = gjson.Get(str, "reason").String()
 	return nil
 }
 
 // ToError converts to error interface.
-func (r *Status) ToError() error {
-	if r == nil || r.Code == OK {
+func (s *Status) ToError() error {
+	if s == nil || s.code == OK {
 		return nil
 	}
-	return (*serror)(unsafe.Pointer(r))
+	return (*serror)(unsafe.Pointer(s))
 }
 
 type serror Status

@@ -11,10 +11,10 @@ func Test(t *testing.T) {
 	stat = new(Status)
 	t.Logf("%v", stat.IsOK())
 	t.Logf("%v", stat)
-	stat.Code = 400
-	stat.Message = "msg"
+	stat.SetCode(400)
+	stat.SetMessage("msg")
 	t.Logf("%v", stat)
-	stat.Reason = `"bala...bala..."`
+	stat.SetReason(`"bala...bala..."`)
 	t.Logf("%v", stat)
 	err := stat.ToError()
 	t.Logf("test ToError 1: %v", err)
