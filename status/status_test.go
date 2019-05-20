@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test(t *testing.T) {
+func TestStatus(t *testing.T) {
 	stat := New(
 		400,
 		"msg...",

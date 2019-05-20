@@ -11,6 +11,14 @@ import (
 	"github.com/henrylee2cn/goutil"
 )
 
+const (
+	// OK status
+	OK int32 = 0
+
+	// UnknownError status
+	UnknownError int32 = -1
+)
+
 // Status a handling status with code, msg, cause and stack.
 type Status struct {
 	code  int32
@@ -18,9 +26,6 @@ type Status struct {
 	cause error
 	*stack
 }
-
-// OK status
-const OK int32 = 0
 
 // New creates a handling status with code, msg and cause.
 // NOTE:
@@ -36,6 +41,8 @@ func New(code int32, msg string, cause interface{}) *Status {
 		s.cause = v
 	case string:
 		s.cause = errors.New(v)
+	case *Status:
+		s.cause = v.cause
 	default:
 		s.cause = fmt.Errorf("%v", v)
 	}

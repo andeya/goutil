@@ -594,6 +594,30 @@ A handling status with code, msg, cause and stack.
     func NewWithStack(code int32, msg string, cause interface{}) *Status
     ```
 
+- Throw creates a status with stack, and panic.
+
+    ```go
+    func Throw(code int32, msg string, cause interface{})
+    ```
+
+- Panic panic with stack trace.
+
+    ```go
+    func Panic(stat *Status)
+    ```
+
+- Check if err!=nil, create a status with stack, and panic.
+
+    ```go
+    func Check(err error, code int32, msg string)
+    ```
+
+- Catch recovers the panic and returns status.
+
+    ```go
+    func Catch(statPtr **Status)
+    ```
+
 ### Tpack
 
 Go underlying type data.
