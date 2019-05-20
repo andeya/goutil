@@ -19,7 +19,7 @@ Common and useful utils for the Go project development.
 - [GoPool](#gopool) Goroutines' pool
 - [HTTPBody](#httpbody) HTTP body builder
 - [ResPool](#respool) Resources' pool
-- [Status](#status) A handling status, similar to an error info
+- [Status](#status) A handling status with code, msg, cause and stack
 - [Tpack](#tpack) Go underlying type data
 - [Workshop](#workshop) Non-blocking asynchronous multiplex resource pool
 - [Password](#password) Check password
@@ -572,7 +572,7 @@ If the same name exists, will close and cover it.
 
 ### Status
 
-A handling status, similar to an error info.
+A handling status with code, msg, cause and stack.
 
 - import it
 
@@ -580,17 +580,18 @@ A handling status, similar to an error info.
     "github.com/henrylee2cn/goutil/status"
     ```
 
-- New creates a *Status.
-<br>code=0 means no error, code=-1 means unknown error
+- New creates a handling status with code, msg and cause.
+<br>code=0 means no error
 
     ```go
-    func New(code int32, message, reason string) *Status
+    func New(code int32, msg string, cause error) *Status
     ```
 
-- To converts error to *Status
+- WithStack creates a handling status with code, msg, cause and stack.
+<br>code=0 means no error
 
     ```go
-    func To(err error) *Status
+    WithStack(code int32, msg string, cause error) *Status
     ```
 
 ### Tpack

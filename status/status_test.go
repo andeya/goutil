@@ -1,30 +1,31 @@
 package status
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 )
 
 func Test(t *testing.T) {
-	var stat *Status
-	t.Logf("%v", stat.IsOK())
+	stat := New(
+		400,
+		"msg",
+		errors.New("bala...bala..."),
+	)
+	t.Logf("%v", stat)
+
+	stat = testWithStack()
+	t.Logf("%+v", stat)
+
 	stat = new(Status)
-	t.Logf("%v", stat.IsOK())
-	t.Logf("%v", stat)
-	stat.SetCode(400)
-	stat.SetMessage("msg")
-	t.Logf("%v", stat)
-	stat.SetReason(`"bala...bala..."`)
-	t.Logf("%v", stat)
-	err := stat.ToError()
-	t.Logf("test ToError 1: %v", err)
-	stat = To(err)
-	t.Logf("test To 1: %s", stat)
-	stat = nil
-	err = stat.ToError()
-	t.Logf("test ToError 2: %v", err)
-	stat = To(nil)
-	t.Logf("test To 2: %s", stat)
-	stat = To(errors.New("text error"))
-	t.Logf("test To 3: %s", stat)
+	err := json.Unmarshal([]byte(`{"code":404,"msg":"Not Found","cause":"xxxxxxxxxx"}`), stat)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%+v", stat)
+	t.Logf("%+v", stat.Copy(true, errors.New("zzzzzzzzz")))
+}
+
+func testWithStack() *Status {
+	return WithStack(404, "Not Found", errors.New("xxxxxxxxxx"))
 }
