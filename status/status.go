@@ -110,7 +110,7 @@ func (s *Status) UnknownError() bool {
 
 // StackTrace returns stack trace.
 func (s *Status) StackTrace() StackTrace {
-	if s.stack == nil {
+	if s == nil || s.stack == nil {
 		return nil
 	}
 	return s.stack.StackTrace()
