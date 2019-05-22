@@ -43,6 +43,8 @@ func New(code int32, msg string, cause interface{}) *Status {
 		s.cause = errors.New(v)
 	case *Status:
 		s.cause = v.cause
+	case Status:
+		s.cause = v.cause
 	default:
 		s.cause = fmt.Errorf("%v", v)
 	}

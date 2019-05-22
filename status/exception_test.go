@@ -10,9 +10,17 @@ import (
 func TestCatchNil(t *testing.T) {
 	var stat *Status
 	defer func() {
-		if stat != nil {
-			assert.Nil(t, stat)
-		}
+		assert.Nil(t, stat)
+	}()
+	defer Catch(&stat)
+	panic(nil)
+}
+
+func TestCatchNil2(t *testing.T) {
+	var stat *Status
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
 	}()
 	defer Catch(&stat)
 	Panic(nil)
