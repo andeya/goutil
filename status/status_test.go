@@ -1,12 +1,25 @@
 package status
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"testing"
 )
 
 func TestStatus(t *testing.T) {
+	if (*Status)(nil).String() != "<nil>" {
+		t.FailNow()
+	}
+	b, _ := json.Marshal((*Status)(nil))
+	if !bytes.Equal(b, null) {
+		t.FailNow()
+	}
+	b, _ = (*Status)(nil).MarshalJSON()
+	if !bytes.Equal(b, null) {
+		t.FailNow()
+	}
+
 	stat := New(
 		400,
 		"msg...",

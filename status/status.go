@@ -144,31 +144,40 @@ func (s *Status) Format(state fmt.State, verb rune) {
 	}
 }
 
+type exportStatus struct {
+	Code  int32  `json:"code"`
+	Msg   string `json:"msg"`
+	Cause string `json:"cause"`
+}
+
+var (
+	reA  = []byte(`{"code":`)
+	reB  = []byte(`,"msg":`)
+	reC  = []byte(`,"cause":`)
+	null = []byte("null")
+)
 var (
 	_ json.Marshaler   = new(Status)
 	_ json.Unmarshaler = new(Status)
-
-	reA = []byte(`{"code":`)
-	reB = []byte(`,"msg":`)
-	reC = []byte(`,"cause":`)
 )
 
 // MarshalJSON marshals Status into JSON, implements json.Marshaler interface.
 func (s *Status) MarshalJSON() ([]byte, error) {
 	if s == nil {
-		return []byte{}, nil
+		return null, nil
 	}
-	var b = append(reA, strconv.FormatInt(int64(s.code), 10)...)
-	if len(s.msg) > 0 {
-		b = append(b, reB...)
-		b = append(b, goutil.StringMarshalJSON(s.msg, false)...)
-	}
+	b := append(reA, strconv.FormatInt(int64(s.code), 10)...)
+
+	b = append(b, reB...)
+	b = append(b, goutil.StringMarshalJSON(s.msg, false)...)
+
+	var cause string
 	if s.cause != nil {
-		if cause := s.cause.Error(); cause != "" {
-			b = append(b, reC...)
-			b = append(b, goutil.StringMarshalJSON(cause, false)...)
-		}
+		cause = s.cause.Error()
 	}
+	b = append(b, reC...)
+	b = append(b, goutil.StringMarshalJSON(cause, false)...)
+
 	b = append(b, '}')
 	return b, nil
 }
