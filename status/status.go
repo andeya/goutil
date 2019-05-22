@@ -98,9 +98,14 @@ func (s *Status) Cause() error {
 	return s.cause
 }
 
-// OK returns whether is OK status.
+// OK returns whether is OK status (code=0).
 func (s *Status) OK() bool {
 	return s.Code() == OK
+}
+
+// UnknownError returns whether is UnknownError status (code=-1).
+func (s *Status) UnknownError() bool {
+	return s.Code() == UnknownError
 }
 
 // StackTrace returns stack trace.
