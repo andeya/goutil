@@ -31,10 +31,12 @@ func Check(err error, code int32, msg string) {
 //  defer Catch(&stat)
 func Catch(statPtr **Status) {
 	r := recover()
-	if r == nil || statPtr == nil {
+	if statPtr == nil {
 		return
 	}
 	switch v := r.(type) {
+	case nil:
+		*statPtr = new(Status)
 	case *Status:
 		if v == nil {
 			v = new(Status)
