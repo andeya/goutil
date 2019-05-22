@@ -98,6 +98,11 @@ func (s *Status) Cause() error {
 	return s.cause
 }
 
+// OK returns whether is OK status.
+func (s *Status) OK() bool {
+	return s.Code() == OK
+}
+
 // StackTrace returns stack trace.
 func (s *Status) StackTrace() StackTrace {
 	if s.stack == nil {
