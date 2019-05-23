@@ -13,15 +13,15 @@ import (
 
 const (
 	// OK status
-	OK int32 = 0
+	OK int64 = 0
 
 	// UnknownError status
-	UnknownError int32 = -1
+	UnknownError int64 = -1
 )
 
 // Status a handling status with code, msg, cause and stack.
 type Status struct {
-	code  int32
+	code  int64
 	msg   string
 	cause error
 	*stack
@@ -30,7 +30,7 @@ type Status struct {
 // New creates a handling status with code, msg and cause.
 // NOTE:
 //  code=0 means no error
-func New(code int32, msg string, cause interface{}) *Status {
+func New(code int64, msg string, cause interface{}) *Status {
 	s := &Status{
 		code: code,
 		msg:  msg,
@@ -54,7 +54,7 @@ func New(code int32, msg string, cause interface{}) *Status {
 // NewWithStack creates a handling status with code, msg and cause and stack.
 // NOTE:
 //  code=0 means no error
-func NewWithStack(code int32, msg string, cause interface{}) *Status {
+func NewWithStack(code int64, msg string, cause interface{}) *Status {
 	s := New(code, msg, cause)
 	s.stack = callers()
 	return s
@@ -77,7 +77,7 @@ func (s *Status) Copy(withStack bool, newCause ...interface{}) *Status {
 }
 
 // Code returns the status code.
-func (s *Status) Code() int32 {
+func (s *Status) Code() int64 {
 	if s == nil {
 		return OK
 	}
@@ -147,7 +147,7 @@ func (s *Status) Format(state fmt.State, verb rune) {
 }
 
 type exportStatus struct {
-	Code  int32  `json:"code"`
+	Code  int64  `json:"code"`
 	Msg   string `json:"msg"`
 	Cause string `json:"cause"`
 }
@@ -168,7 +168,7 @@ func (s *Status) MarshalJSON() ([]byte, error) {
 	if s == nil {
 		return null, nil
 	}
-	b := append(reA, strconv.FormatInt(int64(s.code), 10)...)
+	b := append(reA, strconv.FormatInt(s.code, 10)...)
 
 	b = append(b, reB...)
 	b = append(b, goutil.StringMarshalJSON(s.msg, false)...)
@@ -189,12 +189,8 @@ func (s *Status) UnmarshalJSON(b []byte) error {
 	if s == nil {
 		return nil
 	}
-	var v = &struct {
-		Code  int32  `json:"code"`
-		Msg   string `json:"msg"`
-		Cause string `json:"cause"`
-	}{}
-	err := json.Unmarshal(b, v)
+	var v exportStatus
+	err := json.Unmarshal(b, &v)
 	if err != nil {
 		return err
 	}

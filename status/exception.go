@@ -1,7 +1,7 @@
 package status
 
 // Throw creates a status with stack, and panic.
-func Throw(code int32, msg string, cause interface{}) {
+func Throw(code int64, msg string, cause interface{}) {
 	panic(NewWithStack(code, msg, cause))
 }
 
@@ -18,7 +18,7 @@ func Panic(stat *Status) {
 }
 
 // Check if err!=nil, create a status with stack, and panic.
-func Check(err error, code int32, msg string) {
+func Check(err error, code int64, msg string) {
 	if err == nil {
 		return
 	}
