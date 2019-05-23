@@ -584,20 +584,20 @@ A handling status with code, msg, cause and stack.
 <br>code=0 means no error
 
     ```go
-    func New(code int64, msg string, cause interface{}) *Status
+    func New(code int32, msg string, cause interface{}) *Status
     ```
 
 - NewWithStack creates a handling status with code, msg and cause and stack.
 <br>code=0 means no error
 
     ```go
-    func NewWithStack(code int64, msg string, cause interface{}) *Status
+    func NewWithStack(code int32, msg string, cause interface{}) *Status
     ```
 
 - Throw creates a status with stack, and panic.
 
     ```go
-    func Throw(code int64, msg string, cause interface{})
+    func Throw(code int32, msg string, cause interface{})
     ```
 
 - Panic panic with stack trace.
@@ -609,7 +609,7 @@ A handling status with code, msg, cause and stack.
 - Check if err!=nil, create a status with stack, and panic.
 
     ```go
-    func Check(err error, code int64, msg string)
+    func Check(err error, code int32, msg string)
     ```
 
 - Catch recovers the panic and returns status.
