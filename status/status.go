@@ -189,12 +189,8 @@ func (s *Status) UnmarshalJSON(b []byte) error {
 	if s == nil {
 		return nil
 	}
-	var v = &struct {
-		Code  int32  `json:"code"`
-		Msg   string `json:"msg"`
-		Cause string `json:"cause"`
-	}{}
-	err := json.Unmarshal(b, v)
+	var v exportStatus
+	err := json.Unmarshal(b, &v)
 	if err != nil {
 		return err
 	}
