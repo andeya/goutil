@@ -27,7 +27,7 @@ func Check(err error, code int32, msg string) {
 
 // Catch recovers the panic and returns status.
 // NOTE:
-//  Set "realStat" to true if a "state" type is recovered
+//  Set `realStat` to true if a status type is recovered
 // Example:
 //  var stat *Status
 //  defer Catch(&stat)

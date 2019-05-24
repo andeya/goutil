@@ -614,7 +614,7 @@ A handling status with code, msg, cause and stack.
 
 - Catch recovers the panic and returns status.
 <br>NOTE:
-<br>Set "realStat" to true if a "state" type is recovered
+<br>Set `realStat` to true if a status type is recovered
 
     ```go
     func Catch(statPtr **Status, realStat ...*bool)
