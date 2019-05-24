@@ -31,7 +31,7 @@ func NewFromHex(s string) (*BitSet, error) {
 
 // Set sets the bit bool value on the specified offset,
 // and returns the value of before setting.
-// Notes:
+// NOTE:
 //  0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on;
 //  If offset>=len(b.set), automatically grow the bit set;
 //  If the bit offset is out of the left range, returns error.
@@ -75,7 +75,7 @@ func (b *BitSet) Set(offset int, value bool) (bool, error) {
 }
 
 // Get gets the bit bool value on the specified offset.
-// Notes:
+// NOTE:
 //  0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on;
 //  If offset>=len(b.set), returns false.
 func (b *BitSet) Get(offset int) bool {
@@ -116,7 +116,7 @@ func getBit(gb, offset byte) byte {
 }
 
 // Count counts the amount of bit set to 1 within the specified range of the bit set.
-// Notes:
+// NOTE:
 //  0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on.
 func (b *BitSet) Count(start, end int) int {
 	b.mu.RLock()
@@ -174,7 +174,7 @@ func (b *BitSet) Not() *BitSet {
 }
 
 // And returns all the "AND" bit sets.
-// Notes:
+// NOTE:
 //  If the bitSets are empty, returns b.
 func (b *BitSet) And(bitSets ...*BitSet) *BitSet {
 	b.mu.RLock()
@@ -211,21 +211,21 @@ func (b *BitSet) And(bitSets ...*BitSet) *BitSet {
 }
 
 // Or returns all the "OR" bit sets.
-// Notes:
+// NOTE:
 //  If the bitSets are empty, returns b.
 func (b *BitSet) Or(bitSet ...*BitSet) *BitSet {
 	return b.op("|", bitSet)
 }
 
 // Xor returns all the "XOR" bit sets.
-// Notes:
+// NOTE:
 //  If the bitSets are empty, returns b.
 func (b *BitSet) Xor(bitSet ...*BitSet) *BitSet {
 	return b.op("^", bitSet)
 }
 
 // AndNot returns all the "&^" bit sets.
-// Notes:
+// NOTE:
 //  If the bitSets are empty, returns b.
 func (b *BitSet) AndNot(bitSet ...*BitSet) *BitSet {
 	return b.op("&^", bitSet)
@@ -302,7 +302,7 @@ func (b *BitSet) Bytes() []byte {
 }
 
 // Binary returns the bit set by binary type.
-// Notes:
+// NOTE:
 //  Paramter sep is the separator between chars.
 func (b *BitSet) Binary(sep string) string {
 	b.mu.RLock()
@@ -325,7 +325,7 @@ func (b *BitSet) String() string {
 }
 
 // Sub returns the bit subset within the specified range of the bit set.
-// Notes:
+// NOTE:
 //  0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on.
 func (b *BitSet) Sub(start, end int) *BitSet {
 	b.mu.RLock()

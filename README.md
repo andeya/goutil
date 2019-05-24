@@ -58,7 +58,7 @@ A bit set.
     ```
 
 - And returns all the "AND" bit sets.
-<br>Notes:
+<br>NOTE:
 <br>If the bitSets are empty, returns b.
 
     ```go
@@ -66,7 +66,7 @@ A bit set.
     ```
 
 - Or returns all the "OR" bit sets.
-<br>Notes:
+<br>NOTE:
 <br>If the bitSets are empty, returns b.
 
     ```go
@@ -74,7 +74,7 @@ A bit set.
     ```
 
 - Xor returns all the "XOR" bit sets.
-<br>Notes:
+<br>NOTE:
 <br>If the bitSets are empty, returns b.
 
     ```go
@@ -83,7 +83,7 @@ A bit set.
 
 
 - AndNot returns all the "&^" bit sets.
-<br>Notes:
+<br>NOTE:
 <br>If the bitSets are empty, returns b.
 
     ```go
@@ -92,7 +92,7 @@ A bit set.
 
 - Set sets the bit bool value on the specified offset,
 and returns the value of before setting.
-<br>Notes:
+<br>NOTE:
 <br>0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on;
 <br>If offset>=len(b.set), automatically grow the bit set;
 <br>If the bit offset is out of the left range, returns error.
@@ -102,7 +102,7 @@ and returns the value of before setting.
     ```
 
 - Get gets the bit bool value on the specified offset.
-<br>Notes:
+<br>NOTE:
 <br>0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on;
 <br>If offset>=len(b.set), returns false.
 
@@ -117,7 +117,7 @@ and returns the value of before setting.
     ```
 
 - Count counts the amount of bit set to 1 within the specified range of the bit set.
-<br>Notes:
+<br>NOTE:
 <br>0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on.
 
     ```go
@@ -143,7 +143,7 @@ and returns the value of before setting.
     ```
 
 - Binary returns the bit set by binary type.
-<br>Notes:
+<br>NOTE:
 <br>Paramter sep is the separator between chars.
 
     ```go
@@ -157,7 +157,7 @@ and returns the value of before setting.
     ```
 
 - Sub returns the bit subset within the specified range of the bit set.
-<br>Notes:
+<br>NOTE:
 <br>0 means the 1st bit, -1 means the bottom 1th bit, -2 means the bottom 2th bit and so on.
 
     ```go
@@ -288,7 +288,7 @@ Parameter timeout is used to reset time-out period for the process shutdown.
     ```
 
 - Reboot all the frame process gracefully.
-<br>Notes:
+<br>NOTE:
 <br>Windows system are not supported!
 
     ```go
@@ -296,7 +296,7 @@ Parameter timeout is used to reset time-out period for the process shutdown.
     ```
 
 - AddInherited adds the files and envs to be inherited by the new process.
-<br>Notes:
+<br>NOTE:
 <br>Only for reboot!
 <br>Windows system are not supported!
 
@@ -613,9 +613,11 @@ A handling status with code, msg, cause and stack.
     ```
 
 - Catch recovers the panic and returns status.
+<br>NOTE:
+<br>Set "realStat" to true if a "state" type is recovered
 
     ```go
-    func Catch(statPtr **Status)
+    func Catch(statPtr **Status, realStat ...*bool)
     ```
 
 ### Tpack
@@ -727,7 +729,7 @@ Performance:
 - NewWorkshop creates a new workshop(non-blocking asynchronous multiplex resource pool).
 <br>If maxQuota<=0, will use default value.
 <br>If maxIdleDuration<=0, will use default value.
-<br>Notes:
+<br>NOTE:
 <br>Worker can not be implemented using empty structures(struct{})!
 
     ```go
