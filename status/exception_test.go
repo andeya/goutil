@@ -9,21 +9,26 @@ import (
 
 func TestCatchNil(t *testing.T) {
 	var stat *Status
+	var realStat bool
 	defer func() {
 		t.Logf("%+v", stat)
 		assert.Empty(t, stat)
+		assert.True(t, stat != nil)
+		assert.False(t, realStat)
 	}()
-	defer Catch(&stat)
+	defer Catch(&stat, &realStat)
 	panic(nil)
 }
 
 func TestCatchNil2(t *testing.T) {
 	var stat *Status
+	var realStat bool
 	defer func() {
 		t.Logf("%+v", stat)
 		assert.True(t, stat != nil)
+		assert.True(t, realStat)
 	}()
-	defer Catch(&stat)
+	defer Catch(&stat, &realStat)
 	Panic(nil)
 }
 

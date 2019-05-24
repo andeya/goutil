@@ -26,25 +26,44 @@ func Check(err error, code int32, msg string) {
 }
 
 // Catch recovers the panic and returns status.
+// NOTE:
+//  Set "realStat" to true if a "state" type is recovered
 // Example:
 //  var stat *Status
 //  defer Catch(&stat)
-func Catch(statPtr **Status) {
+func Catch(statPtr **Status, realStat ...*bool) {
 	r := recover()
+
 	if statPtr == nil {
-		return
+		switch r.(type) {
+		case *Status, Status:
+			trySetBool(realStat, true)
+		default:
+			trySetBool(realStat, false)
+		}
 	}
+
 	switch v := r.(type) {
 	case nil:
+		trySetBool(realStat, false)
 		*statPtr = new(Status)
 	case *Status:
+		trySetBool(realStat, true)
 		if v == nil {
 			v = new(Status)
 		}
 		*statPtr = v
 	case Status:
+		trySetBool(realStat, true)
 		*statPtr = &v
 	default:
+		trySetBool(realStat, false)
 		*statPtr = New(UnknownError, "", v)
+	}
+}
+
+func trySetBool(a []*bool, v bool) {
+	if len(a) > 0 && a[0] != nil {
+		*(a[0]) = v
 	}
 }
