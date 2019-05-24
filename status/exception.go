@@ -1,28 +1,28 @@
 package status
 
+// Check if err!=nil, create a status with stack, and panic.
+func Check(err error, code int32, msg string) {
+	if err == nil {
+		return
+	}
+	panic(New(code, msg, err).setStack(4))
+}
+
 // Throw creates a status with stack, and panic.
 func Throw(code int32, msg string, cause interface{}) {
-	panic(NewWithStack(code, msg, cause))
+	panic(New(code, msg, cause).setStack(4))
 }
 
 // Panic panic with stack trace.
 func Panic(stat *Status) {
 	if stat == nil {
 		stat = &Status{
-			stack: callers(),
+			stack: callers(3),
 		}
 	} else if stat.stack == nil {
-		stat.stack = callers()
+		stat.stack = callers(3)
 	}
 	panic(stat)
-}
-
-// Check if err!=nil, create a status with stack, and panic.
-func Check(err error, code int32, msg string) {
-	if err == nil {
-		return
-	}
-	panic(NewWithStack(code, msg, err))
 }
 
 // Catch recovers the panic and returns status.
@@ -58,7 +58,7 @@ func Catch(statPtr **Status, realStat ...*bool) {
 		*statPtr = &v
 	default:
 		trySetBool(realStat, false)
-		*statPtr = New(UnknownError, "", v)
+		*statPtr = New(UnknownError, "", v).setStack(5)
 	}
 }
 

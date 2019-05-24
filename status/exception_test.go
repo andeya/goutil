@@ -44,12 +44,13 @@ func TestCatchNotNil(t *testing.T) {
 }
 
 func TestThrow(t *testing.T) {
+	var stat *Status
 	defer func() {
-		r := recover()
-		t.Logf("%+v", r)
-		assert.True(t, r != nil)
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
 	}()
 
+	defer Catch(&stat)
 	Throw(400, "", "a test error")
 }
 

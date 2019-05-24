@@ -55,8 +55,12 @@ func New(code int32, msg string, cause interface{}) *Status {
 // NOTE:
 //  code=0 means no error
 func NewWithStack(code int32, msg string, cause interface{}) *Status {
-	s := New(code, msg, cause)
-	s.stack = callers()
+	s := New(code, msg, cause).setStack(4)
+	return s
+}
+
+func (s *Status) setStack(skip int) *Status {
+	s.stack = callers(skip)
 	return s
 }
 
@@ -71,7 +75,7 @@ func (s *Status) Copy(withStack bool, newCause ...interface{}) *Status {
 	}
 	copy := New(s.code, s.msg, cause)
 	if withStack {
-		copy.stack = callers()
+		copy.stack = callers(3)
 	}
 	return copy
 }
