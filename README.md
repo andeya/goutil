@@ -1131,13 +1131,13 @@ to select AES-128, AES-192, or AES-256.
 - TarGz compresses and archives tar.gz file.
 
     ```go
-    func TarGz(src, dst string, includePrefix bool, logOutput func(string, ...interface{}), ignoreBaseName ...string) (err error)
+    func TarGz(src, dst string, includePrefix bool, logOutput func(string, ...interface{}), ignoreElem ...string) (err error)
     ```
 
 - TarGzTo compresses and archives tar.gz to dst writer.
 
     ```go
-    TarGzTo(src string, dstWriter io.Writer, includePrefix bool, logOutput func(string, ...interface{}), ignoreBaseName ...string) (err error)
+    TarGzTo(src string, dstWriter io.Writer, includePrefix bool, logOutput func(string, ...interface{}), ignoreElem ...string) (err error)
     ```
 
 ### Versioning
