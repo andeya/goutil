@@ -22,6 +22,7 @@ import (
 )
 
 // SemVer semantic version object
+// via https://semver.org/
 type SemVer struct {
 	major    string
 	minor    string
