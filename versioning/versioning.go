@@ -16,7 +16,10 @@
 //
 package versioning
 
-import "strconv"
+import (
+	"errors"
+	"strconv"
+)
 
 // SemVer semantic version object
 type SemVer struct {
@@ -43,7 +46,7 @@ func Create(major, minor, patch uint32, metadata string) *SemVer {
 // Parse parses the semantic version string to object.
 // NOTE:
 // If metadata part exists, the separator must not be a number.
-func Parse(semVer string) *SemVer {
+func Parse(semVer string) (*SemVer, error) {
 	a := [4][]rune{}
 	var i int
 	for _, r := range semVer {
@@ -59,6 +62,11 @@ func Parse(semVer string) *SemVer {
 			a[i] = append(a[i], r)
 		}
 	}
+	for _, s := range a[:3] {
+		if len(s) == 0 {
+			return nil, errors.New("invalid semantic version 2: " + semVer)
+		}
+	}
 	return &SemVer{
 		major:    string(a[0]),
 		minor:    string(a[1]),
@@ -69,14 +77,22 @@ func Parse(semVer string) *SemVer {
 			runeToUint32(a[1]),
 			runeToUint32(a[2]),
 		},
-	}
+	}, nil
 }
 
 // Compare compares 'a' and 'b'.
 // The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
 // If compareMetadata==nil, will not compare metadata.
-func Compare(a, b string, compareMetadata func(aMeta, bMeta string) int) int {
-	return Parse(a).Compare(Parse(b), compareMetadata)
+func Compare(a, b string, compareMetadata func(aMeta, bMeta string) int) (int, error) {
+	ver1, err := Parse(a)
+	if err != nil {
+		return 0, err
+	}
+	ver2, err := Parse(b)
+	if err != nil {
+		return 0, err
+	}
+	return ver1.Compare(ver2, compareMetadata), nil
 }
 
 // Compare compares whether 's' and 'semVer'.

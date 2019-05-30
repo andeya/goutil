@@ -1161,7 +1161,7 @@ Version comparison tool that conforms to semantic version 2.0.0.
 <br>If metadata part exists, the separator must not be a number.
 
     ```go
-    func Parse(semVer string) *SemVer
+    func Parse(semVer string) (*SemVer, error)
     ```
 
 - Compare compares 'a' and 'b'.
@@ -1169,7 +1169,7 @@ Version comparison tool that conforms to semantic version 2.0.0.
 <br>If compareMetadata==nil, will not compare metadata.
 
     ```go
-    func Compare(a, b string, compareMetadata func(aMeta, bMeta string) int) int
+    func Compare(a, b string, compareMetadata func(aMeta, bMeta string) int) (int, error)
     ```
 
 - Compare compares whether 's' and 'semVer'.

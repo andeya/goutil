@@ -67,7 +67,10 @@ func TestParse(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		semVer := Parse(c.ver)
+		semVer, err := Parse(c.ver)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if !reflect.DeepEqual(*semVer, c.semVer) {
 			t.Fatal(c.ver)
 		}
