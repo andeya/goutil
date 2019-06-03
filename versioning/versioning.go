@@ -63,9 +63,9 @@ func Parse(semVer string) (*SemVer, error) {
 			a[i] = append(a[i], r)
 		}
 	}
-	for _, s := range a[:3] {
+	for _, s := range a[:2] {
 		if len(s) == 0 {
-			return nil, errors.New("invalid semantic version 2: " + semVer)
+			return nil, errors.New("invalid version : " + semVer)
 		}
 	}
 	return &SemVer{
