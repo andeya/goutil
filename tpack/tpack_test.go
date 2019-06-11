@@ -150,6 +150,31 @@ func TestElem(t *testing.T) {
 	}
 }
 
+func TestEmptyStruct(t *testing.T) {
+	type P1 struct {
+		A *int
+	}
+	u := Unpack(P1{})
+	if u.Pointer() != 0 {
+		t.FailNow()
+	}
+	if !u.IsNil() {
+		t.FailNow()
+	}
+
+	type P2 struct {
+		A *int
+		B *int
+	}
+	u = Unpack(P2{})
+	if u.Pointer() == 0 {
+		t.FailNow()
+	}
+	if u.IsNil() {
+		t.FailNow()
+	}
+}
+
 func TestFrom(t *testing.T) {
 	type X struct {
 		A int16
