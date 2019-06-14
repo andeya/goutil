@@ -2,6 +2,7 @@ package goutil
 
 import (
 	"reflect"
+	"unsafe"
 )
 
 // InitAndGetString if strPtr is empty string, initialize it with def,
@@ -31,4 +32,13 @@ func DereferenceValue(v reflect.Value) reflect.Value {
 		v = v.Elem()
 	}
 	return v
+}
+
+// IsLittleEndian determine whether the current system is little endian.
+func IsLittleEndian() bool {
+	var i int32 = 0x01020304
+	u := unsafe.Pointer(&i)
+	pb := (*byte)(u)
+	b := *pb
+	return (b == 0x04)
 }
