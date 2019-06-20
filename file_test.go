@@ -27,12 +27,13 @@ func TestSelfChdir(t *testing.T) {
 	t.Logf("SelfChdir: %s %v", path, err)
 }
 
-func TestFileExists(t *testing.T) {
-	if !FileExists("./file.go") {
+func TestFileExist(t *testing.T) {
+	existed, isDir := FileExist("./file.go")
+	if !existed || isDir {
 		t.Errorf("./file.go should exists, but it didn't")
 	}
-
-	if FileExists(noExistedFile) {
+	existed, isDir = FileExist(noExistedFile)
+	if existed || isDir {
 		t.Errorf("Weird, how could this file exists: %s", noExistedFile)
 	}
 }

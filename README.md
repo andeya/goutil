@@ -945,10 +945,10 @@ From go v1.9 sync.Map.
     func SelfChdir()
     ```
 
-- FileExists reports whether the named file or directory exists.
+- ExistFile reports whether the named file or directory exists.
 
     ```go
-    func FileExists(name string) bool
+    FileExist(name string) (existed bool, isDir bool)
     ```
 
 - SearchFile Search a file in paths.
@@ -971,6 +971,12 @@ From go v1.9 sync.Map.
 
     ```go
     func WalkDirs(targpath string, suffixes ...string) (dirlist []string)
+    ```
+
+- RewriteFile rewrite file.
+
+    ```go
+    func RewriteFile(name string, fn func(content []byte) (newContent []byte, err error)) error
     ```
 
 - IsExportedOrBuiltinType is this type exported or a builtin?
