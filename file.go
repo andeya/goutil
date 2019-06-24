@@ -39,6 +39,12 @@ func SelfChdir() {
 	}
 }
 
+// FileExists reports whether the named file or directory exists.
+func FileExists(name string) (existed bool) {
+	existed, _ = FileExist(name)
+	return
+}
+
 // FileExist reports whether the named file or directory exists.
 func FileExist(name string) (existed bool, isDir bool) {
 	info, err := os.Stat(name)
