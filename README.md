@@ -1146,6 +1146,12 @@ to select AES-128, AES-192, or AES-256.
     TarGzTo(src string, dstWriter io.Writer, includePrefix bool, logOutput func(string, ...interface{}), ignoreElem ...string) (err error)
     ```
 
+- IsGoTest check if the current process is a test.
+
+    ```go
+    func IsGoTest() bool
+    ```
+
 ### Versioning
 
 Version comparison tool that conforms to semantic version 2.0.0.
