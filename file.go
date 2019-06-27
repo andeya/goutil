@@ -171,28 +171,16 @@ func FilepathContains(basepath string, subpaths []string) error {
 
 // FilepathAbsolute returns the absolute paths.
 func FilepathAbsolute(paths []string) ([]string, error) {
-	ret := make([]string, 0, len(paths))
-	for _, p := range paths {
-		abs, err := filepath.Abs(p)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, abs)
-	}
-	return ret, nil
+	return StringsConvert(paths, func(p string) (string, error) {
+		return filepath.Abs(p)
+	})
 }
 
 // FilepathAbsoluteMap returns the absolute paths map.
 func FilepathAbsoluteMap(paths []string) (map[string]string, error) {
-	ret := make(map[string]string, len(paths))
-	list, err := FilepathAbsolute(paths)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range paths {
-		ret[v] = list[k]
-	}
-	return ret, nil
+	return StringsConvertMap(paths, func(p string) (string, error) {
+		return filepath.Abs(p)
+	})
 }
 
 // FilepathRelative returns the relative paths.
@@ -201,36 +189,35 @@ func FilepathRelative(basepath string, targpaths []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]string, 0, len(targpaths))
-	var abs, rel string
-	for _, p := range targpaths {
-		abs, err = filepath.Abs(p)
-		if err != nil {
-			return nil, err
-		}
-		rel, err = filepath.Rel(basepath, abs)
-		if err != nil {
-			return nil, err
-		}
-		if strings.HasPrefix(rel, "..") {
-			return nil, fmt.Errorf("%s is not include %s", basepath, abs)
-		}
-		ret = append(ret, rel)
-	}
-	return ret, nil
+	return StringsConvert(targpaths, func(p string) (string, error) {
+		return filepathRelative(basepath, p)
+	})
 }
 
 // FilepathRelativeMap returns the relative paths map.
 func FilepathRelativeMap(basepath string, targpaths []string) (map[string]string, error) {
-	list, err := FilepathRelative(basepath, targpaths)
+	basepath, err := filepath.Abs(basepath)
 	if err != nil {
 		return nil, err
 	}
-	ret := make(map[string]string, len(targpaths))
-	for k, v := range targpaths {
-		ret[v] = list[k]
+	return StringsConvertMap(targpaths, func(p string) (string, error) {
+		return filepathRelative(basepath, p)
+	})
+}
+
+func filepathRelative(basepath, targpath string) (string, error) {
+	abs, err := filepath.Abs(targpath)
+	if err != nil {
+		return "", err
 	}
-	return ret, nil
+	rel, err := filepath.Rel(basepath, abs)
+	if err != nil {
+		return "", err
+	}
+	if strings.HasPrefix(rel, "..") {
+		return "", fmt.Errorf("%s is not include %s", basepath, abs)
+	}
+	return rel, nil
 }
 
 // FilepathDistinct removes the same path and return in the original order.
@@ -254,6 +241,26 @@ func FilepathDistinct(paths []string, toAbs bool) ([]string, error) {
 		}
 	}
 	return ret, nil
+}
+
+// FilepathToSlash returns the result of replacing each separator character
+// in path with a slash ('/') character. Multiple separators are
+// replaced by multiple slashes.
+func FilepathToSlash(paths []string) []string {
+	ret, _ := StringsConvert(paths, func(p string) (string, error) {
+		return filepath.ToSlash(p), nil
+	})
+	return ret
+}
+
+// FilepathFromSlash returns the result of replacing each slash ('/') character
+// in path with a separator character. Multiple slashes are replaced
+// by multiple separators.
+func FilepathFromSlash(paths []string) []string {
+	ret, _ := StringsConvert(paths, func(p string) (string, error) {
+		return filepath.FromSlash(p), nil
+	})
+	return ret
 }
 
 // FilepathSame checks if the two paths are the same.
