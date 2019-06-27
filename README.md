@@ -10,7 +10,7 @@ Common and useful utils for the Go project development.
 
 ## 2. Contents
 
-- [Tools](.) Some useful small functions.
+- [Tools](#) Some useful small functions.
 - [BitSet](bitset) A bit set
 - [Calendar](calendar) Chinese Lunar Calendar, Solar Calendar and cron time rules
 - [Cmder](cmder) Cmder exec cmd and catch the result
