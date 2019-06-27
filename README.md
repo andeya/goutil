@@ -973,6 +973,27 @@ From go v1.9 sync.Map.
     func WalkDirs(targpath string, suffixes ...string) (dirlist []string)
     ```
 
+- MkdirAll creates a directory named path,
+<br>along with any necessary parents, and returns nil,
+<br>or else returns an error.
+<br>The permission bits perm (before umask) are used for all
+<br>directories that MkdirAll creates.
+<br>If path is already a directory, MkdirAll does nothing
+<br>and returns nil.
+<br>If perm is empty, default use 0755.
+
+    ```go
+    func MkdirAll(path string, perm ...os.FileMode) error
+    ```
+
+- WriteFile write file, and automatically creates the directory if necessary.
+<br>NOTE:
+<br>If perm is empty, automatically determine the file permissions based on extension.
+
+    ```go
+    func WriteFile(filename string, data []byte, perm ...os.FileMode) error
+    ```
+
 - RewriteFile rewrite file.
 
     ```go

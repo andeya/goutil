@@ -146,6 +146,46 @@ func WalkDirs(targpath string, suffixes ...string) (dirlist []string) {
 	return
 }
 
+// MkdirAll creates a directory named path,
+// along with any necessary parents, and returns nil,
+// or else returns an error.
+// The permission bits perm (before umask) are used for all
+// directories that MkdirAll creates.
+// If path is already a directory, MkdirAll does nothing
+// and returns nil.
+// If perm is empty, default use 0755.
+func MkdirAll(path string, perm ...os.FileMode) error {
+	var fm os.FileMode = 0755
+	if len(perm) > 0 {
+		fm = perm[0]
+	}
+	return os.MkdirAll(path, fm)
+}
+
+// WriteFile write file, and automatically creates the directory if necessary.
+// NOTE:
+//  If perm is empty, automatically determine the file permissions based on extension.
+func WriteFile(filename string, data []byte, perm ...os.FileMode) error {
+	filename = filepath.FromSlash(filename)
+	err := MkdirAll(filepath.Dir(filename))
+	if err != nil {
+		return err
+	}
+	if len(perm) > 0 {
+		return ioutil.WriteFile(filename, data, perm[0])
+	}
+	var ext string
+	if idx := strings.LastIndex(filename, "."); idx != -1 {
+		ext = filename[idx:]
+	}
+	switch ext {
+	case ".sh", ".py", ".rb", ".bat", ".com", ".vbs", ".htm", ".run", ".App", ".exe", ".reg":
+		return ioutil.WriteFile(filename, data, 0755)
+	default:
+		return ioutil.WriteFile(filename, data, 0644)
+	}
+}
+
 // RewriteFile rewrite file.
 func RewriteFile(name string, fn func(content []byte) (newContent []byte, err error)) error {
 	f, err := os.OpenFile(name, os.O_RDWR, 0777)
