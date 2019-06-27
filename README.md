@@ -973,6 +973,12 @@ From go v1.9 sync.Map.
     func WalkDirs(targpath string, suffixes ...string) (dirlist []string)
     ```
 
+- PathContains check if the basepath path contains the subpaths.
+
+    ```go
+    func PathContains(basepath string, subpaths []string) error
+    ```
+
 - MkdirAll creates a directory named path,
 <br>along with any necessary parents, and returns nil,
 <br>or else returns an error.

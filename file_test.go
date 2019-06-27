@@ -65,3 +65,21 @@ func TestGrepFile(t *testing.T) {
 		t.Errorf("expect [\"func GrepFile(patten string, filename string) (lines []string, err error) {\"], but receive %v", lines)
 	}
 }
+
+func TestPathContains(t *testing.T) {
+	cases := []struct {
+		basepath    string
+		subpaths    []string
+		checkResult bool
+	}{
+		{"./", []string{"status", "file.go"}, true},
+		{"status", []string{"file.go"}, false},
+		{"file.go", []string{"status"}, false},
+		{"file.go", []string{""}, false},
+	}
+	for _, c := range cases {
+		if c.checkResult != (PathContains(c.basepath, c.subpaths) == nil) {
+			t.FailNow()
+		}
+	}
+}

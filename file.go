@@ -3,6 +3,7 @@ package goutil
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -144,6 +145,20 @@ func WalkDirs(targpath string, suffixes ...string) (dirlist []string) {
 	}
 
 	return
+}
+
+// PathContains check if the basepath path contains the subpaths.
+func PathContains(basepath string, subpaths []string) error {
+	for _, p := range subpaths {
+		rel, err := filepath.Rel(basepath, p)
+		if err != nil {
+			return err
+		}
+		if strings.HasPrefix(rel, "..") {
+			return fmt.Errorf("%s is not include %s", basepath, p)
+		}
+	}
+	return nil
 }
 
 // MkdirAll creates a directory named path,
