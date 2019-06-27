@@ -66,19 +66,101 @@ func TestGrepFile(t *testing.T) {
 	}
 }
 
-func TestPathContains(t *testing.T) {
+func TestFilepathContains(t *testing.T) {
 	cases := []struct {
-		basepath    string
-		subpaths    []string
-		checkResult bool
+		basepath string
+		subpaths []string
+		expect   bool
 	}{
+		{"./", []string{"../goutil/status/../"}, true},
 		{"./", []string{"status", "file.go"}, true},
 		{"status", []string{"file.go"}, false},
 		{"file.go", []string{"status"}, false},
 		{"file.go", []string{""}, false},
 	}
 	for _, c := range cases {
-		if c.checkResult != (PathContains(c.basepath, c.subpaths) == nil) {
+		if c.expect != (FilepathContains(c.basepath, c.subpaths) == nil) {
+			t.FailNow()
+		}
+	}
+}
+
+func TestFilepathRelativeMap(t *testing.T) {
+	cases := []struct {
+		basepath  string
+		targpaths []string
+		expect    map[string]string
+	}{
+		{"./", []string{"../goutil/status/../"}, map[string]string{"../goutil/status/../": "."}},
+		{"./", []string{"status", "file.go"}, map[string]string{"status": "status", "file.go": "file.go"}},
+		{"status", []string{"file.go"}, nil},
+		{"file.go", []string{"status"}, nil},
+		{"file.go", []string{""}, nil},
+	}
+	for _, c := range cases {
+		ret, err := FilepathRelativeMap(c.basepath, c.targpaths)
+		if err != nil {
+			if c.expect == nil {
+				continue
+			}
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(c.expect, ret) {
+			t.FailNow()
+		}
+	}
+}
+
+func TestFilepathDistinct(t *testing.T) {
+	cases := []struct {
+		paths       []string
+		expect      []string
+		expectToRel []string
+	}{
+		{
+			[]string{"../goutil/status/../", "./", "status", "file.go"},
+			[]string{"../goutil/status/../", "status", "file.go"},
+			[]string{".", "status", "file.go"},
+		},
+	}
+	for _, c := range cases {
+		ret, err := FilepathDistinct(c.paths, false)
+		if err != nil {
+			t.FailNow()
+		}
+		if !reflect.DeepEqual(c.expect, ret) {
+			t.FailNow()
+		}
+		ret, err = FilepathDistinct(c.paths, true)
+		if err != nil {
+			t.FailNow()
+		}
+		ret, err = FilepathRelative(".", ret)
+		if err != nil {
+			t.FailNow()
+		}
+		if !reflect.DeepEqual(c.expectToRel, ret) {
+			t.FailNow()
+		}
+	}
+}
+
+func TestFilepathSame(t *testing.T) {
+	cases := []struct {
+		path1  string
+		path2  string
+		expect bool
+	}{
+		{"./", "../goutil/status/../", true},
+		{"status", "file.go", false},
+		{"xx", "xx", true},
+	}
+	for _, c := range cases {
+		same, err := FilepathSame(c.path1, c.path2)
+		if err != nil {
+			t.FailNow()
+		}
+		if c.expect != same {
 			t.FailNow()
 		}
 	}

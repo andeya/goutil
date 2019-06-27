@@ -147,9 +147,17 @@ func WalkDirs(targpath string, suffixes ...string) (dirlist []string) {
 	return
 }
 
-// PathContains check if the basepath path contains the subpaths.
-func PathContains(basepath string, subpaths []string) error {
+// FilepathContains checks if the basepath path contains the subpaths.
+func FilepathContains(basepath string, subpaths []string) error {
+	basepath, err := filepath.Abs(basepath)
+	if err != nil {
+		return err
+	}
 	for _, p := range subpaths {
+		p, err = filepath.Abs(p)
+		if err != nil {
+			return err
+		}
 		rel, err := filepath.Rel(basepath, p)
 		if err != nil {
 			return err
@@ -159,6 +167,109 @@ func PathContains(basepath string, subpaths []string) error {
 		}
 	}
 	return nil
+}
+
+// FilepathAbsolute returns the absolute paths.
+func FilepathAbsolute(paths []string) ([]string, error) {
+	ret := make([]string, 0, len(paths))
+	for _, p := range paths {
+		abs, err := filepath.Abs(p)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, abs)
+	}
+	return ret, nil
+}
+
+// FilepathAbsoluteMap returns the absolute paths map.
+func FilepathAbsoluteMap(paths []string) (map[string]string, error) {
+	ret := make(map[string]string, len(paths))
+	list, err := FilepathAbsolute(paths)
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range paths {
+		ret[v] = list[k]
+	}
+	return ret, nil
+}
+
+// FilepathRelative returns the relative paths.
+func FilepathRelative(basepath string, targpaths []string) ([]string, error) {
+	basepath, err := filepath.Abs(basepath)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]string, 0, len(targpaths))
+	var abs, rel string
+	for _, p := range targpaths {
+		abs, err = filepath.Abs(p)
+		if err != nil {
+			return nil, err
+		}
+		rel, err = filepath.Rel(basepath, abs)
+		if err != nil {
+			return nil, err
+		}
+		if strings.HasPrefix(rel, "..") {
+			return nil, fmt.Errorf("%s is not include %s", basepath, abs)
+		}
+		ret = append(ret, rel)
+	}
+	return ret, nil
+}
+
+// FilepathRelativeMap returns the relative paths map.
+func FilepathRelativeMap(basepath string, targpaths []string) (map[string]string, error) {
+	list, err := FilepathRelative(basepath, targpaths)
+	if err != nil {
+		return nil, err
+	}
+	ret := make(map[string]string, len(targpaths))
+	for k, v := range targpaths {
+		ret[v] = list[k]
+	}
+	return ret, nil
+}
+
+// FilepathDistinct removes the same path and return in the original order.
+// If toAbs is true, return the result to absolute paths.
+func FilepathDistinct(paths []string, toAbs bool) ([]string, error) {
+	m := make(map[string]bool, len(paths))
+	ret := make([]string, 0, len(paths))
+	for _, p := range paths {
+		abs, err := filepath.Abs(p)
+		if err != nil {
+			return nil, err
+		}
+		if m[abs] {
+			continue
+		}
+		m[abs] = true
+		if toAbs {
+			ret = append(ret, abs)
+		} else {
+			ret = append(ret, p)
+		}
+	}
+	return ret, nil
+}
+
+// FilepathSame checks if the two paths are the same.
+func FilepathSame(path1, path2 string) (bool, error) {
+	if path1 == path2 {
+		return true, nil
+	}
+	p1, err := filepath.Abs(path1)
+	if err != nil {
+		return false, err
+	}
+	p2, err := filepath.Abs(path2)
+	if err != nil {
+		return false, err
+	}
+	return p1 == p2, nil
 }
 
 // MkdirAll creates a directory named path,

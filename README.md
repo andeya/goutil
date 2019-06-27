@@ -973,10 +973,47 @@ From go v1.9 sync.Map.
     func WalkDirs(targpath string, suffixes ...string) (dirlist []string)
     ```
 
-- PathContains check if the basepath path contains the subpaths.
+- PathContains checks if the basepath path contains the subpaths.
 
     ```go
     func PathContains(basepath string, subpaths []string) error
+    ```
+
+- FilepathAbsolute returns the absolute paths.
+
+    ```go
+    FilepathAbsolute(paths []string) ([]string, error)
+    ```
+
+- FilepathAbsoluteMap returns the absolute paths map.
+
+    ```go
+    FilepathAbsoluteMap(paths []string) (map[string]string, error)
+    ```
+
+- FilepathRelative returns the relative paths.
+
+    ```go
+    FilepathRelative(basepath string, targpaths []string) ([]string, error)
+    ```
+
+- FilepathRelativeMap returns the relative paths map.
+
+    ```go
+    FilepathRelativeMap(basepath string, targpaths []string) (map[string]string, error)
+    ```
+
+- FilepathDistinct removes the same path and return in the original order.
+<br>If toAbs is true, return the result to absolute paths.
+
+    ```go
+    FilepathDistinct(paths []string, toAbs bool) ([]string, error) 
+    ```
+
+- FilepathSame checks if the two paths are the same.
+
+    ```go
+    FilepathSame(path1, path2 string) (bool, error)
     ```
 
 - MkdirAll creates a directory named path,
