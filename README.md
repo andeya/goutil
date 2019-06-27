@@ -16,11 +16,11 @@ Common and useful utils for the Go project development.
 - [CoarseTime](coarsetime) Current time truncated to the nearest 100ms
 - [Errors](errors) Improved errors package.
 - [Graceful](graceful) Shutdown or reboot current process gracefully
-- [GoPool](gopool) Goroutines' pool
 - [HTTPBody](httpbody) HTTP body builder
-- [ResPool](respool) Resources' pool
+- [Password](password) Check password
+- [GoPool](pool) Goroutines' pool
+- [ResPool](pool) Resources' pool
+- [Workshop](pool) Non-blocking asynchronous multiplex resource pool
 - [Status](status) A handling status with code, msg, cause and stack
 - [Tpack](tpack) Go underlying type data
-- [Workshop](workshop) Non-blocking asynchronous multiplex resource pool
-- [Password](password) Check password
 - [Versioning](versioning) Version comparison tool that conforms to semantic version 2.0.0
