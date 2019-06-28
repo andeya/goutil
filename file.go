@@ -152,9 +152,9 @@ func WalkDirs(targpath string, suffixes ...string) (dirlist []string) {
 //  FilenameStem("/root/dir/sub/file.ext") // output "file"
 func FilenameStem(filename string) string {
 	if filepath.Separator == '/' {
-		filename = strings.ReplaceAll(filename, "\\", "/")
+		filename = strings.Replace(filename, "\\", "/", -1)
 	} else {
-		filename = strings.ReplaceAll(filename, "/", "\\")
+		filename = strings.Replace(filename, "/", "\\", -1)
 	}
 	base := filepath.Base(filename)
 	for i := len(base) - 1; i >= 0; i-- {
