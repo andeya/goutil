@@ -147,10 +147,10 @@ func WalkDirs(targpath string, suffixes ...string) (dirlist []string) {
 	return
 }
 
-// FilenameSplitExt splits the filename into a pair (root, ext) such that root + ext == filename,
+// FilepathSplitExt splits the filename into a pair (root, ext) such that root + ext == filename,
 // and ext is empty or begins with a period and contains at most one period.
 // Leading periods on the basename are ignored; splitext('.cshrc') returns ('', '.cshrc').
-func FilenameSplitExt(filename string, slashInsensitive ...bool) (root, ext string) {
+func FilepathSplitExt(filename string, slashInsensitive ...bool) (root, ext string) {
 	insensitive := false
 	if len(slashInsensitive) > 0 {
 		insensitive = slashInsensitive[0]
@@ -166,12 +166,12 @@ func FilenameSplitExt(filename string, slashInsensitive ...bool) (root, ext stri
 	return filename, ""
 }
 
-// FilenameStem returns the stem of filename.
+// FilepathStem returns the stem of filename.
 // Example:
-//  FilenameStem("/root/dir/sub/file.ext") // output "file"
+//  FilepathStem("/root/dir/sub/file.ext") // output "file"
 // NOTE:
 //  If slashInsensitive is empty, default is false.
-func FilenameStem(filename string, slashInsensitive ...bool) string {
+func FilepathStem(filename string, slashInsensitive ...bool) string {
 	insensitive := false
 	if len(slashInsensitive) > 0 {
 		insensitive = slashInsensitive[0]
