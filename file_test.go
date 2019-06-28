@@ -165,3 +165,20 @@ func TestFilepathSame(t *testing.T) {
 		}
 	}
 }
+
+func TestFilenameStem(t *testing.T) {
+	cases := []struct {
+		filename string
+		stem     string
+	}{
+		{"/root/dir/sub/file.ext", "file"},
+		{"/root/dir/sub/file.go.ext", "file.go"},
+		{"./", ""},
+	}
+	for _, c := range cases {
+		stem := FilenameStem(c.filename)
+		if c.stem != stem {
+			t.FailNow()
+		}
+	}
+}

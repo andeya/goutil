@@ -147,6 +147,19 @@ func WalkDirs(targpath string, suffixes ...string) (dirlist []string) {
 	return
 }
 
+// FilenameStem returns the stem of filename.
+// e.g. '/root/dir/sub/file.ext' => 'file'
+func FilenameStem(filename string) string {
+	filename = filepath.ToSlash(filename)
+	base := filepath.Base(filename)
+	for i := len(base) - 1; i >= 0; i-- {
+		if base[i] == '.' {
+			return base[:i]
+		}
+	}
+	return base
+}
+
 // FilepathContains checks if the basepath path contains the subpaths.
 func FilepathContains(basepath string, subpaths []string) error {
 	basepath, err := filepath.Abs(basepath)
