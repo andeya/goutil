@@ -172,7 +172,7 @@ func TestFilenameStem(t *testing.T) {
 		stem     string
 	}{
 		{"/root/dir/sub/file.ext", "file"},
-		{"/root/dir/sub/file.go.ext", "file.go"},
+		{"../..\\../.\\./root/dir/sub\\file.go.ext", "file.go"},
 		{"./", ""},
 	}
 	for _, c := range cases {

@@ -148,9 +148,14 @@ func WalkDirs(targpath string, suffixes ...string) (dirlist []string) {
 }
 
 // FilenameStem returns the stem of filename.
-// e.g. '/root/dir/sub/file.ext' => 'file'
+// Example:
+//  FilenameStem("/root/dir/sub/file.ext") // output "file"
 func FilenameStem(filename string) string {
-	filename = filepath.ToSlash(filename)
+	if filepath.Separator == '/' {
+		filename = strings.ReplaceAll(filename, "\\", "/")
+	} else {
+		filename = strings.ReplaceAll(filename, "/", "\\")
+	}
 	base := filepath.Base(filename)
 	for i := len(base) - 1; i >= 0; i-- {
 		if base[i] == '.' {
