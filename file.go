@@ -295,7 +295,7 @@ func MkdirAll(path string, perm ...os.FileMode) error {
 	return os.MkdirAll(path, fm)
 }
 
-// WriteFile write file, and automatically creates the directory if necessary.
+// WriteFile writes file, and automatically creates the directory if necessary.
 // NOTE:
 //  If perm is empty, automatically determine the file permissions based on extension.
 func WriteFile(filename string, data []byte, perm ...os.FileMode) error {
@@ -319,9 +319,9 @@ func WriteFile(filename string, data []byte, perm ...os.FileMode) error {
 	}
 }
 
-// RewriteFile rewrite file.
-func RewriteFile(name string, fn func(content []byte) (newContent []byte, err error)) error {
-	f, err := os.OpenFile(name, os.O_RDWR, 0777)
+// RewriteFile rewrites the file.
+func RewriteFile(filename string, fn func(content []byte) (newContent []byte, err error)) error {
+	f, err := os.OpenFile(filename, os.O_RDWR, 0777)
 	if err != nil {
 		return err
 	}
@@ -338,4 +338,30 @@ func RewriteFile(name string, fn func(content []byte) (newContent []byte, err er
 	f.Truncate(0)
 	_, err = f.Write(newContent)
 	return err
+}
+
+// RewriteToFile rewrites the file to newfilename.
+// If newfilename already exists and is not a directory, replaces it.
+func RewriteToFile(filename, newfilename string, fn func(content []byte) (newContent []byte, err error)) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if err != nil {
+		return err
+	}
+	info, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	cnt, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+	newContent, err := fn(cnt)
+	if err != nil {
+		return err
+	}
+	return WriteFile(newfilename, newContent, info.Mode())
 }
