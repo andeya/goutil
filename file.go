@@ -147,14 +147,37 @@ func WalkDirs(targpath string, suffixes ...string) (dirlist []string) {
 	return
 }
 
+// FilenameSplitExt splits the filename into a pair (root, ext) such that root + ext == filename,
+// and ext is empty or begins with a period and contains at most one period.
+// Leading periods on the basename are ignored; splitext('.cshrc') returns ('', '.cshrc').
+func FilenameSplitExt(filename string, slashInsensitive ...bool) (root, ext string) {
+	insensitive := false
+	if len(slashInsensitive) > 0 {
+		insensitive = slashInsensitive[0]
+	}
+	if insensitive {
+		filename = FilepathSlashInsensitive(filename)
+	}
+	for i := len(filename) - 1; i >= 0 && !os.IsPathSeparator(filename[i]); i-- {
+		if filename[i] == '.' {
+			return filename[:i], filename[i:]
+		}
+	}
+	return filename, ""
+}
+
 // FilenameStem returns the stem of filename.
 // Example:
 //  FilenameStem("/root/dir/sub/file.ext") // output "file"
-func FilenameStem(filename string) string {
-	if filepath.Separator == '/' {
-		filename = strings.Replace(filename, "\\", "/", -1)
-	} else {
-		filename = strings.Replace(filename, "/", "\\", -1)
+// NOTE:
+//  If slashInsensitive is empty, default is false.
+func FilenameStem(filename string, slashInsensitive ...bool) string {
+	insensitive := false
+	if len(slashInsensitive) > 0 {
+		insensitive = slashInsensitive[0]
+	}
+	if insensitive {
+		filename = FilepathSlashInsensitive(filename)
 	}
 	base := filepath.Base(filename)
 	for i := len(base) - 1; i >= 0; i-- {
@@ -163,6 +186,15 @@ func FilenameStem(filename string) string {
 		}
 	}
 	return base
+}
+
+// FilepathSlashInsensitive ignore the difference between the slash and the backslash,
+// and convert to the same as the current system.
+func FilepathSlashInsensitive(path string) string {
+	if filepath.Separator == '/' {
+		return strings.Replace(path, "\\", "/", -1)
+	}
+	return strings.Replace(path, "/", "\\", -1)
 }
 
 // FilepathContains checks if the basepath path contains the subpaths.

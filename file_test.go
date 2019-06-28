@@ -166,17 +166,38 @@ func TestFilepathSame(t *testing.T) {
 	}
 }
 
+func TestFilenameSplitExt(t *testing.T) {
+	cases := []struct {
+		filename  string
+		root, ext string
+	}{
+		{"/root/dir/sub/file.ext", "/root/dir/sub/file", ".ext"},
+		{"../..\\../.\\./root/dir/sub\\file.go.ext", "../..\\../.\\./root/dir/sub\\file.go", ".ext"},
+		{"./", "./", ""},
+		{".go", "", ".go"},
+	}
+	for _, c := range cases {
+		root, ext := FilenameSplitExt(c.filename)
+		if c.root != root {
+			t.FailNow()
+		}
+		if c.ext != ext {
+			t.FailNow()
+		}
+	}
+}
+
 func TestFilenameStem(t *testing.T) {
 	cases := []struct {
 		filename string
 		stem     string
 	}{
-		{"/root/dir/sub/file.ext", "file"},
 		{"../..\\../.\\./root/dir/sub\\file.go.ext", "file.go"},
+		{"/root/dir/sub/file.ext", "file"},
 		{"./", ""},
 	}
-	for _, c := range cases {
-		stem := FilenameStem(c.filename)
+	for i, c := range cases {
+		stem := FilenameStem(c.filename, i == 0)
 		if c.stem != stem {
 			t.FailNow()
 		}
