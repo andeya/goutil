@@ -93,17 +93,16 @@ func (s *Status) TagStack(skip ...int) *Status {
 }
 
 // Copy returns the copy of Status.
-func (s *Status) Copy(withStack bool, newCause ...interface{}) *Status {
+func (s *Status) Copy(newCause interface{}, newStackSkip ...int) *Status {
 	if s == nil {
 		return nil
 	}
-	var cause interface{} = s.cause
-	if len(newCause) > 0 {
-		cause = newCause[0]
+	if newCause == nil {
+		newCause = s.cause
 	}
-	copy := New(s.code, s.msg, cause)
-	if withStack {
-		copy.stack = callers(3)
+	copy := New(s.code, s.msg, newCause)
+	if len(newStackSkip) != 0 {
+		copy.stack = callers(3 + newStackSkip[0])
 	}
 	return copy
 }

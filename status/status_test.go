@@ -38,7 +38,7 @@ func TestStatusJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("%+v", stat)
-	t.Logf("%+v", stat.Copy(true, "zzzzzzzzz"))
+	t.Logf("%+v", stat.Copy("zzzzzzzzz", 0))
 }
 
 func TestStatusQuery(t *testing.T) {
@@ -76,6 +76,23 @@ func TestStatusStack(t *testing.T) {
 	t.Logf("%+v", s)
 	s = New(400, "tag", "test").TagStack()
 	t.Logf("%+v", s)
+}
+
+func TestStatusPanic(t *testing.T) {
+	defer func() {
+		stat := New(1, "panic", recover()).TagStack(3)
+		t.Logf("%+v", stat)
+	}()
+	var a []byte
+	_ = a[1]
+}
+
+func TestStatusPanic2(t *testing.T) {
+	defer func() {
+		stat := New(1, "panic", recover()).TagStack(2)
+		t.Logf("%+v", stat)
+	}()
+	panic("this is panic text")
 }
 
 func testWithStack(err error) *Status {
