@@ -2,6 +2,7 @@
 package status
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -122,6 +123,20 @@ func (s *Status) StackTrace() StackTrace {
 	return s.stack.StackTrace()
 }
 
+// QueryString returns query string for the status object.
+func (s *Status) QueryString() string {
+	return goutil.BytesToString(s.EncodeQuery())
+}
+
+// JSONString returns JSON string for the status object.
+func (s *Status) JSONString() string {
+	if s == nil {
+		return "{}"
+	}
+	b, _ := s.MarshalJSON()
+	return goutil.BytesToString(b)
+}
+
 // String prints status info.
 func (s *Status) String() string {
 	if s == nil {
@@ -167,7 +182,7 @@ var (
 	_ json.Unmarshaler = new(Status)
 )
 
-// MarshalJSON marshals Status into JSON, implements json.Marshaler interface.
+// MarshalJSON marshals the status object into JSON, implements json.Marshaler interface.
 func (s *Status) MarshalJSON() ([]byte, error) {
 	if s == nil {
 		return null, nil
@@ -190,7 +205,7 @@ func (s *Status) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals a JSON description of self.
 func (s *Status) UnmarshalJSON(b []byte) error {
-	if s == nil {
+	if s == nil || len(b) == 0 {
 		return nil
 	}
 	var v exportStatus
@@ -204,4 +219,71 @@ func (s *Status) UnmarshalJSON(b []byte) error {
 		s.cause = errors.New(v.Cause)
 	}
 	return nil
+}
+
+var (
+	keyCode  = []byte("code")
+	keyMsg   = []byte("msg")
+	keyCause = []byte("cause")
+)
+
+// EncodeQuery encodes the status object into query bytes.
+func (s *Status) EncodeQuery() []byte {
+	if s == nil {
+		return nil
+	}
+	b := make([]byte, 0, 384)
+	b = append(b, keyCode...)
+	b = append(b, '=')
+	b = append(b, strconv.FormatInt(int64(s.code), 10)...)
+	if len(s.msg) > 0 {
+		b = append(b, '&')
+		b = append(b, keyMsg...)
+		b = append(b, '=')
+		b = appendQuotedArg(b, goutil.StringToBytes(s.msg))
+	}
+	if s.cause != nil {
+		b = append(b, '&')
+		b = append(b, keyCause...)
+		b = append(b, '=')
+		b = appendQuotedArg(b, goutil.StringToBytes(s.cause.Error()))
+	}
+	return b
+}
+
+// DecodeQuery parses the given b containing query args to the status object.
+func (s *Status) DecodeQuery(b []byte) {
+	if s == nil || len(b) == 0 {
+		return
+	}
+	var hadCode, hadMsg, hadCause bool
+	kv := &argsKV{
+		key:   make([]byte, 0, 8),
+		value: make([]byte, 0, 128),
+	}
+	a := argsScanner{b: b}
+	for a.next(kv) {
+		if !hadCode && bytes.Equal(keyCode, kv.key) {
+			i, _ := strconv.ParseInt(goutil.BytesToString(kv.value), 10, 32)
+			s.code = int32(i)
+			if hadMsg && hadCause {
+				return
+			}
+			hadCode = true
+		} else if !hadMsg && bytes.Equal(keyMsg, kv.key) {
+			if hadCode && hadCause {
+				s.msg = goutil.BytesToString(kv.value)
+				return
+			}
+			s.msg = string(kv.value)
+			hadMsg = true
+		} else if !hadCause && bytes.Equal(keyCause, kv.key) {
+			if hadCode && hadMsg {
+				s.cause = errors.New(goutil.BytesToString(kv.value))
+				return
+			}
+			s.cause = errors.New(string(kv.value))
+			hadCause = true
+		}
+	}
 }

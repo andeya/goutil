@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"testing"
 )
 
-func TestStatus(t *testing.T) {
+func TestStatusJSON(t *testing.T) {
 	if (*Status)(nil).String() != "<nil>" {
 		t.FailNow()
 	}
@@ -38,6 +39,29 @@ func TestStatus(t *testing.T) {
 	}
 	t.Logf("%+v", stat)
 	t.Logf("%+v", stat.Copy(true, "zzzzzzzzz"))
+}
+
+func TestStatusQuery(t *testing.T) {
+	if (*Status)(nil).QueryString() != "" {
+		t.FailNow()
+	}
+	b := (*Status)(nil).EncodeQuery()
+	if b != nil {
+		t.FailNow()
+	}
+
+	expect := New(
+		400,
+		"msg...",
+		"bala...bala...",
+	)
+	t.Logf("%v", expect.QueryString())
+
+	stat := new(Status)
+	stat.DecodeQuery([]byte(expect.QueryString()))
+	if !reflect.DeepEqual(*expect, *stat) {
+		t.Fatalf("got:%s, want:%s", stat, expect)
+	}
 }
 
 func testWithStack(err error) *Status {
