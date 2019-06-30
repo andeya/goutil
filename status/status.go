@@ -123,10 +123,17 @@ func (s *Status) Msg() string {
 	return s.msg
 }
 
+var noCause = errors.New("")
+
 // Cause returns the cause of the status for debugging (optional).
+// NOTE:
+//  If s.OK() is false, the return value is never nil.
 func (s *Status) Cause() error {
 	if s == nil {
 		return nil
+	}
+	if s.cause == nil && s.code != OK {
+		return noCause
 	}
 	return s.cause
 }
