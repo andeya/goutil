@@ -5,12 +5,12 @@ func Check(err error, code int32, msg string) {
 	if err == nil {
 		return
 	}
-	panic(New(code, msg, err).setStack(4))
+	panic(New(code, msg, err).TagStack(1))
 }
 
 // Throw creates a status with stack, and panic.
 func Throw(code int32, msg string, cause interface{}) {
-	panic(New(code, msg, cause).setStack(4))
+	panic(New(code, msg, cause).TagStack(1))
 }
 
 // Panic panic with stack trace.
@@ -58,7 +58,7 @@ func Catch(statPtr **Status, realStat ...*bool) {
 		*statPtr = &v
 	default:
 		trySetBool(realStat, false)
-		*statPtr = New(UnknownError, "", v).setStack(5)
+		*statPtr = New(UnknownError, "", v).TagStack(2)
 	}
 }
 

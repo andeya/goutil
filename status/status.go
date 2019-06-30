@@ -56,7 +56,7 @@ func New(code int32, msg string, cause interface{}) *Status {
 // NOTE:
 //  code=0 means no error
 func NewWithStack(code int32, msg string, cause interface{}) *Status {
-	return New(code, msg, cause).setStack(4)
+	return New(code, msg, cause).TagStack(1)
 }
 
 // FromJSON parses the JSON bytes to a status object.
@@ -67,7 +67,7 @@ func FromJSON(b []byte, tagStack bool) (*Status, error) {
 		return nil, err
 	}
 	if tagStack {
-		s.setStack(4)
+		s.stack = callers(3)
 	}
 	return s, nil
 }
@@ -77,18 +77,18 @@ func FromQuery(b []byte, tagStack bool) *Status {
 	s := new(Status)
 	s.DecodeQuery(b)
 	if tagStack {
-		s.setStack(4)
+		s.stack = callers(3)
 	}
 	return s
 }
 
-// TagStack marks the current stack information.
-func (s *Status) TagStack() *Status {
-	return s.setStack(4)
-}
-
-func (s *Status) setStack(skip int) *Status {
-	s.stack = callers(skip)
+// TagStack marks stack information.
+func (s *Status) TagStack(skip ...int) *Status {
+	depth := 3
+	if len(skip) > 0 {
+		depth += skip[0]
+	}
+	s.stack = callers(depth)
 	return s
 }
 
