@@ -95,6 +95,25 @@ func TestStatusPanic2(t *testing.T) {
 	panic("this is panic text")
 }
 
+func TestStatusPanic3(t *testing.T) {
+	stat := New(0, "", nil)
+	defer func() {
+		stat = stat.Copy(recover(), 3)
+		t.Logf("%+v", stat)
+	}()
+	var a []byte
+	_ = a[1]
+}
+
+func TestStatusPanic4(t *testing.T) {
+	stat := New(0, "", nil)
+	defer func() {
+		stat = stat.Copy(recover(), 2)
+		t.Logf("%+v", stat)
+	}()
+	panic("this is panic text")
+}
+
 func testWithStack(err error) *Status {
 	return NewWithStack(404, "Not Found", err)
 }
