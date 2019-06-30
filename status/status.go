@@ -33,21 +33,9 @@ type Status struct {
 //  code=0 means no error
 func New(code int32, msg string, cause interface{}) *Status {
 	s := &Status{
-		code: code,
-		msg:  msg,
-	}
-	switch v := cause.(type) {
-	case nil:
-	case error:
-		s.cause = v
-	case string:
-		s.cause = errors.New(v)
-	case *Status:
-		s.cause = v.cause
-	case Status:
-		s.cause = v.cause
-	default:
-		s.cause = fmt.Errorf("%v", v)
+		code:  code,
+		msg:   msg,
+		cause: toErr(cause),
 	}
 	return s
 }
@@ -105,6 +93,30 @@ func (s *Status) Copy(newCause interface{}, newStackSkip ...int) *Status {
 		copy.stack = callers(3 + newStackSkip[0])
 	}
 	return copy
+}
+
+// SetCode sets a new code to the status object.
+func (s *Status) SetCode(code int32) *Status {
+	if s != nil {
+		s.code = code
+	}
+	return s
+}
+
+// SetMsg sets a new msg to the status object.
+func (s *Status) SetMsg(msg string) *Status {
+	if s != nil {
+		s.msg = msg
+	}
+	return s
+}
+
+// SetCause sets a new cause to the status object.
+func (s *Status) SetCause(cause interface{}) *Status {
+	if s != nil {
+		s.cause = toErr(cause)
+	}
+	return s
 }
 
 // Clear clears the status.
@@ -340,5 +352,22 @@ func (s *Status) DecodeQuery(b []byte) {
 			s.cause = errors.New(string(kv.value))
 			hadCause = true
 		}
+	}
+}
+
+func toErr(cause interface{}) error {
+	switch v := cause.(type) {
+	case nil:
+		return nil
+	case error:
+		return v
+	case string:
+		return errors.New(v)
+	case *Status:
+		return v.cause
+	case Status:
+		return v.cause
+	default:
+		return fmt.Errorf("%v", v)
 	}
 }
