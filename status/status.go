@@ -107,6 +107,11 @@ func (s *Status) Copy(newCause interface{}, newStackSkip ...int) *Status {
 	return copy
 }
 
+// Clear clears the status.
+func (s *Status) Clear() {
+	*s = Status{}
+}
+
 // Code returns the status code.
 func (s *Status) Code() int32 {
 	if s == nil {
@@ -245,7 +250,11 @@ func (s *Status) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals a JSON description of self.
 func (s *Status) UnmarshalJSON(b []byte) error {
-	if s == nil || len(b) == 0 {
+	if s == nil {
+		return nil
+	}
+	if len(b) == 0 {
+		s.Clear()
 		return nil
 	}
 	var v exportStatus
@@ -257,6 +266,8 @@ func (s *Status) UnmarshalJSON(b []byte) error {
 	s.msg = v.Msg
 	if v.Cause != "" {
 		s.cause = errors.New(v.Cause)
+	} else {
+		s.cause = nil
 	}
 	return nil
 }
@@ -293,7 +304,11 @@ func (s *Status) EncodeQuery() []byte {
 
 // DecodeQuery parses the given b containing query args to the status object.
 func (s *Status) DecodeQuery(b []byte) {
-	if s == nil || len(b) == 0 {
+	if s == nil {
+		return
+	}
+	s.Clear()
+	if len(b) == 0 {
 		return
 	}
 	var hadCode, hadMsg, hadCause bool
