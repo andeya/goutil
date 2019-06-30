@@ -56,8 +56,35 @@ func New(code int32, msg string, cause interface{}) *Status {
 // NOTE:
 //  code=0 means no error
 func NewWithStack(code int32, msg string, cause interface{}) *Status {
-	s := New(code, msg, cause).setStack(4)
+	return New(code, msg, cause).setStack(4)
+}
+
+// FromJSON parses the JSON bytes to a status object.
+func FromJSON(b []byte, tagStack bool) (*Status, error) {
+	s := new(Status)
+	err := s.UnmarshalJSON(b)
+	if err != nil {
+		return nil, err
+	}
+	if tagStack {
+		s.setStack(4)
+	}
+	return s, nil
+}
+
+// FromQuery parses the query bytes to a status object.
+func FromQuery(b []byte, tagStack bool) *Status {
+	s := new(Status)
+	s.DecodeQuery(b)
+	if tagStack {
+		s.setStack(4)
+	}
 	return s
+}
+
+// TagStack marks the current stack information.
+func (s *Status) TagStack() *Status {
+	return s.setStack(4)
 }
 
 func (s *Status) setStack(skip int) *Status {
@@ -146,7 +173,14 @@ func (s *Status) String() string {
 	return goutil.BytesToString(b)
 }
 
-// Format implementes fmt.Formatter.
+// Format formats the status object according to the fmt.Formatter interface.
+//
+//    %s	lists source files for each Frame in the stack
+//    %v	lists the source file and line number for each Frame in the stack
+//
+// Format accepts flags that alter the printing of some verbs, as follows:
+//
+//    %+v   Prints filename, function, and line number for each Frame in the stack.
 func (s *Status) Format(state fmt.State, verb rune) {
 	switch verb {
 	case 'v':

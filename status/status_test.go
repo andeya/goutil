@@ -64,6 +64,20 @@ func TestStatusQuery(t *testing.T) {
 	}
 }
 
+func TestStatusStack(t *testing.T) {
+	jsonBytes := []byte(`{"code":404,"msg":"Not Found","cause":"xxxxxxxxxx"}`)
+	s, err := FromJSON(jsonBytes, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%+v", s)
+	queryBytes := []byte(`code=400&msg=msg...&cause=bala...bala...`)
+	s = FromQuery(queryBytes, true)
+	t.Logf("%+v", s)
+	s = New(400, "tag", "test").TagStack()
+	t.Logf("%+v", s)
+}
+
 func testWithStack(err error) *Status {
 	return NewWithStack(404, "Not Found", err)
 }
