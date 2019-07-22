@@ -39,6 +39,24 @@ func DereferenceValue(v reflect.Value) reflect.Value {
 	return v
 }
 
+func DereferencePtrValue(v reflect.Value) reflect.Value {
+	for v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	return v
+}
+
+func DereferenceIfaceValue(v reflect.Value) reflect.Value {
+	for v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+	return v
+}
+
+func DereferenceImplementType(v reflect.Value) reflect.Type {
+	return DereferenceType(DereferenceIfaceValue(v).Type())
+}
+
 // IsLittleEndian determine whether the current system is little endian.
 func IsLittleEndian() bool {
 	var i int32 = 0x01020304
