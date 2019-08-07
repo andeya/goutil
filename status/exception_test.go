@@ -40,7 +40,18 @@ func TestCatchNotNil(t *testing.T) {
 	}()
 
 	defer Catch(&stat)
-	Check(errors.New("a test error"), 400, "check")
+	Check(errors.New("a test error"), 400, "check 1")
+}
+
+func TestCheckWhenError(t *testing.T) {
+	var stat *Status
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+	}()
+
+	defer Catch(&stat)
+	Check(errors.New("a test error"), 400, "check 2", func() { t.Log("whenerror") })
 }
 
 func TestThrow(t *testing.T) {
