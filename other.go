@@ -62,7 +62,7 @@ func DereferenceImplementType(v reflect.Value) reflect.Type {
 
 // ReferenceSlice convert []T to []*T, the ptrDepth is the count of '*'.
 func ReferenceSlice(v reflect.Value, ptrDepth int) reflect.Value {
-	if ptrDepth == 0 {
+	if ptrDepth <= 0 {
 		return v
 	}
 	m := v.Len() - 1
