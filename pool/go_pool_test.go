@@ -115,3 +115,21 @@ func BenchmarkGoPool_go(b *testing.B) {
 	}
 	wg.Wait()
 }
+
+func TestGoPool_Work(t *testing.T) {
+	gp := NewGoPool(10, 0)
+	defer gp.Stop()
+	var goAdd = func(a, b int) <-chan int {
+		ch := make(chan int, 1)
+		gp.MustGo(func() {
+			ch <- a + b
+			close(ch)
+		})
+		return ch
+	}
+	ch := goAdd(1, 2)
+	ret := <-ch
+	if ret != 3 {
+		t.Fatalf("except %d, but %d", 3, ret)
+	}
+}
