@@ -60,6 +60,21 @@ func DereferenceImplementType(v reflect.Value) reflect.Type {
 	return DereferenceType(DereferenceIfaceValue(v).Type())
 }
 
+// DereferenceSlice convert []*T to []T.
+func DereferenceSlice(v reflect.Value) reflect.Value {
+	m := v.Len() - 1
+	if m < 0 {
+		return v
+	}
+	s := make([]reflect.Value, m+1)
+	for ; m >= 0; m-- {
+		s[m] = DereferenceValue(v.Index(m))
+	}
+	v = reflect.New(reflect.SliceOf(s[0].Type())).Elem()
+	v = reflect.Append(v, s...)
+	return v
+}
+
 // ReferenceSlice convert []T to []*T, the ptrDepth is the count of '*'.
 func ReferenceSlice(v reflect.Value, ptrDepth int) reflect.Value {
 	if ptrDepth <= 0 {
