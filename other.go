@@ -74,7 +74,6 @@ func ReferenceSlice(v reflect.Value, ptrDepth int) reflect.Value {
 		s[m] = ReferenceValue(v.Index(m), ptrDepth)
 	}
 	v = reflect.New(reflect.SliceOf(s[0].Type())).Elem()
-	v.SetCap(m + 1)
 	v = reflect.Append(v, s...)
 	return v
 }
