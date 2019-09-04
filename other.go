@@ -64,7 +64,7 @@ func DereferenceImplementType(v reflect.Value) reflect.Type {
 func DereferenceSlice(v reflect.Value) reflect.Value {
 	m := v.Len() - 1
 	if m < 0 {
-		return v
+		return reflect.New(reflect.SliceOf(DereferenceType(v.Type().Elem()))).Elem()
 	}
 	s := make([]reflect.Value, m+1)
 	for ; m >= 0; m-- {
@@ -82,7 +82,7 @@ func ReferenceSlice(v reflect.Value, ptrDepth int) reflect.Value {
 	}
 	m := v.Len() - 1
 	if m < 0 {
-		return v
+		return reflect.New(reflect.SliceOf(ReferenceType(v.Type().Elem(), ptrDepth))).Elem()
 	}
 	s := make([]reflect.Value, m+1)
 	for ; m >= 0; m-- {
@@ -91,6 +91,14 @@ func ReferenceSlice(v reflect.Value, ptrDepth int) reflect.Value {
 	v = reflect.New(reflect.SliceOf(s[0].Type())).Elem()
 	v = reflect.Append(v, s...)
 	return v
+}
+
+// ReferenceType convert T to *T, the ptrDepth is the count of '*'.
+func ReferenceType(t reflect.Type, ptrDepth int) reflect.Type {
+	for ; ptrDepth > 0; ptrDepth-- {
+		t = reflect.PtrTo(t)
+	}
+	return t
 }
 
 // ReferenceValue convert T to *T, the ptrDepth is the count of '*'.
