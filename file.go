@@ -2,6 +2,7 @@ package goutil
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -376,13 +377,16 @@ func RewriteFile(filename string, fn func(content []byte) (newContent []byte, er
 		return err
 	}
 	defer f.Close()
-	cnt, err := ioutil.ReadAll(f)
+	content, err := ioutil.ReadAll(f)
 	if err != nil {
 		return err
 	}
-	newContent, err := fn(cnt)
+	newContent, err := fn(content)
 	if err != nil {
 		return err
+	}
+	if bytes.Equal(content, newContent) {
+		return nil
 	}
 	f.Seek(0, 0)
 	f.Truncate(0)

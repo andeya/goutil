@@ -203,3 +203,12 @@ func TestFilepathStem(t *testing.T) {
 		}
 	}
 }
+
+func TestRewriteFile(t *testing.T) {
+	err := RewriteFile("file_test.go", func(cnt []byte) ([]byte, error) {
+		return cnt, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
