@@ -1,9 +1,12 @@
 package goutil
 
+// test: 2019-09-05T18:11:25+08:00
+
 import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
 
 var noExistedFile = "/tmp/not_existed_file"
@@ -208,6 +211,13 @@ func TestRewriteFile(t *testing.T) {
 	err := RewriteFile("file_test.go", func(cnt []byte) ([]byte, error) {
 		return cnt, nil
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestReplaceFile(t *testing.T) {
+	err := ReplaceFile("file_test.go", 25, 50, time.Now().Format(time.RFC3339))
 	if err != nil {
 		t.Fatal(err)
 	}

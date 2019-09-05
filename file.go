@@ -419,3 +419,19 @@ func RewriteToFile(filename, newfilename string, fn func(content []byte) (newCon
 	}
 	return WriteFile(newfilename, newContent, info.Mode())
 }
+
+// ReplaceFile replaces the bytes selected by [start, end] with the new content.
+func ReplaceFile(filename string, start, end int, newContent string) error {
+	if start < 0 || (end >= 0 && start > end) {
+		return nil
+	}
+	return RewriteFile(filename, func(content []byte) ([]byte, error) {
+		if end < 0 || end > len(content) {
+			end = len(content)
+		}
+		if start > end {
+			start = end
+		}
+		return bytes.Replace(content, content[start:end], StringToBytes(newContent), 1), nil
+	})
+}
