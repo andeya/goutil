@@ -7,6 +7,17 @@ import (
 	"github.com/henrylee2cn/goutil/calendar"
 )
 
+func TestConvert(t *testing.T) {
+	solar := calendar.NewSolar(2019, 9, 8, 22, 6, 56, 0, calendar.CST)
+	lunar := calendar.NewLunar(2019, 8, 10, 22, 6, 56, 0, false)
+	if !solar.Convert().Equal(lunar) {
+		t.Errorf("expected %s, actual %s", lunar, solar.Convert())
+	}
+	if !lunar.Convert().Equal(solar) {
+		t.Errorf("expected %s, actual %s", solar, lunar.Convert())
+	}
+}
+
 func TestActivation(t *testing.T) {
 	tests := []struct {
 		time, spec string
@@ -66,7 +77,7 @@ func TestActivation(t *testing.T) {
 		actual := sched.Next(getTime(test.time).Add(-1 * time.Second))
 		expected := getTime(test.time)
 		if test.expected && expected != actual || !test.expected && expected == actual {
-			t.Errorf("Fail evaluating %s on %s: (expected) %s != %s (actual)",
+			t.Errorf("Fail evaluating %s on %s: expected %s, actual %s",
 				test.spec, test.time, expected, actual)
 		}
 	}
@@ -163,105 +174,7 @@ func TestNext(t *testing.T) {
 		actual := sched.Next(getTime(c.time))
 		expected := getTime(c.expected)
 		if !actual.Equal(expected) {
-			t.Errorf("%s, \"%s\": (expected) %v != %v (actual)", c.time, c.spec, expected, actual)
-		}
-	}
-}
-
-func TestLunarNext(t *testing.T) {
-	runs := []struct {
-		time, spec string
-		expected   string
-	}{
-		// Simple cases
-		{"Mon Jul 9 14:45 2012", "0 0/15 * * *", "Mon Jul 9 15:00 2012"},
-		{"Mon Jul 9 14:59 2012", "0 0/15 * * *", "Mon Jul 9 15:00 2012"},
-		{"Mon Jul 9 14:59:59 2012", "0 0/15 * * *", "Mon Jul 9 15:00 2012"},
-
-		// Wrap around hours
-		{"Mon Jul 9 15:45 2012", "0 20-35/15 * * *", "Mon Jul 9 16:20 2012"},
-
-		// Wrap around days
-		{"Mon Jul 9 23:46 2012", "0 */15 * * *", "Tue Jul 10 00:00 2012"},
-		{"Mon Jul 9 23:45 2012", "0 20-35/15 * * *", "Tue Jul 10 00:20 2012"},
-		{"Mon Jul 9 23:35:51 2012", "15/35 20-35/15 * * *", "Tue Jul 10 00:20:15 2012"},
-		{"Mon Jul 9 23:35:51 2012", "15/35 20-35/15 1/2 * *", "Tue Jul 10 01:20:15 2012"},
-		{"Mon Jul 9 23:35:51 2012", "15/35 20-35/15 10-12 * *", "Tue Jul 10 10:20:15 2012"},
-
-		{"Mon Jul 9 23:35:51 2012", "15/35 20-35/15 1/2 */2 * *", "Thu Jul 11 01:20:15 2012"},
-		{"Mon Jul 9 23:35:51 2012", "15/35 20-35/15 * 9-20 * *", "Wed Jul 10 00:20:15 2012"},
-		{"Mon Jul 9 23:35:51 2012", "15/35 20-35/15 * 9-20 Jul *", "Wed Jul 10 00:20:15 2012"},
-
-		// Wrap around months
-		{"Mon Jul 9 23:35 2012", "0 0 0 9 Apr-Oct ?", "Thu Aug 9 00:00 2012"},
-		{"Mon Jul 9 23:35 2012", "0 0 0 */5 Apr,Aug,Oct Mon", "Mon Aug 6 00:00 2012"},
-		{"Mon Jul 9 23:35 2012", "0 0 0 */5 Oct Mon", "Mon Oct 1 00:00 2012"},
-
-		// Wrap around years
-		{"Mon Jul 9 23:35 2012", "0 0 0 * Feb Mon", "Mon Feb 4 00:00 2013"},
-		{"Mon Jul 9 23:35 2012", "0 0 0 * Feb Mon/2", "Fri Feb 1 00:00 2013"},
-
-		// Wrap around minute, hour, day, month, and year
-		{"Mon Dec 31 23:59:45 2012", "0 * * * * *", "Tue Jan 1 00:00:00 2013"},
-
-		// Leap year
-		{"Mon Jul 9 23:35 2012", "0 0 0 29 Feb ?", "Mon Feb 29 00:00 2016"},
-
-		// Daylight savings time 2am EST (-5) -> 3am EDT (-4)
-		{"2012-03-11T00:00:00-0500", "0 30 2 11 Mar ?", "2013-03-11T02:30:00-0400"},
-
-		// hourly job
-		{"2012-03-11T00:00:00-0500", "0 0 * * * ?", "2012-03-11T01:00:00-0500"},
-		{"2012-03-11T01:00:00-0500", "0 0 * * * ?", "2012-03-11T03:00:00-0400"},
-		{"2012-03-11T03:00:00-0400", "0 0 * * * ?", "2012-03-11T04:00:00-0400"},
-		{"2012-03-11T04:00:00-0400", "0 0 * * * ?", "2012-03-11T05:00:00-0400"},
-
-		// 1am nightly job
-		{"2012-03-11T00:00:00-0500", "0 0 1 * * ?", "2012-03-11T01:00:00-0500"},
-		{"2012-03-11T01:00:00-0500", "0 0 1 * * ?", "2012-03-12T01:00:00-0400"},
-
-		// 2am nightly job (skipped)
-		{"2012-03-11T00:00:00-0500", "0 0 2 * * ?", "2012-03-12T02:00:00-0400"},
-
-		// Daylight savings time 2am EDT (-4) => 1am EST (-5)
-		{"2012-11-04T00:00:00-0400", "0 30 2 04 Nov ?", "2012-11-04T02:30:00-0500"},
-		{"2012-11-04T01:45:00-0400", "0 30 1 04 Nov ?", "2012-11-04T01:30:00-0500"},
-
-		// hourly job
-		{"2012-11-04T00:00:00-0400", "0 0 * * * ?", "2012-11-04T01:00:00-0400"},
-		{"2012-11-04T01:00:00-0400", "0 0 * * * ?", "2012-11-04T01:00:00-0500"},
-		{"2012-11-04T01:00:00-0500", "0 0 * * * ?", "2012-11-04T02:00:00-0500"},
-
-		// 1am nightly job (runs twice)
-		{"2012-11-04T00:00:00-0400", "0 0 1 * * ?", "2012-11-04T01:00:00-0400"},
-		{"2012-11-04T01:00:00-0400", "0 0 1 * * ?", "2012-11-04T01:00:00-0500"},
-		{"2012-11-04T01:00:00-0500", "0 0 1 * * ?", "2012-11-05T01:00:00-0500"},
-
-		// 2am nightly job
-		{"2012-11-04T00:00:00-0400", "0 0 2 * * ?", "2012-11-04T02:00:00-0500"},
-		{"2012-11-04T02:00:00-0500", "0 0 2 * * ?", "2012-11-05T02:00:00-0500"},
-
-		// 3am nightly job
-		{"2012-11-04T00:00:00-0400", "0 0 3 * * ?", "2012-11-04T03:00:00-0500"},
-		{"2012-11-04T03:00:00-0500", "0 0 3 * * ?", "2012-11-05T03:00:00-0500"},
-
-		// Unsatisfiable
-		// {"Mon Jul 9 23:35 2012", "0 0 0 30 Feb ?", ""},
-		// {"Mon Jul 9 23:35 2012", "0 0 0 31 Apr ?", ""},
-	}
-
-	for _, c := range runs {
-		sched, err := Parse(c.spec)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-		actual := sched.LunarNext(calendar.NewSolarTime(getTime(c.time)).Convert())
-		expected := calendar.NewSolarTime(getTime(c.expected)).Convert()
-		if !actual.Equal(expected) {
-			t.Errorf("%s, \"%s\": (expected) %v != %v (actual)", c.time, c.spec, expected, actual)
-		} else {
-			// t.Log("success")
+			t.Errorf("%s, \"%s\": expected %v, actual %v", c.time, c.spec, expected, actual)
 		}
 	}
 }
@@ -279,28 +192,6 @@ func TestErrors(t *testing.T) {
 			t.Error("expected an error parsing: ", spec)
 		}
 	}
-}
-
-func getTime(value string) time.Time {
-	if value == "" {
-		return time.Time{}
-	}
-	t, err := time.Parse("Mon Jan 2 15:04 2006", value)
-	if err != nil {
-		t, err = time.Parse("Mon Jan 2 15:04:05 2006", value)
-		if err != nil {
-			t, err = time.Parse("2006-01-02T15:04:05-0700", value)
-			if err != nil {
-				panic(err)
-			}
-			// Daylight savings time tests require location
-			if ny, err := time.LoadLocation("America/New_York"); err == nil {
-				t = t.In(ny)
-			}
-		}
-	}
-
-	return t
 }
 
 func TestNextWithTz(t *testing.T) {
@@ -325,9 +216,30 @@ func TestNextWithTz(t *testing.T) {
 		actual := sched.Next(getTimeTZ(c.time))
 		expected := getTimeTZ(c.expected)
 		if !actual.Equal(expected) {
-			t.Errorf("%s, \"%s\": (expected) %v != %v (actual)", c.time, c.spec, expected, actual)
+			t.Errorf("%s, \"%s\": expected %v, actual %v", c.time, c.spec, expected, actual)
 		}
 	}
+}
+
+func getTime(value string) time.Time {
+	if value == "" {
+		return time.Time{}
+	}
+	t, err := time.Parse("Mon Jan 2 15:04 2006", value)
+	if err != nil {
+		t, err = time.Parse("Mon Jan 2 15:04:05 2006", value)
+		if err != nil {
+			t, err = time.Parse("2006-01-02T15:04:05-0700", value)
+			if err != nil {
+				panic(err)
+			}
+			// Daylight savings time tests require location
+			if ny, err := time.LoadLocation("America/New_York"); err == nil {
+				t = t.In(ny)
+			}
+		}
+	}
+	return t
 }
 
 func getTimeTZ(value string) time.Time {

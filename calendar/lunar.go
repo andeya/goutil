@@ -55,7 +55,7 @@ var (
 	monthStr1           = []string{"初", "十", "廿", "卅"}
 	monthStr2           = []string{"日", "一", "二", "三", "四", "五", "六", "七", "八", "九"}
 
-	weekday = []string{"星期日","星期一","星期二","星期三","星期四","星期五","星期六"}
+	weekday = []string{"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"}
 
 	base = time.Date(MinYear, 1, 31, 0, 0, 0, 0, CST)
 
@@ -63,7 +63,7 @@ var (
 	CST = time.FixedZone("CST", 3600*8)
 )
 
-//Luanr structure
+// Lunar structure
 type Lunar struct {
 	year        int
 	month       int
@@ -81,7 +81,14 @@ func NewLunarNow() *Lunar {
 	return NewSolarNow().Convert()
 }
 
+// NewLunarTime creates a lunar time from time.Time.
+func NewLunarTime(t time.Time) *Lunar {
+	return NewSolarTime(t).Convert()
+}
+
 // NewLunar creates a lunar time.
+// NOTE:
+//  The time zone is +0800(CST)
 func NewLunar(year, month, day, hour, min, sec int, nsec int, leapFirst bool) *Lunar {
 	if !isYearValid(year) {
 		return nil
@@ -307,6 +314,11 @@ func (l *Lunar) Equal(lunar *Lunar) bool {
 		l.isLeapMonth == lunar.isLeapMonth
 }
 
+// GetTime returns the time.Time
+func (l *Lunar) GetTime() time.Time {
+	return l.Convert().Time
+}
+
 // String formats time.
 func (l *Lunar) String() string {
 	return fmt.Sprintf("%s%s%s %2d时%2d分%2d秒", LunarYearString(l.Year()), LunarMonthString(l.Month(), l.IsLeapMonth()), LunarDayString(l.Day()), l.Hour(), l.Minute(), l.Second())
@@ -322,7 +334,7 @@ func (l *Lunar) Month() int {
 	return l.month
 }
 
-//Month returns month string
+// MonthStr returns month string
 func (l *Lunar) MonthStr() string {
 	return LunarMonthString(l.Month(), l.IsLeapMonth())
 }
@@ -342,7 +354,7 @@ func (l *Lunar) Day() int {
 	return l.day
 }
 
-// Day returns day string.
+// DayStr returns day string.
 func (l *Lunar) DayStr() string {
 	return LunarDayString(l.Day())
 }
@@ -352,6 +364,7 @@ func (l *Lunar) Weekday() time.Weekday {
 	return l.Convert().Weekday()
 }
 
+// WeekdayStr returns weekday.
 func (l *Lunar) WeekdayStr() string {
 	return weekday[int(l.Convert().Weekday())]
 }
@@ -376,9 +389,10 @@ func (l *Lunar) Nanosecond() int {
 	return l.nanosecond
 }
 
-func (l *Lunar) AnimalYear() string{
-	ganzhiY,_,_ := l.Convert().GanzhiYMD()
-	return fmt.Sprintf("%s%s",ganzhiY,AnimalYear(l.year))
+// AnimalYear returns the animal year.
+func (l *Lunar) AnimalYear() string {
+	ganzhiY, _, _ := l.Convert().GanzhiYMD()
+	return fmt.Sprintf("%s%s", ganzhiY, AnimalYear(l.year))
 }
 
 // SetHour sets hour.
@@ -439,7 +453,7 @@ func LunarYearDays(year int) int {
 	sum := 348
 	for i := 0x8000; i > 0x8; i >>= 1 {
 		if (lunarTable[year-MinYear] & i) != 0 {
-			sum += 1
+			sum++
 		}
 	}
 	return sum + LeapDays(year)

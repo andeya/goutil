@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/henrylee2cn/goutil/calendar"
 	"time"
+
+	"github.com/henrylee2cn/goutil/calendar"
 )
 
 func main() {
@@ -120,5 +121,5 @@ func main() {
 	fmt.Println("Mon Jul 9 23:35:51 2012 -> ", l)
 	fmt.Println("2012年五月廿二 10时20分15秒 -> ", calendar.NewLunar(2012, 5, 22, 10, 20, 15, 0, false))
 
-	fmt.Println(calendar.NewSolar(2018,11,28,0,0,0,0,calendar.CST).DiffFromYMD(2018,12,1))
+	fmt.Println(calendar.NewSolar(2018, 11, 28, 0, 0, 0, 0, calendar.CST).DiffWithYMD(2018, 12, 1))
 }

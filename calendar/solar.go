@@ -29,18 +29,30 @@ func NewSolar(year, month, day, hour, min, sec int, nsec int, loc *time.Location
 	return &Solar{t.In(CST)}
 }
 
+// DiffWithYMD returns the number of days past the current time.
 func (s *Solar) DiffWithYMD(year, month, day int) int {
 	return int((time.Date(year, time.Month(month), day, 0, 0, 0, 0, CST).Unix() - s.Time.Unix()) / 86400)
 }
 
-func DiffYMD(year, month, day,targetYear,targetMonth,targetDay int) int {
+// DiffYMD returns the number of days that the target time exceeds the specified time.
+func DiffYMD(year, month, day, targetYear, targetMonth, targetDay int) int {
 	return int((time.Date(targetYear, time.Month(targetMonth), targetDay, 0, 0, 0, 0, CST).Unix() - time.Date(year, time.Month(month), day, 0, 0, 0, 0, CST).Unix()) / 86400)
+}
+
+// GetTime returns the time.Time
+func (s *Solar) GetTime() time.Time {
+	return s.Time
 }
 
 // String formats time.
 func (s *Solar) String() string {
 	return fmt.Sprintf("%d年%02d月%02d日 %2d时%2d分%2d秒",
 		s.Year(), s.Month(), s.Day(), s.Hour(), s.Minute(), s.Second())
+}
+
+// Equal returns whether it is equal to the solar time.
+func (s *Solar) Equal(solar *Solar) bool {
+	return s.Time.Equal(solar.Time)
 }
 
 // Festival returns festival.
@@ -51,6 +63,7 @@ func (s *Solar) Festival(fm FestivalMap) (string, error) {
 	return fm.Get(m + d)
 }
 
+// GanzhiYMD returns the year, month and day of "天干地支".
 func (s *Solar) GanzhiYMD() (year, month, day string) {
 	year, month, day = GanZhiYMD(s.Year(), int(s.Month()), s.Day())
 	return
