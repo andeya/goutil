@@ -85,6 +85,12 @@ func ExampleBitSet() {
 	fmt.Println("And:", not.And(bitset.New(1<<1, 1<<1)).Binary(" "))
 	fmt.Println("Or:", not.Or(bitset.New(1<<7, 1<<7)).Binary(" "))
 	fmt.Println("Xor:", not.Xor(bitset.New(1<<7, 1<<7)).Binary(" "))
+
+	not.Range(func(k int, v bool) bool {
+		fmt.Println(v)
+		return true
+	})
+
 	// Output:
 	// Origin: 11000000 00100000
 	// Not: 00111111 11011111
@@ -92,14 +98,6 @@ func ExampleBitSet() {
 	// And: 00000010 00000010
 	// Or: 10111111 11011111
 	// Xor: 10111111 01011111
-
-	not.Range(func(k int, v bool) bool {
-		fmt.Println(v)
-		return true
-	})
-	// 00111111 11011111
-
-	// Output:
 	// false
 	// false
 	// true
