@@ -1,12 +1,14 @@
 package bitset
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/bits"
-	"strings"
 	"sync"
+
+	"github.com/henrylee2cn/goutil"
 )
 
 // BitSet bit set
@@ -310,11 +312,11 @@ func (b *BitSet) Binary(sep string) string {
 	if len(b.set) == 0 {
 		return ""
 	}
-	var s strings.Builder
+	var buf bytes.Buffer
 	for _, i := range b.set {
-		s.WriteString(fmt.Sprintf("%s%08b", sep, i))
+		buf.WriteString(fmt.Sprintf("%s%08b", sep, i))
 	}
-	return strings.TrimPrefix(s.String(), sep)
+	return goutil.BytesToString(bytes.TrimPrefix(buf.Bytes(), goutil.StringToBytes(sep)))
 }
 
 // String returns the bit set by hex type.
