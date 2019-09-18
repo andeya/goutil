@@ -32,6 +32,25 @@ func TestCatchNil2(t *testing.T) {
 	Panic(nil)
 }
 
+func TestCatchNil3(t *testing.T) {
+	var realStat bool
+	defer func() {
+		assert.False(t, realStat)
+	}()
+	defer Catch(nil, &realStat)
+}
+
+func TestCatchStatus(t *testing.T) {
+	var stat = NewWithStack(2, "TestCatchStatus", nil)
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.Equal(t, int32(2), stat.Code())
+		assert.True(t, realStat)
+	}()
+	defer Catch(&stat, &realStat)
+}
+
 func TestCatchNotNil(t *testing.T) {
 	var stat *Status
 	defer func() {
