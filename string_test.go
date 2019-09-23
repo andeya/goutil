@@ -68,6 +68,22 @@ func TestCamelString(t *testing.T) {
 	}
 }
 
+func TestHTMLEntityToUTF8(t *testing.T) {
+	want := `{"info":[["color","咖啡色|绿色"]]｝`
+	got := HTMLEntityToUTF8(`{"info":[["color","&#5496;&#5561;&#8272;&#7c;&#7eff;&#8272;"]]｝`, 16)
+	if got != want {
+		t.Fatalf("want: %q, got: %q", want, got)
+	}
+}
+
+func TestCodePointToUTF8(t *testing.T) {
+	got := CodePointToUTF8(`{"info":[["color","\u5496\u5561\u8272\u7c\u7eff\u8272"]]｝`, 16)
+	want := `{"info":[["color","咖啡色|绿色"]]｝`
+	if got != want {
+		t.Fatalf("want: %q, got: %q", want, got)
+	}
+}
+
 func TestSpaceInOne(t *testing.T) {
 	a := struct {
 		input  string
