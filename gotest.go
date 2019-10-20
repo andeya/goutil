@@ -28,7 +28,7 @@ func checkGoTestEnv() bool {
 			"-test.v=",
 			"-test.v ",
 		} {
-			if strings.HasPrefix(arg, s) {
+			if strings.HasPrefix(arg, s) || arg == s {
 				return true
 			}
 		}
