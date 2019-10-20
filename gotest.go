@@ -20,9 +20,13 @@ func checkGoTestEnv() bool {
 	for _, arg := range os.Args[1:] {
 		for _, s := range []string{
 			"-test.timeout=",
+			"-test.timeout ",
 			"-test.run=",
+			"-test.run ",
 			"-test.bench=",
+			"-test.bench ",
 			"-test.v=",
+			"-test.v ",
 		} {
 			if strings.HasPrefix(arg, s) {
 				return true
