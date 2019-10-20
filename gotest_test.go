@@ -1,17 +1,17 @@
 package goutil
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestIsGoTest(t *testing.T) {
-	if !IsGoTest() {
-		t.FailNow()
-	}
+	assert.True(t, IsGoTest())
 }
 
 func BenchmarkIsGoTest(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		if !IsGoTest() {
-			b.FailNow()
-		}
+		assert.True(b, IsGoTest())
 	}
 }
