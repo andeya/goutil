@@ -28,7 +28,7 @@ func (fm FestivalMap) Get(key string) (string, error) {
 	if ok {
 		return desc, nil
 	}
-	return "", errors.New("FestivalMap KEY NotFound")
+	return "", errors.New("FestivalMap key not found")
 }
 
 func (fm FestivalMap) SaveToFile(filename string) error {

@@ -14,9 +14,9 @@ import (
 func ExtranetIP() (ip string, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("Get external IP error: %v", p)
+			err = fmt.Errorf("get external IP error: %v", p)
 		} else if err != nil {
-			err = errors.New("Get external IP error: " + err.Error())
+			err = errors.New("get external IP error: " + err.Error())
 		}
 	}()
 	resp, err := http.Get("http://pv.sohu.com/cityjson?ie=utf-8")
@@ -71,5 +71,5 @@ func IntranetIP() (string, error) {
 			return ip.String(), nil
 		}
 	}
-	return "", errors.New("Are you connected to the network?")
+	return "", errors.New("no network connection")
 }
