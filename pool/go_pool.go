@@ -114,7 +114,7 @@ func (gp *GoPool) Stop() {
 	gp.lock.Unlock()
 }
 
-var ErrLack = errors.New("lack of goroutines, because exceeded maxGoroutinesAmount limit.")
+var ErrLack = errors.New("lack of goroutines, because exceeded maxGoroutinesAmount limit")
 
 // Go executes the function via a goroutine.
 // If returns non-nil, the function cannot be executed because exceeded maxGoroutinesAmount limit.
