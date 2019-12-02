@@ -6,6 +6,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSetToStrings(t *testing.T) {
+	a := make([]string, 0, 10)
+	a = append(a, "1", "2", "3")
+	b := SetToStrings(a, "4", "2", "5")
+	assert.Equal(t, []string{"1", "2", "3", "4", "5"}, b)
+	assert.Equal(t, []string{"1", "2", "3"}, a)
+}
+
 func TestIntersectStrings(t *testing.T) {
 	cases := []struct {
 		set1, set2, intersect []string

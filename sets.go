@@ -259,7 +259,14 @@ func StringsDistinct(a []string) (set []string) {
 }
 
 // SetToStrings sets a element to the string set.
-func SetToStrings(set []string, a string) []string {
+func SetToStrings(set []string, a ...string) []string {
+	for _, s := range a {
+		set = setOneToStrings(set, s)
+	}
+	return set
+}
+
+func setOneToStrings(set []string, a string) []string {
 	for _, s := range set {
 		if s == a {
 			return set
