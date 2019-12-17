@@ -2,9 +2,12 @@ package goutil
 
 import (
 	"crypto/aes"
+	"crypto/cipher"
 	"crypto/md5"
+	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"io"
 )
 
 // Md5 returns the MD5 checksum string of the data.
@@ -13,15 +16,12 @@ func Md5(b []byte) string {
 	return hex.EncodeToString(checksum[:])
 }
 
-// AESEncrypt uses ECB mode to encrypt a piece of data.
+// AESEncrypt uses ECB mode to encrypt a piece of data and then encodes it in hex.
 // The cipherkey argument should be the AES key,
 // either 16, 24, or 32 bytes to select
 // AES-128, AES-192, or AES-256.
 func AESEncrypt(cipherkey, plaintext []byte) []byte {
-	block, err := aes.NewCipher(cipherkey)
-	if err != nil {
-		panic(err)
-	}
+	block := mustNewCipher(cipherkey)
 	blockSize := block.BlockSize()
 	plaintext = pkcs5Padding(plaintext, blockSize)
 	r := make([]byte, len(plaintext))
@@ -31,22 +31,19 @@ func AESEncrypt(cipherkey, plaintext []byte) []byte {
 		plaintext = plaintext[blockSize:]
 		dst = dst[blockSize:]
 	}
-	dst = make([]byte, hex.EncodedLen(len(r)))
-	hex.Encode(dst, r)
-	return dst
+	return hexEncode(r)
 }
 
-// AESDecrypt uses ECB mode to decrypt a piece of data.
+// AESDecrypt hex decodes a piece of data and then decrypts it using ECB mode.
 // The cipherkey argument should be the AES key,
 // either 16, 24, or 32 bytes to select
 // AES-128, AES-192, or AES-256.
 func AESDecrypt(cipherkey, ciphertext []byte) ([]byte, error) {
-	block, err := aes.NewCipher(cipherkey)
+	src, err := hexDecode(ciphertext)
 	if err != nil {
 		return nil, err
 	}
-	src := make([]byte, hex.DecodedLen(len(ciphertext)))
-	_, err = hex.Decode(src, ciphertext)
+	block, err := aes.NewCipher(cipherkey)
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +58,110 @@ func AESDecrypt(cipherkey, ciphertext []byte) ([]byte, error) {
 	return pkcs5Unpadding(r)
 }
 
+// AESCBCEncrypt uses CBC mode to encrypt a piece of data and then encodes it in hex.
+// The cipherkey argument should be the AES key,
+// either 16, 24, or 32 bytes to select
+// AES-128, AES-192, or AES-256.
+func AESCBCEncrypt(cipherkey, plaintext []byte) []byte {
+	block := mustNewCipher(cipherkey)
+	blockSize := block.BlockSize()
+	plaintext = pkcs5Padding(plaintext, blockSize)
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the ciphertext.
+	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		panic(err)
+	}
+	mode := cipher.NewCBCEncrypter(block, iv)
+	mode.CryptBlocks(ciphertext[aes.BlockSize:], plaintext)
+	return hexEncode(ciphertext)
+}
+
+// AESCBCDecrypt hex decodes a piece of data and then decrypts it using CBC mode.
+// The cipherkey argument should be the AES key,
+// either 16, 24, or 32 bytes to select
+// AES-128, AES-192, or AES-256.
+func AESCBCDecrypt(cipherkey, ciphertext []byte) ([]byte, error) {
+	ciphertext, err := hexDecode(ciphertext)
+	if err != nil {
+		return nil, err
+	}
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the ciphertext.
+	if len(ciphertext) < aes.BlockSize {
+		return nil, errors.New("ciphertext too short")
+	}
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
+	// CBC mode always works in whole blocks.
+	if len(ciphertext)%aes.BlockSize != 0 {
+		return nil, errors.New("ciphertext is not a multiple of the block size")
+	}
+	block, err := aes.NewCipher(cipherkey)
+	if err != nil {
+		return nil, err
+	}
+	mode := cipher.NewCBCDecrypter(block, iv)
+	// CryptBlocks can work in-place if the two arguments are the same.
+	plaintext := ciphertext
+	mode.CryptBlocks(plaintext, ciphertext)
+	return pkcs5Unpadding(plaintext)
+}
+
+// AESCTREncrypt uses CTR mode to encrypt a piece of data and then encodes it in hex.
+// The cipherkey argument should be the AES key,
+// either 16, 24, or 32 bytes to select
+// AES-128, AES-192, or AES-256.
+func AESCTREncrypt(cipherkey, plaintext []byte) []byte {
+	block := mustNewCipher(cipherkey)
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the ciphertext.
+	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		panic(err)
+	}
+	stream := cipher.NewCTR(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
+	return hexEncode(ciphertext)
+}
+
+// AESCTRDecrypt hex decodes a piece of data and then decrypts it using CTR mode.
+// The cipherkey argument should be the AES key,
+// either 16, 24, or 32 bytes to select
+// AES-128, AES-192, or AES-256.
+func AESCTRDecrypt(cipherkey, ciphertext []byte) ([]byte, error) {
+	ciphertext, err := hexDecode(ciphertext)
+	if err != nil {
+		return nil, err
+	}
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the ciphertext.
+	if len(ciphertext) < aes.BlockSize {
+		return nil, errors.New("ciphertext too short")
+	}
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
+	block, err := aes.NewCipher(cipherkey)
+	if err != nil {
+		return nil, err
+	}
+	stream := cipher.NewCTR(block, iv)
+	plaintext := ciphertext
+	// XORKeyStream can work in-place if the two arguments are the same.
+	stream.XORKeyStream(plaintext, ciphertext)
+	return plaintext, nil
+}
+
+func mustNewCipher(cipherkey []byte) cipher.Block {
+	block, err := aes.NewCipher(cipherkey)
+	if err != nil {
+		panic(err)
+	}
+	return block
+}
+
 func pkcs5Padding(plaintext []byte, blockSize int) []byte {
 	n := byte(blockSize - len(plaintext)%blockSize)
 	for i := byte(0); i < n; i++ {
@@ -72,9 +173,12 @@ func pkcs5Padding(plaintext []byte, blockSize int) []byte {
 func pkcs5Unpadding(r []byte) ([]byte, error) {
 	l := len(r)
 	if l == 0 {
-		return []byte{}, errors.New("input padded bytes is empty")
+		return nil, errors.New("input padded bytes is empty")
 	}
 	last := int(r[l-1])
+	if l-last < 0 {
+		return nil, errors.New("input padded bytes is invalid")
+	}
 	n := byte(last)
 	pad := r[l-last : l]
 	isPad := true
@@ -85,7 +189,19 @@ func pkcs5Unpadding(r []byte) ([]byte, error) {
 		}
 	}
 	if !isPad {
-		return r, errors.New("remove pad error")
+		return nil, errors.New("remove pad error")
 	}
 	return r[:l-last], nil
+}
+
+func hexEncode(src []byte) []byte {
+	dst := make([]byte, hex.EncodedLen(len(src)))
+	hex.Encode(dst, src)
+	return dst
+}
+
+func hexDecode(src []byte) ([]byte, error) {
+	dst := make([]byte, hex.DecodedLen(len(src)))
+	_, err := hex.Decode(dst, src)
+	return dst, err
 }

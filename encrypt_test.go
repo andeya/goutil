@@ -1,8 +1,9 @@
 package goutil
 
 import (
-	"encoding/hex"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMd5(t *testing.T) {
@@ -10,22 +11,42 @@ func TestMd5(t *testing.T) {
 	t.Logf("text: %s, md5: %s", b, Md5(b))
 }
 
-func TestEncrypt(t *testing.T) {
-	cipherkey := []byte("1234567890abcdef")
-	ciphertext := AESEncrypt(cipherkey, []byte("text1234"))
+var (
+	_cipherkey = []byte("1234567890abcdef")
+	_plaintext = []byte("text1234")
+)
+
+func TestAESEncrypt(t *testing.T) {
+	ciphertext := AESEncrypt(_cipherkey, _plaintext)
 	t.Logf("ciphertext: %s", ciphertext)
-	plaintext, err := AESDecrypt(cipherkey, ciphertext)
-	t.Logf("plaintext: %s, error: %v", plaintext, err)
-	if string(plaintext) != "text1234" {
-		t.Fatalf("expect: %s, but get: %s", "text1234", plaintext)
-	}
+	r, err := AESDecrypt(_cipherkey, ciphertext)
+	assert.NoError(t, err)
+	assert.Equal(t, _plaintext, r)
+}
+
+func TestAESCBCEncrypt(t *testing.T) {
+	ciphertext := AESCBCEncrypt(_cipherkey, _plaintext)
+	t.Logf("ciphertext: %s", ciphertext)
+	r, err := AESCBCDecrypt(_cipherkey, ciphertext)
+	assert.NoError(t, err)
+	assert.Equal(t, _plaintext, r)
+}
+
+func TestAESCTREncrypt(t *testing.T) {
+	ciphertext := AESCTREncrypt(_cipherkey, _plaintext)
+	t.Logf("ciphertext: %s", ciphertext)
+	r, err := AESCTRDecrypt(_cipherkey, ciphertext)
+	assert.NoError(t, err)
+	assert.Equal(t, _plaintext, r)
 }
 
 func TestPading(t *testing.T) {
-	plainText := []byte("text1234")
 	blockSize := 16
-	r := pkcs5Padding(plainText, blockSize)
-	dst := make([]byte, hex.EncodedLen(len(r)))
-	hex.Encode(dst, r)
-	t.Log(string(dst))
+	padded := hexEncode(pkcs5Padding(_plaintext, blockSize))
+	t.Log(string(padded))
+	r, err := hexDecode(padded)
+	assert.NoError(t, err)
+	unpaded, err := pkcs5Unpadding(r)
+	assert.NoError(t, err)
+	assert.Equal(t, _plaintext, unpaded)
 }
