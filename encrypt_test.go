@@ -11,6 +11,12 @@ func TestMd5(t *testing.T) {
 	t.Logf("text: %s, md5: %s", b, Md5(b))
 }
 
+func TestFnv1aToUint(t *testing.T) {
+	b := []byte("1234567890abcdef")
+	t.Logf("text: %s, Fnv1aToUint64: %d", b, Fnv1aToUint64(b))
+	t.Logf("text: %s, Fnv1aToUint32: %d", b, Fnv1aToUint32(b))
+}
+
 var (
 	_cipherkey = []byte("1234567890abcdef")
 	_plaintext = []byte("text1234")

@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"hash/fnv"
 	"io"
 )
 
@@ -14,6 +15,22 @@ import (
 func Md5(b []byte) string {
 	checksum := md5.Sum(b)
 	return hex.EncodeToString(checksum[:])
+}
+
+// Fnv1aToUint64 returns the 64-bit FNV-1a hash sum of b.
+func Fnv1aToUint64(b []byte) uint64 {
+	h := fnv.New64a()
+	h.Reset()
+	h.Write(b)
+	return h.Sum64()
+}
+
+// Fnv1aToUint32 returns the 32-bit FNV-1a hash sum of b.
+func Fnv1aToUint32(b []byte) uint32 {
+	h := fnv.New32a()
+	h.Reset()
+	h.Write(b)
+	return h.Sum32()
 }
 
 // AESEncrypt uses ECB mode to encrypt a piece of data and then encodes it in hex.
