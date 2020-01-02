@@ -3,6 +3,8 @@ package goutil
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBytesToString(t *testing.T) {
@@ -34,18 +36,15 @@ func TestSnakeString(t *testing.T) {
 	}
 	for _, p := range data {
 		r := SnakeString(p[0])
-		if r != p[1] {
-			t.Fatalf("[SnakeString] %s: expect: %s, but get %s", p[0], p[1], r)
-		}
+		assert.Equal(t, p[1], r, p[0])
 		r = SnakeString(p[1])
-		if r != p[1] {
-			t.Fatalf("[SnakeString] %s: expect: %s, but get %s", p[1], p[1], r)
-		}
+		assert.Equal(t, p[1], r, p[0])
 	}
 }
 
 func TestCamelString(t *testing.T) {
 	data := [][2]string{
+		{"_", "_"},
 		{"xx_yy", "XxYy"},
 		{"_xx_yy", "_XxYy"},
 		{"id", "Id"},
@@ -58,13 +57,30 @@ func TestCamelString(t *testing.T) {
 	}
 	for _, p := range data {
 		r := CamelString(p[0])
-		if r != p[1] {
-			t.Fatalf("[CamelString] %s: expect: %s, but get %s", p[0], p[1], r)
-		}
+		assert.Equal(t, p[1], r, p[0])
 		r = CamelString(p[1])
-		if r != p[1] {
-			t.Fatalf("[CamelString] %s: expect: %s, but get %s", p[1], p[1], r)
-		}
+		assert.Equal(t, p[1], r, p[0])
+	}
+}
+
+func TestLintCamelString(t *testing.T) {
+	data := [][2]string{
+		{"_", "_"},
+		{"xx_yy", "XxYy"},
+		{"_xx_yy", "XxYy"},
+		{"id", "ID"},
+		{"user_id", "UserID"},
+		{"rpc", "RPC"},
+		{"tcp_rpc", "TCPRPC"},
+		{"wake_rpc", "WakeRPC"},
+		{"___tcp___rpc", "TCPRPC"},
+		{"_tc_p__rp_c__", "TcPRpC"},
+	}
+	for _, p := range data {
+		r := LintCamelString(p[0])
+		assert.Equal(t, p[1], r, p[0])
+		r = LintCamelString(p[1])
+		assert.Equal(t, p[1], r, p[0])
 	}
 }
 
