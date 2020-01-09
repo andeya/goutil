@@ -73,6 +73,18 @@ func TestCheckWhenError(t *testing.T) {
 	Check(errors.New("a test error"), 400, "check 2", func() { t.Log("whenerror") })
 }
 
+func TestCheckError(t *testing.T) {
+	err := errors.New("a test error 3")
+	var stat *Status
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.Equal(t, err.Error(), stat.Msg())
+	}()
+	defer Catch(&stat)
+	Check(err, 400, "")
+}
+
 func TestThrow(t *testing.T) {
 	var stat *Status
 	defer func() {
