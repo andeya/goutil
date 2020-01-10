@@ -24,7 +24,15 @@ func InitAndGetString(strPtr *string, def string) string {
 
 // InitPointer initializes null pointer.
 func InitPointer(v reflect.Value) bool {
-	for v.Kind() == reflect.Ptr {
+	for {
+		kind := v.Kind()
+		if kind == reflect.Interface {
+			v = v.Elem()
+			continue
+		}
+		if kind != reflect.Ptr {
+			return true
+		}
 		u := v.Elem()
 		if u.IsValid() {
 			v = u
@@ -37,7 +45,6 @@ func InitPointer(v reflect.Value) bool {
 		v.Set(v2)
 		v = v.Elem()
 	}
-	return true
 }
 
 // DereferenceType dereference, get the underlying non-pointer type.
