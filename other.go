@@ -22,6 +22,24 @@ func InitAndGetString(strPtr *string, def string) string {
 	return *strPtr
 }
 
+// InitPointer initializes null pointer.
+func InitPointer(v reflect.Value) bool {
+	for v.Kind() == reflect.Ptr {
+		u := v.Elem()
+		if u.IsValid() {
+			v = u
+			continue
+		}
+		if !v.CanSet() {
+			return false
+		}
+		v2 := reflect.New(v.Type().Elem())
+		v.Set(v2)
+		v = v.Elem()
+	}
+	return true
+}
+
 // DereferenceType dereference, get the underlying non-pointer type.
 func DereferenceType(t reflect.Type) reflect.Type {
 	for t.Kind() == reflect.Ptr {

@@ -3,7 +3,21 @@ package goutil
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestInitPointer(t *testing.T) {
+	type T struct {
+		A string
+		B int
+	}
+	var i **********T
+	v := reflect.ValueOf(&i)
+	done := InitPointer(v)
+	assert.True(t, done)
+	assert.Equal(t, T{}, **********i)
+}
 
 func TestReferenceSlice(t *testing.T) {
 	v := reflect.ValueOf([]int{1, 2})
