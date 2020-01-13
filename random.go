@@ -26,7 +26,7 @@ func NewRandom(alphabet string) *Random {
 	return r
 }
 
-// Random random string creater.
+// Random random string creator.
 type Random struct {
 	encoding      *base64.Encoding
 	substitute    []byte
