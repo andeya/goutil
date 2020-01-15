@@ -6,6 +6,13 @@ func isEmptyAsZero(emptyAsZero []bool) bool {
 	return len(emptyAsZero) > 0 && emptyAsZero[0]
 }
 
+// CopyStrings creates a copy of the string slice.
+func CopyStrings(a []string) []string {
+	b := make([]string, len(a))
+	copy(b, a)
+	return b
+}
+
 // StringsToBools converts string slice to bool slice.
 func StringsToBools(a []string, emptyAsZero ...bool) ([]bool, error) {
 	strict := !isEmptyAsZero(emptyAsZero)
