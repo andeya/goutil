@@ -133,24 +133,28 @@ func (s *Status) Code() int32 {
 }
 
 // Msg returns the status msg displayed to the user (optional).
+// NOTE:
+//  When empty, the reason is returned by default
 func (s *Status) Msg() string {
 	if s == nil {
 		return ""
 	}
+	if s.msg == "" && s.cause != nil {
+		return s.cause.Error()
+	}
 	return s.msg
 }
 
-var noCause = errors.New("")
-
 // Cause returns the cause of the status for debugging (optional).
 // NOTE:
-//  If s.OK() is false, the return value is never nil.
+//  If s.OK() is false, the return value is never nil;
+//  When empty, the msg is returned by default
 func (s *Status) Cause() error {
 	if s == nil {
 		return nil
 	}
 	if s.cause == nil && s.code != OK {
-		return noCause
+		return errors.New(s.msg)
 	}
 	return s.cause
 }

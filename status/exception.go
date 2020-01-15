@@ -10,9 +10,6 @@ func Check(err error, code int32, msg string, whenError ...func()) {
 	if len(whenError) > 0 && whenError[0] != nil {
 		whenError[0]()
 	}
-	if msg == "" {
-		msg = err.Error()
-	}
 	panic(New(code, msg, err).TagStack(1))
 }
 
