@@ -446,7 +446,7 @@ func RemoveAllFromInt64s(set []int64, a int64) []int64 {
 }
 
 // InterfacesDistinct creates a interface{} set that
-// removes the same elementerface{}s and returns them in their original order.
+// removes the same elements and returns them in their original order.
 func InterfacesDistinct(a []interface{}) (set []interface{}) {
 	m := make(map[interface{}]bool, len(a))
 	set = make([]interface{}, 0, len(a))
