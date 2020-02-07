@@ -144,3 +144,10 @@ func IsLittleEndian() bool {
 	b := *pb
 	return (b == 0x04)
 }
+
+const (
+	// Is64BitPlatform Whether the current system is a 64-bit platform
+	Is64BitPlatform bool = (32 << (^uint(0) >> 63)) == 64
+	// Is32BitPlatform Whether the current system is a 32-bit platform
+	Is32BitPlatform bool = (32 << (^uint(0) >> 63)) == 0
+)
