@@ -1,24 +1,25 @@
 package password
 
-// Flag password material requirement
+// Flag denotes the expected or actual element of the password.
 type Flag uint8
 
 const (
-	// N Numbers
+	// N denotes the numerals.
 	N Flag = 1 << 0
-	// L_OR_U Uppercase or lowercase letter
+	// L_OR_U denotes the lowercase or uppercase letters.
 	L_OR_U Flag = 1 << 1
-	// L Lowercase letters
+	// L denotes the lowercase letters.
 	L Flag = 1 << 2
-	// U Uppercase letter
+	// U denotes the uppercase letters.
 	U Flag = 1 << 3
-	// S Symbols found on the keyboard (all keyboard characters not defined as letters or numerals) and spaces
+	// S denotes the printable symbols found on the keyboard, except letters, numerals and spaces.
 	S Flag = 1 << 4
 
+	// mask is used for extracting the 5 least significant bits of the flag.
 	mask Flag = 0x1f
 )
 
-// CheckPassword checks if the password matches the format requirements.
+// CheckPassword checks if the actual element of the password matches the expected flag.
 func CheckPassword(pw string, flag Flag, minLen int, maxLen ...int) bool {
 	if len(pw) < minLen ||
 		(len(maxLen) > 0 && len(pw) > maxLen[0]) {
@@ -47,5 +48,6 @@ func CheckPassword(pw string, flag Flag, minLen int, maxLen ...int) bool {
 			return false
 		}
 	}
+	r &^= flag & (L|U) ^ (L|U)
 	return r == flag
 }
