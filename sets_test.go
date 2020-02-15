@@ -26,17 +26,17 @@ func TestIntersectStrings(t *testing.T) {
 		{
 			[]string{"a", "b", "c", "d", "e", "d"},
 			[]string{"b", "d", "d", "d"},
-			[]string{"b", "d", "d"},
+			[]string{"b", "d"},
 		},
 		{
 			[]string{"a"},
 			nil,
-			nil,
+			[]string{},
 		},
 		{
 			[]string{"a"},
 			[]string{"b"},
-			nil,
+			[]string{},
 		},
 	}
 
