@@ -10,6 +10,19 @@ import (
 	"unsafe"
 )
 
+// Indent inserts prefix at the beginning of each line
+func Indent(text, prefix string) string {
+	if len(prefix) == 0 {
+		return text
+	}
+	has := strings.HasSuffix(text, "\n")
+	text = prefix + strings.Replace(text, "\n", "\n"+prefix, -1)
+	if has {
+		return text[:len(text)-len(prefix)]
+	}
+	return text
+}
+
 // BytesToString convert []byte type to string type.
 func BytesToString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
