@@ -117,8 +117,7 @@ func StringsDistinct(a []string) (set []string) {
 
 // SetToStrings sets a element to the string set.
 func SetToStrings(set []string, a ...string) []string {
-	ameda.StringsPushDistinct(&set, a...)
-	return set
+	return ameda.StringsPushDistinct(set, a...)
 }
 
 // RemoveFromStrings removes the first element from the string set.
@@ -143,8 +142,7 @@ func IntsDistinct(a []int) (set []int) {
 
 // SetToInts sets a element to the int set.
 func SetToInts(set []int, a int) []int {
-	ameda.IntsPushDistinct(&set, a)
-	return set
+	return ameda.IntsPushDistinct(set, a)
 }
 
 // RemoveFromInts removes the first element from the int set.
@@ -169,8 +167,7 @@ func Int32sDistinct(a []int32) (set []int32) {
 
 // SetToInt32s sets a element to the int32 set.
 func SetToInt32s(set []int32, a int32) []int32 {
-	ameda.Int32sPushDistinct(&set, a)
-	return set
+	return ameda.Int32sPushDistinct(set, a)
 }
 
 // RemoveFromInt32s removes the first element from the int32 set.
@@ -195,8 +192,7 @@ func Int64sDistinct(a []int64) (set []int64) {
 
 // SetToInt64s sets a element to the int64 set.
 func SetToInt64s(set []int64, a int64) []int64 {
-	ameda.Int64sPushDistinct(&set, a)
-	return set
+	return ameda.Int64sPushDistinct(set, a)
 }
 
 // RemoveFromInt64s removes the first element from the int64 set.
@@ -221,8 +217,7 @@ func InterfacesDistinct(a []interface{}) (set []interface{}) {
 
 // SetToInterfaces sets a element to the interface{} set.
 func SetToInterfaces(set []interface{}, a interface{}) []interface{} {
-	ameda.InterfacesPushDistinct(&set, a)
-	return set
+	return ameda.InterfacesPushDistinct(set, a)
 }
 
 // RemoveFromInterfaces removes the first element from the interface{} set.
