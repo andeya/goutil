@@ -14,8 +14,8 @@ func Check(err error, code int32, msg string, whenError ...func()) {
 }
 
 // Throw creates a status with stack, and panic.
-func Throw(code int32, msg string, cause interface{}) {
-	panic(New(code, msg, cause).TagStack(1))
+func Throw(code int32, msg string, cause ...interface{}) {
+	panic(New(code, msg, cause...).TagStack(1))
 }
 
 // Panic panic with stack trace.

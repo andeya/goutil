@@ -31,11 +31,13 @@ type Status struct {
 // New creates a handling status with code, msg and cause.
 // NOTE:
 //  code=0 means no error
-func New(code int32, msg string, cause interface{}) *Status {
+func New(code int32, msg string, cause ...interface{}) *Status {
 	s := &Status{
-		code:  code,
-		msg:   msg,
-		cause: toErr(cause),
+		code: code,
+		msg:  msg,
+	}
+	if len(cause) > 0 {
+		s.cause = toErr(cause[0])
 	}
 	return s
 }
@@ -43,8 +45,8 @@ func New(code int32, msg string, cause interface{}) *Status {
 // NewWithStack creates a handling status with code, msg and cause and stack.
 // NOTE:
 //  code=0 means no error
-func NewWithStack(code int32, msg string, cause interface{}) *Status {
-	return New(code, msg, cause).TagStack(1)
+func NewWithStack(code int32, msg string, cause ...interface{}) *Status {
+	return New(code, msg, cause...).TagStack(1)
 }
 
 // FromJSON parses the JSON bytes to a status object.
