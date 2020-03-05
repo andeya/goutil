@@ -178,7 +178,7 @@ func TestCheckError2(t *testing.T) {
 		assert.Equal(t, err, stat.Cause())
 	}()
 	defer Catch(&stat)
-	stat.Check(err)
+	stat.CopyCheck(err)
 }
 
 func TestThrow(t *testing.T) {
@@ -199,7 +199,7 @@ func TestThrow2(t *testing.T) {
 		assert.Equal(t, "a test error", stat.Cause().Error())
 	}()
 	defer Catch(&stat)
-	stat.Throw("a test error")
+	stat.CopyThrow("a test error")
 }
 
 func TestThrow3(t *testing.T) {
@@ -210,7 +210,7 @@ func TestThrow3(t *testing.T) {
 		assert.Equal(t, "raw cause", stat.cause.Error())
 	}()
 	defer Catch(&stat)
-	stat.Throw()
+	stat.CopyThrow()
 }
 
 func TestCatchNotError(t *testing.T) {

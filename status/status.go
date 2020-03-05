@@ -82,10 +82,8 @@ func (s *Status) TagStack(skip ...int) *Status {
 	return s
 }
 
-// Check if err!=nil, copies the status with stack, and panic.
-// NOTE:
-//  If err!=nil and msg=="", error text is set to msg
-func (s *Status) Check(err error, whenError ...func()) {
+// CopyCheck if err!=nil, copies the status with stack, and panic.
+func (s *Status) CopyCheck(err error, whenError ...func()) {
 	if err == nil {
 		return
 	}
@@ -95,8 +93,8 @@ func (s *Status) Check(err error, whenError ...func()) {
 	panic(New(s.code, s.msg, err).TagStack(1))
 }
 
-// Throw copies the status with stack, and panic.
-func (s *Status) Throw(cause ...interface{}) {
+// CopyThrow copies the status with stack, and panic.
+func (s *Status) CopyThrow(cause ...interface{}) {
 	ns := New(s.code, s.msg, s.cause).TagStack(1)
 	if len(cause) > 0 {
 		ns.cause = toErr(cause[0])
