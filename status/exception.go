@@ -19,14 +19,14 @@ func Throw(code int32, msg string, cause ...interface{}) {
 }
 
 // Panic panic with stack trace.
-func Panic(stat *Status) {
+func Panic(stat *Status, copy ...bool) {
 	if stat == nil {
-		stat = &Status{
-			stack: callers(3),
-		}
-	} else if stat.stack == nil {
-		stat.stack = callers(3)
+		panic(&Status{stack: callers(3)})
 	}
+	if len(copy) > 0 && copy[0] {
+		panic(&Status{code: stat.code, msg: stat.msg, cause: stat.cause, stack: callers(3)})
+	}
+	stat.stack = callers(3)
 	panic(stat)
 }
 
@@ -49,14 +49,13 @@ func Catch(statPtr **Status, realStat ...*bool) {
 		return
 	}
 
-	// Keep the original abnormal status
-	if !(*statPtr).OK() {
-		trySetBool(realStat, true)
-		return
-	}
-
 	switch v := r.(type) {
 	case nil:
+		// Keep the original abnormal status
+		if !(*statPtr).OK() {
+			trySetBool(realStat, true)
+			return
+		}
 		trySetBool(realStat, false)
 		*statPtr = new(Status)
 	case *Status:

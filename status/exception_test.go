@@ -32,6 +32,90 @@ func TestCatchNil2(t *testing.T) {
 	Panic(nil)
 }
 
+func TestCatchNil20(t *testing.T) {
+	var stat *Status
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.True(t, realStat)
+	}()
+	defer Catch(&stat, &realStat)
+	Panic(nil, true)
+}
+
+func TestCatchNil21(t *testing.T) {
+	var stat = New(1, "text")
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.True(t, realStat)
+	}()
+	defer Catch(&stat, &realStat)
+	Panic(stat)
+}
+
+func TestCatchNil22(t *testing.T) {
+	var stat = New(1, "text")
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.True(t, realStat)
+	}()
+	defer Catch(&stat, &realStat)
+	Panic(stat, true)
+}
+
+func TestCatchNil23(t *testing.T) {
+	var stat *Status
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.True(t, realStat)
+	}()
+	defer Catch(&stat, &realStat)
+	stat.Panic(false)
+}
+
+func TestCatchNil24(t *testing.T) {
+	var stat *Status
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.True(t, realStat)
+	}()
+	defer Catch(&stat, &realStat)
+	stat.Panic(true)
+}
+
+func TestCatchNil25(t *testing.T) {
+	var stat = NewWithStack(1, "text")
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.True(t, realStat)
+	}()
+	defer Catch(&stat, &realStat)
+	stat.Panic(false)
+}
+
+func TestCatchNil26(t *testing.T) {
+	var stat = NewWithStack(1, "text")
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.True(t, realStat)
+	}()
+	defer Catch(&stat, &realStat)
+	stat.Panic(true)
+}
+
 func TestCatchNil3(t *testing.T) {
 	var realStat bool
 	defer func() {
@@ -41,7 +125,7 @@ func TestCatchNil3(t *testing.T) {
 }
 
 func TestCatchStatus(t *testing.T) {
-	var stat = NewWithStack(2, "TestCatchStatus", nil)
+	var stat = NewWithStack(2, "TestCatchStatus")
 	var realStat bool
 	defer func() {
 		t.Logf("%+v", stat)
@@ -85,15 +169,48 @@ func TestCheckError(t *testing.T) {
 	Check(err, 400, "")
 }
 
+func TestCheckError2(t *testing.T) {
+	err := errors.New("a test error 3")
+	var stat = New(400, "bad", "raw cause")
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.Equal(t, err, stat.Cause())
+	}()
+	defer Catch(&stat)
+	stat.Check(err)
+}
+
 func TestThrow(t *testing.T) {
 	var stat *Status
 	defer func() {
 		t.Logf("%+v", stat)
 		assert.True(t, stat != nil)
 	}()
-
 	defer Catch(&stat)
 	Throw(400, "", "a test error")
+}
+
+func TestThrow2(t *testing.T) {
+	var stat = New(400, "bad", "raw cause")
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.Equal(t, "a test error", stat.Cause().Error())
+	}()
+	defer Catch(&stat)
+	stat.Throw("a test error")
+}
+
+func TestThrow3(t *testing.T) {
+	var stat = New(400, "bad", "raw cause")
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.Equal(t, "raw cause", stat.cause.Error())
+	}()
+	defer Catch(&stat)
+	stat.Throw()
 }
 
 func TestCatchNotError(t *testing.T) {
