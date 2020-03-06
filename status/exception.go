@@ -18,16 +18,55 @@ func Throw(code int32, msg string, cause ...interface{}) {
 	panic(New(code, msg, cause...).TagStack(1))
 }
 
-// Panic panic with stack trace.
-func Panic(stat *Status, copy ...bool) {
-	if stat == nil {
-		panic(&Status{stack: callers(3)})
-	}
-	if len(copy) > 0 && copy[0] {
-		panic(&Status{code: stat.code, msg: stat.msg, cause: stat.cause, stack: callers(3)})
-	}
-	stat.stack = callers(3)
+// Panic panic.
+// TODO: remove
+func Panic(stat *Status) {
 	panic(stat)
+}
+
+// CatchWithStack recovers the panic and returns status copy with stack.
+// NOTE:
+//  Set `realStat` to true if a `Status` type is recovered
+// Example:
+//  var stat *Status
+//  defer CatchWithStack(&stat)
+func CatchWithStack(statPtr **Status, realStat ...*bool) {
+	r := recover()
+
+	if statPtr == nil {
+		switch r.(type) {
+		case *Status, Status:
+			trySetBool(realStat, true)
+		default:
+			trySetBool(realStat, false)
+		}
+		return
+	}
+	stack := findPanicStack()
+	switch v := r.(type) {
+	case nil:
+		// Keep the original abnormal status
+		if !(*statPtr).OK() {
+			trySetBool(realStat, true)
+			(*statPtr).stack = stack
+		} else {
+			trySetBool(realStat, false)
+			*statPtr = &Status{stack: stack}
+		}
+	case *Status:
+		trySetBool(realStat, true)
+		if v == nil {
+			*statPtr = &Status{stack: stack}
+		} else {
+			*statPtr = &Status{code: v.code, msg: v.msg, cause: v.cause, stack: stack}
+		}
+	case Status:
+		trySetBool(realStat, true)
+		*statPtr = &Status{code: v.code, msg: v.msg, cause: v.cause, stack: stack}
+	default:
+		trySetBool(realStat, false)
+		*statPtr = &Status{code: UnknownError, cause: toErr(v), stack: stack}
+	}
 }
 
 // Catch recovers the panic and returns status.

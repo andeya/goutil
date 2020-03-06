@@ -82,8 +82,8 @@ func (s *Status) TagStack(skip ...int) *Status {
 	return s
 }
 
-// CopyCheck if err!=nil, copies the status with stack, and panic.
-func (s *Status) CopyCheck(err error, whenError ...func()) {
+// NewCheck if err!=nil, copies the status with stack, and panic.
+func (s *Status) NewCheck(err error, whenError ...func()) {
 	if err == nil {
 		return
 	}
@@ -93,26 +93,13 @@ func (s *Status) CopyCheck(err error, whenError ...func()) {
 	panic(New(s.code, s.msg, err).TagStack(1))
 }
 
-// CopyThrow copies the status with stack, and panic.
-func (s *Status) CopyThrow(cause ...interface{}) {
+// NewThrow copies the status with stack, and panic.
+func (s *Status) NewThrow(cause ...interface{}) {
 	ns := New(s.code, s.msg, s.cause).TagStack(1)
 	if len(cause) > 0 {
 		ns.cause = toErr(cause[0])
 	}
 	panic(ns)
-}
-
-// Panic panic with stack trace.
-func (s *Status) Panic(copy bool) {
-	if s == nil {
-		panic(&Status{
-			stack: callers(3),
-		})
-	}
-	if !copy {
-		panic(s.TagStack(1))
-	}
-	panic(New(s.code, s.msg, s.cause).TagStack(1))
 }
 
 // Copy returns the copy of Status.

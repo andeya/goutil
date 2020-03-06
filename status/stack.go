@@ -175,3 +175,29 @@ func funcname(name string) string {
 	i = strings.Index(name, ".")
 	return name[i+1:]
 }
+
+func findPanicStack() *stack {
+	const depth = 32
+	var skip = 0
+	for {
+		pcs := make([]uintptr, depth)
+		n := runtime.Callers(skip, pcs)
+		pcs = pcs[0:n]
+		for i, p := range pcs {
+			println(Frame(p).name())
+			if Frame(p).name() == "runtime.gopanic" {
+				if n <= depth {
+					st := stack(pcs[i+1:])
+					return &st
+				}
+				n := runtime.Callers(skip+i+1, pcs)
+				st := stack(pcs[0:n])
+				return &st
+			}
+		}
+		if n < depth {
+			return nil
+		}
+		skip += n
+	}
+}

@@ -20,6 +20,31 @@ func TestCatchNil(t *testing.T) {
 	panic(nil)
 }
 
+func TestCatchNil10(t *testing.T) {
+	var stat *Status
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.Empty(t, stat)
+		assert.True(t, stat != nil)
+		assert.True(t, realStat)
+	}()
+	defer Catch(&stat, &realStat)
+	panic(stat)
+}
+
+func TestCatchNil11(t *testing.T) {
+	var stat *Status
+	var realStat bool
+	defer func() {
+		t.Logf("%+v", stat)
+		assert.True(t, stat != nil)
+		assert.True(t, realStat)
+	}()
+	defer CatchWithStack(&stat, &realStat)
+	panic(stat)
+}
+
 func TestCatchNil2(t *testing.T) {
 	var stat *Status
 	var realStat bool
@@ -32,18 +57,6 @@ func TestCatchNil2(t *testing.T) {
 	Panic(nil)
 }
 
-func TestCatchNil20(t *testing.T) {
-	var stat *Status
-	var realStat bool
-	defer func() {
-		t.Logf("%+v", stat)
-		assert.True(t, stat != nil)
-		assert.True(t, realStat)
-	}()
-	defer Catch(&stat, &realStat)
-	Panic(nil, true)
-}
-
 func TestCatchNil21(t *testing.T) {
 	var stat = New(1, "text")
 	var realStat bool
@@ -54,66 +67,6 @@ func TestCatchNil21(t *testing.T) {
 	}()
 	defer Catch(&stat, &realStat)
 	Panic(stat)
-}
-
-func TestCatchNil22(t *testing.T) {
-	var stat = New(1, "text")
-	var realStat bool
-	defer func() {
-		t.Logf("%+v", stat)
-		assert.True(t, stat != nil)
-		assert.True(t, realStat)
-	}()
-	defer Catch(&stat, &realStat)
-	Panic(stat, true)
-}
-
-func TestCatchNil23(t *testing.T) {
-	var stat *Status
-	var realStat bool
-	defer func() {
-		t.Logf("%+v", stat)
-		assert.True(t, stat != nil)
-		assert.True(t, realStat)
-	}()
-	defer Catch(&stat, &realStat)
-	stat.Panic(false)
-}
-
-func TestCatchNil24(t *testing.T) {
-	var stat *Status
-	var realStat bool
-	defer func() {
-		t.Logf("%+v", stat)
-		assert.True(t, stat != nil)
-		assert.True(t, realStat)
-	}()
-	defer Catch(&stat, &realStat)
-	stat.Panic(true)
-}
-
-func TestCatchNil25(t *testing.T) {
-	var stat = NewWithStack(1, "text")
-	var realStat bool
-	defer func() {
-		t.Logf("%+v", stat)
-		assert.True(t, stat != nil)
-		assert.True(t, realStat)
-	}()
-	defer Catch(&stat, &realStat)
-	stat.Panic(false)
-}
-
-func TestCatchNil26(t *testing.T) {
-	var stat = NewWithStack(1, "text")
-	var realStat bool
-	defer func() {
-		t.Logf("%+v", stat)
-		assert.True(t, stat != nil)
-		assert.True(t, realStat)
-	}()
-	defer Catch(&stat, &realStat)
-	stat.Panic(true)
 }
 
 func TestCatchNil3(t *testing.T) {
@@ -178,7 +131,7 @@ func TestCheckError2(t *testing.T) {
 		assert.Equal(t, err, stat.Cause())
 	}()
 	defer Catch(&stat)
-	stat.CopyCheck(err)
+	stat.NewCheck(err)
 }
 
 func TestThrow(t *testing.T) {
@@ -199,7 +152,7 @@ func TestThrow2(t *testing.T) {
 		assert.Equal(t, "a test error", stat.Cause().Error())
 	}()
 	defer Catch(&stat)
-	stat.CopyThrow("a test error")
+	stat.NewThrow("a test error")
 }
 
 func TestThrow3(t *testing.T) {
@@ -210,7 +163,7 @@ func TestThrow3(t *testing.T) {
 		assert.Equal(t, "raw cause", stat.cause.Error())
 	}()
 	defer Catch(&stat)
-	stat.CopyThrow()
+	stat.NewThrow()
 }
 
 func TestCatchNotError(t *testing.T) {
@@ -232,5 +185,14 @@ func TestCatchNotError2(t *testing.T) {
 	}()
 
 	defer Catch(&stat)
+	panic("this is not a error")
+}
+
+func TestFindPanicStack(t *testing.T) {
+	defer func() {
+		recover()
+		stack := findPanicStack()
+		t.Logf("%+v", stack)
+	}()
 	panic("this is not a error")
 }
