@@ -144,6 +144,29 @@ func (s Solar) Truncate(d time.Duration) *Solar {
 	return &Solar{s.Time.Truncate(d)}
 }
 
+// AddMonth add months
+func (s Solar) AddMonth(months int) *Solar {
+	if months == 0 {
+		return &s
+	}
+	y, m, d := s.Date()
+	m = m + time.Month(months)
+	y += int(m) / 12
+	if m < 0 {
+		y -= 1
+	}
+	if m > 12 {
+		m = m % 12
+	} else if m < 1 {
+		m = 12 + m%12
+	}
+	n := SolarMonthDays(y, int(m))
+	if d > n {
+		d = n
+	}
+	return &Solar{time.Date(y, m, d, s.Hour(), s.Minute(), s.Second(), s.Nanosecond(), s.Location())}
+}
+
 // IsLeapYear determines whether it is a leap year.
 func IsLeapYear(year int) bool {
 	if year%4 == 0 && (year%100 != 0 || year%400 == 0) {
