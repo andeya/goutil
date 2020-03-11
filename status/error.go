@@ -4,10 +4,13 @@ import (
 	"fmt"
 )
 
+// Map is alias of map[string]interface{} type.
+type Map = map[string]interface{}
+
 // WrapError wraps an error with fields.
 // NOTE:
 //  if cause==nil, return nil
-func WrapError(cause interface{}, fields map[string]interface{}) error {
+func WrapError(cause interface{}, fields Map) error {
 	err := toErr(cause)
 	if err == nil {
 		return nil
