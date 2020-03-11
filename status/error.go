@@ -6,7 +6,7 @@ import (
 
 // WrapError wraps an error with fields.
 // NOTE:
-//  if err==nil, return nil
+//  if cause==nil, return nil
 func WrapError(cause interface{}, fields map[string]interface{}) error {
 	err := toErr(cause)
 	if err == nil {
