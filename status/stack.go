@@ -184,7 +184,6 @@ func findPanicStack() *stack {
 		n := runtime.Callers(skip, pcs)
 		pcs = pcs[0:n]
 		for i, p := range pcs {
-			println(Frame(p).name())
 			if Frame(p).name() == "runtime.gopanic" {
 				if n <= depth {
 					st := stack(pcs[i+1:])
