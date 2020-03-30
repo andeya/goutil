@@ -196,3 +196,17 @@ func TestFindPanicStack(t *testing.T) {
 	}()
 	panic("this is not a error")
 }
+
+func TestPanicStackTrace(t *testing.T) {
+	defer func() {
+		stack := PanicStackTrace()
+		t.Logf("%+v", stack)
+	}()
+}
+
+func TestGetStackTrace(t *testing.T) {
+	defer func() {
+		stack := GetStackTrace(0)
+		t.Logf("%+v", stack)
+	}()
+}

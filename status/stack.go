@@ -9,6 +9,16 @@ import (
 	"strings"
 )
 
+// GetStackTrace gets the stack trace.
+func GetStackTrace(skip int) StackTrace {
+	return callers(skip + 3).StackTrace()
+}
+
+// PanicStackTrace gets the panic stack trace.
+func PanicStackTrace() StackTrace {
+	return findPanicStack().StackTrace()
+}
+
 // Frame represents a program counter inside a stack frame.
 // For historical reasons if Frame is interpreted as a uintptr
 // its value represents the program counter + 1.
@@ -195,7 +205,7 @@ func findPanicStack() *stack {
 			}
 		}
 		if n < depth {
-			return nil
+			return &stack{}
 		}
 		skip += n
 	}
