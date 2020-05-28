@@ -11,6 +11,21 @@ func TestMd5(t *testing.T) {
 	t.Logf("text: %s, md5: %s", b, Md5(b))
 }
 
+func TestSha1(t *testing.T) {
+	b := []byte("1234567890abcdef")
+	t.Logf("text: %s, sha1: %s", b, Sha1(b))
+}
+
+func TestSha256(t *testing.T) {
+	b := []byte("1234567890abcdef")
+	t.Logf("text: %s, Sha256: %s", b, Sha256(b))
+}
+
+func TestSha512(t *testing.T) {
+	b := []byte("1234567890abcdef")
+	t.Logf("text: %s, Sha512: %s", b, Sha512(b))
+}
+
 func TestFnv1aToUint(t *testing.T) {
 	b := []byte("1234567890abcdef")
 	t.Logf("text: %s, Fnv1aToUint64: %d", b, Fnv1aToUint64(b))

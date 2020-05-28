@@ -5,6 +5,9 @@ import (
 	"crypto/cipher"
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/hex"
 	"errors"
 	"hash/fnv"
@@ -14,6 +17,24 @@ import (
 // Md5 returns the MD5 checksum string of the data.
 func Md5(b []byte) string {
 	checksum := md5.Sum(b)
+	return hex.EncodeToString(checksum[:])
+}
+
+// Sha1 returns the sha1 checksum string of the data.
+func Sha1(b []byte) string {
+	checksum := sha1.Sum(b)
+	return hex.EncodeToString(checksum[:])
+}
+
+// Sha256 returns the sha256 checksum string of the data.
+func Sha256(b []byte) string {
+	checksum := sha256.Sum256(b)
+	return hex.EncodeToString(checksum[:])
+}
+
+// Sha512 returns the sha512 checksum string of the data.
+func Sha512(b []byte) string {
+	checksum := sha512.Sum512(b)
 	return hex.EncodeToString(checksum[:])
 }
 
