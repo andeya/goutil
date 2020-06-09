@@ -39,24 +39,42 @@ var (
 
 func TestAESEncrypt(t *testing.T) {
 	ciphertext := AESEncrypt(_cipherkey, _plaintext)
-	t.Logf("ciphertext: %s", ciphertext)
+	t.Logf("ciphertext hex: %s", ciphertext)
 	r, err := AESDecrypt(_cipherkey, ciphertext)
+	assert.NoError(t, err)
+	assert.Equal(t, _plaintext, r)
+
+	ciphertext = AESEncrypt(_cipherkey, _plaintext, true)
+	t.Logf("ciphertext base64: %s", ciphertext)
+	r, err = AESDecrypt(_cipherkey, ciphertext, true)
 	assert.NoError(t, err)
 	assert.Equal(t, _plaintext, r)
 }
 
 func TestAESCBCEncrypt(t *testing.T) {
 	ciphertext := AESCBCEncrypt(_cipherkey, _plaintext)
-	t.Logf("ciphertext: %s", ciphertext)
+	t.Logf("ciphertext hex: %s", ciphertext)
 	r, err := AESCBCDecrypt(_cipherkey, ciphertext)
+	assert.NoError(t, err)
+	assert.Equal(t, _plaintext, r)
+
+	ciphertext = AESCBCEncrypt(_cipherkey, _plaintext, true)
+	t.Logf("ciphertext base64: %s", ciphertext)
+	r, err = AESCBCDecrypt(_cipherkey, ciphertext, true)
 	assert.NoError(t, err)
 	assert.Equal(t, _plaintext, r)
 }
 
 func TestAESCTREncrypt(t *testing.T) {
 	ciphertext := AESCTREncrypt(_cipherkey, _plaintext)
-	t.Logf("ciphertext: %s", ciphertext)
+	t.Logf("ciphertext hex: %s", ciphertext)
 	r, err := AESCTRDecrypt(_cipherkey, ciphertext)
+	assert.NoError(t, err)
+	assert.Equal(t, _plaintext, r)
+
+	ciphertext = AESCTREncrypt(_cipherkey, _plaintext, true)
+	t.Logf("ciphertext base64: %s", ciphertext)
+	r, err = AESCTRDecrypt(_cipherkey, ciphertext, true)
 	assert.NoError(t, err)
 	assert.Equal(t, _plaintext, r)
 }

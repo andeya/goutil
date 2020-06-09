@@ -8,10 +8,13 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"hash/fnv"
 	"io"
+
+	"github.com/henrylee2cn/ameda"
 )
 
 // Md5 returns the MD5 checksum string of the data.
@@ -58,7 +61,7 @@ func Fnv1aToUint32(b []byte) uint32 {
 // The cipherkey argument should be the AES key,
 // either 16, 24, or 32 bytes to select
 // AES-128, AES-192, or AES-256.
-func AESEncrypt(cipherkey, plaintext []byte) []byte {
+func AESEncrypt(cipherkey, plaintext []byte, useBase64 ...bool) []byte {
 	block := mustNewCipher(cipherkey)
 	blockSize := block.BlockSize()
 	plaintext = pkcs5Padding(plaintext, blockSize)
@@ -69,15 +72,15 @@ func AESEncrypt(cipherkey, plaintext []byte) []byte {
 		plaintext = plaintext[blockSize:]
 		dst = dst[blockSize:]
 	}
-	return hexEncode(r)
+	return encode(r, useBase64)
 }
 
 // AESDecrypt hex decodes a piece of data and then decrypts it using ECB mode.
 // The cipherkey argument should be the AES key,
 // either 16, 24, or 32 bytes to select
 // AES-128, AES-192, or AES-256.
-func AESDecrypt(cipherkey, ciphertext []byte) ([]byte, error) {
-	src, err := hexDecode(ciphertext)
+func AESDecrypt(cipherkey, ciphertext []byte, useBase64 ...bool) ([]byte, error) {
+	src, err := decode(ciphertext, useBase64)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +103,7 @@ func AESDecrypt(cipherkey, ciphertext []byte) ([]byte, error) {
 // The cipherkey argument should be the AES key,
 // either 16, 24, or 32 bytes to select
 // AES-128, AES-192, or AES-256.
-func AESCBCEncrypt(cipherkey, plaintext []byte) []byte {
+func AESCBCEncrypt(cipherkey, plaintext []byte, useBase64 ...bool) []byte {
 	block := mustNewCipher(cipherkey)
 	blockSize := block.BlockSize()
 	plaintext = pkcs5Padding(plaintext, blockSize)
@@ -113,15 +116,15 @@ func AESCBCEncrypt(cipherkey, plaintext []byte) []byte {
 	}
 	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(ciphertext[aes.BlockSize:], plaintext)
-	return hexEncode(ciphertext)
+	return encode(ciphertext, useBase64)
 }
 
 // AESCBCDecrypt hex decodes a piece of data and then decrypts it using CBC mode.
 // The cipherkey argument should be the AES key,
 // either 16, 24, or 32 bytes to select
 // AES-128, AES-192, or AES-256.
-func AESCBCDecrypt(cipherkey, ciphertext []byte) ([]byte, error) {
-	ciphertext, err := hexDecode(ciphertext)
+func AESCBCDecrypt(cipherkey, ciphertext []byte, useBase64 ...bool) ([]byte, error) {
+	ciphertext, err := decode(ciphertext, useBase64)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +154,7 @@ func AESCBCDecrypt(cipherkey, ciphertext []byte) ([]byte, error) {
 // The cipherkey argument should be the AES key,
 // either 16, 24, or 32 bytes to select
 // AES-128, AES-192, or AES-256.
-func AESCTREncrypt(cipherkey, plaintext []byte) []byte {
+func AESCTREncrypt(cipherkey, plaintext []byte, useBase64 ...bool) []byte {
 	block := mustNewCipher(cipherkey)
 	// The IV needs to be unique, but not secure. Therefore it's common to
 	// include it at the beginning of the ciphertext.
@@ -162,15 +165,15 @@ func AESCTREncrypt(cipherkey, plaintext []byte) []byte {
 	}
 	stream := cipher.NewCTR(block, iv)
 	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
-	return hexEncode(ciphertext)
+	return encode(ciphertext, useBase64)
 }
 
 // AESCTRDecrypt hex decodes a piece of data and then decrypts it using CTR mode.
 // The cipherkey argument should be the AES key,
 // either 16, 24, or 32 bytes to select
 // AES-128, AES-192, or AES-256.
-func AESCTRDecrypt(cipherkey, ciphertext []byte) ([]byte, error) {
-	ciphertext, err := hexDecode(ciphertext)
+func AESCTRDecrypt(cipherkey, ciphertext []byte, useBase64 ...bool) ([]byte, error) {
+	ciphertext, err := decode(ciphertext, useBase64)
 	if err != nil {
 		return nil, err
 	}
@@ -232,6 +235,20 @@ func pkcs5Unpadding(r []byte) ([]byte, error) {
 	return r[:l-last], nil
 }
 
+func encode(src []byte, useBase64 []bool) []byte {
+	if ameda.OneBool(useBase64) {
+		return base64Encode(src)
+	}
+	return hexEncode(src)
+}
+
+func decode(src []byte, useBase64 []bool) ([]byte, error) {
+	if ameda.OneBool(useBase64) {
+		return base64Decode(src)
+	}
+	return hexDecode(src)
+}
+
 func hexEncode(src []byte) []byte {
 	dst := make([]byte, hex.EncodedLen(len(src)))
 	hex.Encode(dst, src)
@@ -242,4 +259,16 @@ func hexDecode(src []byte) ([]byte, error) {
 	dst := make([]byte, hex.DecodedLen(len(src)))
 	_, err := hex.Decode(dst, src)
 	return dst, err
+}
+
+func base64Encode(src []byte) []byte {
+	buf := make([]byte, base64.RawURLEncoding.EncodedLen(len(src)))
+	base64.RawURLEncoding.Encode(buf, src)
+	return buf
+}
+
+func base64Decode(src []byte) ([]byte, error) {
+	dst := make([]byte, base64.RawURLEncoding.DecodedLen(len(src)))
+	n, err := base64.RawURLEncoding.Decode(dst, src)
+	return dst[:n], err
 }
