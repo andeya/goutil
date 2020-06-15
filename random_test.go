@@ -5,6 +5,9 @@ import (
 	"io"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const tokenLength = 32
@@ -64,5 +67,22 @@ func TestRandomString(t *testing.T) {
 			break
 		}
 		t.Log(id)
+	}
+}
+
+func TestRandomStringWithTime(t *testing.T) {
+	r := URLRandom()
+	tm, _ := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", "2038-12-24 13:45:35 +0800 CST")
+	unixTs0 := tm.Unix()
+	s0, err0 := r.RandomStringWithTime(32, unixTs0)
+	assert.NoError(t, err0)
+	t.Logf("RandomStringWithTime: %s", s0)
+	for i := 0; i < 100; i++ {
+		s, err := r.RandomStringWithTime(32, unixTs0)
+		assert.NoError(t, err)
+		t.Logf("RandomStringWithTime(%d): %s", i, s)
+		unixTs, err := r.ParseTime(s)
+		assert.NoError(t, err)
+		assert.Equal(t, unixTs0, unixTs)
 	}
 }
