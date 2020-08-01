@@ -3,6 +3,8 @@ package goutil
 import (
 	"reflect"
 	"unsafe"
+
+	"github.com/henrylee2cn/ameda"
 )
 
 // AddrInt returns a pointer int representing the address of i.
@@ -24,27 +26,7 @@ func InitAndGetString(strPtr *string, def string) string {
 
 // InitPointer initializes null pointer.
 func InitPointer(v reflect.Value) bool {
-	for {
-		kind := v.Kind()
-		if kind == reflect.Interface {
-			v = v.Elem()
-			continue
-		}
-		if kind != reflect.Ptr {
-			return true
-		}
-		u := v.Elem()
-		if u.IsValid() {
-			v = u
-			continue
-		}
-		if !v.CanSet() {
-			return false
-		}
-		v2 := reflect.New(v.Type().Elem())
-		v.Set(v2)
-		v = v.Elem()
-	}
+	return ameda.InitPointer(v)
 }
 
 // DereferenceType dereference, get the underlying non-pointer type.
