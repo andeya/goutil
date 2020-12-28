@@ -19,8 +19,8 @@ var From = ameda.ValueFrom
 
 // RuntimeTypeID returns the underlying type ID in current runtime from reflect.Type.
 // NOTE:
-//  *A and A returns the same runtime type ID;
+//  *A and A returns the different runtime type ID;
 //  It is 10 times performance of t.String().
 // Signature:
-//  func RuntimeTypeID(t reflect.Type) int32
+//  func RuntimeTypeID(t reflect.Type) uintptr
 var RuntimeTypeID = ameda.RuntimeTypeID
