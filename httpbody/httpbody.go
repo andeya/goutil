@@ -33,7 +33,7 @@ func NewFormBody(values, files url.Values) (contentType string, bodyReader io.Re
 	if len(files) == 0 {
 		return "application/x-www-form-urlencoded", strings.NewReader(values.Encode()), nil
 	}
-	var rw = bytes.NewBuffer(make([]byte, 32*1024*len(files)))
+	var rw = bytes.NewBuffer(make([]byte, 0, 32*1024*len(files)))
 	var bodyWriter = multipart.NewWriter(rw)
 	var buf = make([]byte, 32*1024)
 	var fileWriter io.Writer
