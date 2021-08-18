@@ -16,6 +16,8 @@ func init() {
 	isGoTest = checkGoTestEnv()
 }
 
+const IS_GO_TEST = "IS_GO_TEST"
+
 func checkGoTestEnv() bool {
 	for _, arg := range os.Args[1:] {
 		for _, s := range []string{
@@ -33,6 +35,7 @@ func checkGoTestEnv() bool {
 			}
 		}
 	}
-	return false
+	env := os.Getenv(IS_GO_TEST)
+	return env == "1" || env == "true"
 	// return strings.HasSuffix(os.Args[0], ".test")
 }
