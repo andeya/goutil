@@ -3,6 +3,7 @@ package errors
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -93,4 +94,23 @@ func (m *multiError) Error() string {
 	}
 	m.text = goutil.BytesToString(bText)
 	return m.text
+}
+
+func (m *multiError) Is(target error) bool {
+	for _, e := range m.errs {
+		if errors.Is(e, target) {
+			return true
+		}
+	}
+	return false
+}
+
+
+func (m *multiError) As(target interface{}) bool{
+	for _, e := range m.errs {
+		if errors.As(e, target){
+			return true
+		}
+	}
+	return false
 }
