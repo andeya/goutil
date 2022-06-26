@@ -15,7 +15,7 @@ func TestNewFormBody(t *testing.T) {
 		},
 		Files{
 			"f1": []File{
-				NewFile("/Users/henrylee2cn/f11.txt", strings.NewReader("f11 text.")),
+				NewFile("/Users/andeya/f11.txt", strings.NewReader("f11 text.")),
 			},
 		},
 	)

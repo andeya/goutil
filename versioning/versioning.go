@@ -1,6 +1,6 @@
 // Package versioning is a version comparison tool that conforms to semantic version 2.0.0
 //
-// Copyright 2019 henrylee2cn Author. All Rights Reserved.
+// Copyright 2022 AndeyaLee Author. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.

@@ -8,7 +8,7 @@ go:
   - "1.11"
   - "1.12"
   - "1.13"
-go_import_path: github.com/henrylee2cn/goutil
+go_import_path: github.com/andeya/goutil
 env:
   - GIMME_ARCH=amd64 GO111MODULE=on
   - GIMME_ARCH=386 GO111MODULE=on

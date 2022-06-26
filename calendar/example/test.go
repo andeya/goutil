@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/henrylee2cn/goutil/calendar"
+	"github.com/andeya/goutil/calendar"
 )
 
 func main() {
@@ -100,14 +100,14 @@ func main() {
 	l2s := l.Convert()
 	fmt.Println(l2s)
 
-	y, m, d := calendar.GanZhiYMD(2014, 5, 1) //should be:甲午 戊辰 壬申
+	y, m, d := calendar.GanZhiYMD(2014, 5, 1) // should be:甲午 戊辰 壬申
 	fmt.Println("2014.5.1", y, m, d)
 
-	y, m, d = calendar.GanZhiYMD(2014, 5, 5) //should be:甲午 己巳 丙子
+	y, m, d = calendar.GanZhiYMD(2014, 5, 5) // should be:甲午 己巳 丙子
 	fmt.Println("2014.5.5", y, m, d)
 
-	a := calendar.AnimalYear(1900)  //should be 鼠
-	a2 := calendar.AnimalYear(1988) //should be 龙
+	a := calendar.AnimalYear(1900)  // should be 鼠
+	a2 := calendar.AnimalYear(1988) // should be 龙
 	fmt.Println(a, a2)
 
 	z := calendar.ZhiHour(0)

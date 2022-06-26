@@ -204,7 +204,7 @@ type atomicMap struct {
 	// state) and the next store to the map will make a new dirty copy.
 	misses int
 
-	// @added by henrylee2cn 2017/11/17
+	// @added by andeya 2017/11/17
 	length int32
 }
 
@@ -289,7 +289,7 @@ func (m *atomicMap) Store(key, value interface{}) {
 		case 1:
 			return
 		case 2:
-			// @added by henrylee2cn 2017/11/17
+			// @added by andeya 2017/11/17
 			atomic.AddInt32(&m.length, 1)
 			return
 		}
@@ -303,7 +303,7 @@ func (m *atomicMap) Store(key, value interface{}) {
 			m.mu.Unlock()
 			return
 		case 2:
-			// @added by henrylee2cn 2017/11/17
+			// @added by andeya 2017/11/17
 			atomic.AddInt32(&m.length, 1)
 			m.mu.Unlock()
 			return
@@ -312,7 +312,7 @@ func (m *atomicMap) Store(key, value interface{}) {
 				// The entry was previously expunged, which implies that there is a
 				// non-nil dirty map and this entry is not in it.
 				m.dirty[key] = e
-				// @added by henrylee2cn 2017/11/17
+				// @added by andeya 2017/11/17
 				atomic.AddInt32(&m.length, 1)
 			}
 			e.storeLocked(&value)
@@ -380,7 +380,7 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 	if e, ok := read.m[key]; ok {
 		actual, loaded, ok := e.tryLoadOrStore(value)
 		if ok {
-			// @added by henrylee2cn 2017/11/17
+			// @added by andeya 2017/11/17
 			if !loaded {
 				atomic.AddInt32(&m.length, 1)
 			}
@@ -395,7 +395,7 @@ func (m *atomicMap) LoadOrStore(key, value interface{}) (actual interface{}, loa
 			m.dirty[key] = e
 		}
 		actual, loaded, ok = e.tryLoadOrStore(value)
-		// @added by henrylee2cn 2017/12/01
+		// @added by andeya 2017/12/01
 		if ok && !loaded {
 			atomic.AddInt32(&m.length, 1)
 		}
@@ -600,14 +600,14 @@ func (e *entry) tryExpungeLocked() (isExpunged bool) {
 // Len returns the length of the map.
 // Note:
 //  the length may be inaccurate.
-// @added by henrylee2cn 2017/11/17
+// @added by andeya 2017/11/17
 func (m *atomicMap) Len() int {
 	return int(atomic.LoadInt32(&m.length))
 }
 
 // Random returns a pair kv randomly.
 // If exist=false, no kv data is exist.
-// @added by henrylee2cn 2017/08/10
+// @added by andeya 2017/08/10
 func (m *atomicMap) Random() (key, value interface{}, exist bool) {
 	var (
 		length, i int

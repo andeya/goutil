@@ -61,7 +61,7 @@ This package's year range is `[1900,2050]` and month range is `[1,12]`.
 ```go
 package main
 
-import "github.com/henrylee2cn/goutil/calendar"
+import "github.com/andeya/goutil/calendar"
 import "fmt"
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/henrylee2cn/goutil/calendar"
+	"github.com/andeya/goutil/calendar"
 )
 
 // Cron keeps track of any number of entries, invoking the associated func as

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/henrylee2cn/goutil/calendar"
+	"github.com/andeya/goutil/calendar"
 )
 
 // Many tests schedule a job for every second, and then wait at most a second

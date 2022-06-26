@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/henrylee2cn/goutil/coarsetime"
+	"github.com/andeya/goutil/coarsetime"
 )
 
 // ResPool is a high availability/high concurrent resource pool, which automatically manages the number of resources.
@@ -250,7 +250,7 @@ func (p *resPool) addDepLocked(x finalCloser, dep interface{}) {
 }
 
 func (p *resPool) removeDepLocked(x finalCloser, dep interface{}) func() error {
-	//println(fmt.Sprintf("removeDep(%T %p, %T %p)", x, x, dep, dep))
+	// println(fmt.Sprintf("removeDep(%T %p, %T %p)", x, x, dep, dep))
 
 	xdep, ok := p.dep[x]
 	if !ok {
