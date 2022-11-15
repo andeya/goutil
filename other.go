@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/henrylee2cn/ameda"
+	"github.com/andeya/ameda"
 )
 
 // AddrInt returns a pointer int representing the address of i.

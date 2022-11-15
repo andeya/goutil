@@ -7,7 +7,7 @@ import (
 	"errors"
 	mrand "math/rand"
 
-	"github.com/henrylee2cn/ameda"
+	"github.com/andeya/ameda"
 )
 
 // NewRandom creates a new padded Encoding defined by the given alphabet string.

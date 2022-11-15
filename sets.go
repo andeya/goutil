@@ -1,7 +1,7 @@
 package goutil
 
 import (
-	"github.com/henrylee2cn/ameda"
+	"github.com/andeya/ameda"
 )
 
 // CopyStrings creates a copy of the string slice.
