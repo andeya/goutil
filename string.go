@@ -31,9 +31,12 @@ func BytesToString(b []byte) string {
 // StringToBytes convert string type to []byte type.
 // NOTE: panic if modify the member value of the []byte.
 func StringToBytes(s string) []byte {
-	sp := *(*[2]uintptr)(unsafe.Pointer(&s))
-	bp := [3]uintptr{sp[0], sp[1], sp[1]}
-	return *(*[]byte)(unsafe.Pointer(&bp))
+	return *(*[]byte)(unsafe.Pointer(
+		&struct {
+			string
+			Cap int
+		}{s, len(s)},
+	))
 }
 
 // SnakeString converts the accepted string to a snake string (XxYy to xx_yy)
@@ -81,7 +84,8 @@ func CamelString(s string) string {
 
 // LintCamelString converts the accepted string to a camel string (xx_id to XxID)
 // NOTE:
-//  support common initialisms
+//
+//	support common initialisms
 func LintCamelString(name string) string {
 	// Fast path for simple cases: "_" and all lowercase.
 	if name == "_" {
@@ -208,7 +212,7 @@ func HTMLEntityToUTF8(str string, base int) string {
 	oldnew := make([]string, 0, len(a)*2)
 	for _, s := range a {
 		if i, err := strconv.ParseInt(s[1], base, 32); err == nil {
-			oldnew = append(oldnew, s[0], string(i))
+			oldnew = append(oldnew, s[0], string(rune(i)))
 		}
 	}
 	r := strings.NewReplacer(oldnew...)
@@ -231,7 +235,7 @@ func CodePointToUTF8(str string, base int) string {
 	}
 	for ; i <= last; i++ {
 		if x, err := strconv.ParseInt(strSlice[i], base, 32); err == nil {
-			strSlice[i] = string(x)
+			strSlice[i] = string(rune(x))
 		}
 	}
 	return strings.Join(strSlice, "")
@@ -249,10 +253,10 @@ var spaceReplacer = strings.NewReplacer(
 	"\t ", "\t",
 	"\v\v", "\v",
 	"\f\f", "\f",
-	string(0x85)+string(0x85),
-	string(0x85),
-	string(0xA0)+string(0xA0),
-	string(0xA0),
+	string(rune(0x85))+string(rune(0x85)),
+	string(rune(0x85)),
+	string(rune(0xA0))+string(rune(0xA0)),
+	string(rune(0xA0)),
 )
 
 // SpaceInOne combines multiple consecutive space characters into one.
