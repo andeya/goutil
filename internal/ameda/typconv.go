@@ -1,32 +1,40 @@
-package goutil
+package ameda
 
 import (
 	"reflect"
 	"unsafe"
-
-	"github.com/andeya/goutil/internal/ameda"
 )
 
-// AddrInt returns a pointer int representing the address of i.
-func AddrInt(i int) *int {
-	return &i
+// UnsafeBytesToString convert []byte type to string type.
+func UnsafeBytesToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }
 
-// InitAndGetString if strPtr is empty string, initialize it with def,
-// and return the final value.
-func InitAndGetString(strPtr *string, def string) string {
-	if strPtr == nil {
-		return def
-	}
-	if *strPtr == "" {
-		*strPtr = def
-	}
-	return *strPtr
+// UnsafeStringToBytes convert string type to []byte type.
+// NOTE:
+//  panic if modify the member value of the []byte.
+func UnsafeStringToBytes(s string) []byte {
+	return *(*[]byte)(unsafe.Pointer(
+		&struct {
+			string
+			Cap int
+		}{s, len(s)},
+	))
 }
 
-// InitPointer initializes null pointer.
-func InitPointer(v reflect.Value) bool {
-	return ameda.InitPointer(v)
+// IndirectValue gets the indirect value.
+func IndirectValue(v reflect.Value) reflect.Value {
+	if !v.IsValid() {
+		return v
+	}
+	if v.Kind() != reflect.Ptr {
+		// Avoid creating a reflect.Value if it's not a pointer.
+		return v
+	}
+	for v.Kind() == reflect.Ptr && !v.IsNil() {
+		v = v.Elem()
+	}
+	return v
 }
 
 // DereferenceType dereference, get the underlying non-pointer type.
@@ -54,8 +62,8 @@ func DereferencePtrValue(v reflect.Value) reflect.Value {
 	return v
 }
 
-// DereferenceIfaceValue returns the value of the underlying type that implements the interface v.
-func DereferenceIfaceValue(v reflect.Value) reflect.Value {
+// DereferenceInterfaceValue returns the value of the underlying type that implements the interface v.
+func DereferenceInterfaceValue(v reflect.Value) reflect.Value {
 	for v.Kind() == reflect.Interface {
 		v = v.Elem()
 	}
@@ -64,7 +72,7 @@ func DereferenceIfaceValue(v reflect.Value) reflect.Value {
 
 // DereferenceImplementType returns the underlying type of the value that implements the interface v.
 func DereferenceImplementType(v reflect.Value) reflect.Type {
-	return DereferenceType(DereferenceIfaceValue(v).Type())
+	return DereferenceType(DereferenceInterfaceValue(v).Type())
 }
 
 // DereferenceSlice convert []*T to []T.
@@ -102,34 +110,32 @@ func ReferenceSlice(v reflect.Value, ptrDepth int) reflect.Value {
 
 // ReferenceType convert T to *T, the ptrDepth is the count of '*'.
 func ReferenceType(t reflect.Type, ptrDepth int) reflect.Type {
-	for ; ptrDepth > 0; ptrDepth-- {
-		t = reflect.PtrTo(t)
+	switch {
+	case ptrDepth > 0:
+		for ; ptrDepth > 0; ptrDepth-- {
+			t = reflect.PtrTo(t)
+		}
+	case ptrDepth < 0:
+		for ; ptrDepth < 0 && t.Kind() == reflect.Ptr; ptrDepth++ {
+			t = t.Elem()
+		}
 	}
 	return t
 }
 
 // ReferenceValue convert T to *T, the ptrDepth is the count of '*'.
 func ReferenceValue(v reflect.Value, ptrDepth int) reflect.Value {
-	for ; ptrDepth > 0; ptrDepth-- {
-		vv := reflect.New(v.Type())
-		vv.Elem().Set(v)
-		v = vv
+	switch {
+	case ptrDepth > 0:
+		for ; ptrDepth > 0; ptrDepth-- {
+			vv := reflect.New(v.Type())
+			vv.Elem().Set(v)
+			v = vv
+		}
+	case ptrDepth < 0:
+		for ; ptrDepth < 0 && v.Kind() == reflect.Ptr; ptrDepth++ {
+			v = v.Elem()
+		}
 	}
 	return v
 }
-
-// IsLittleEndian determine whether the current system is little endian.
-func IsLittleEndian() bool {
-	var i int32 = 0x01020304
-	u := unsafe.Pointer(&i)
-	pb := (*byte)(u)
-	b := *pb
-	return (b == 0x04)
-}
-
-const (
-	// Is64BitPlatform Whether the current system is a 64-bit platform
-	Is64BitPlatform bool = (32 << (^uint(0) >> 63)) == 64
-	// Is32BitPlatform Whether the current system is a 32-bit platform
-	Is32BitPlatform bool = (32 << (^uint(0) >> 63)) == 0
-)

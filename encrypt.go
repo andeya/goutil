@@ -14,7 +14,7 @@ import (
 	"hash/fnv"
 	"io"
 
-	"github.com/andeya/ameda"
+	"github.com/andeya/goutil/internal/ameda"
 )
 
 // Md5 returns the MD5 checksum string of the data.

@@ -1,7 +1,7 @@
 package tpack
 
 import (
-	"github.com/andeya/ameda"
+	"github.com/andeya/goutil/internal/ameda"
 )
 
 // U go underlying type data

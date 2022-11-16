@@ -1,7 +1,7 @@
 package goutil
 
 import (
-	"github.com/andeya/ameda"
+	"github.com/andeya/goutil/internal/ameda"
 )
 
 // CopyStrings creates a copy of the string slice.
