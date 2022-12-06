@@ -7,3 +7,8 @@ Golang common tool functions or components.
 - Only rely on the Go standard package
 - Functions or lightweight packages
 - Non-business related general tools
+
+## Package Path
+
+- `github.com/andeya/goutil` >= `v1.0.0`
+- `github.com/henrylee2cn/goutil` <= `v0.1.0`
