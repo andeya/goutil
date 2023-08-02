@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -150,7 +151,7 @@ func WalkDirs(targpath string, suffixes ...string) (dirlist []string) {
 
 // FilepathSplitExt splits the filename into a pair (root, ext) such that root + ext == filename,
 // and ext is empty or begins with a period and contains at most one period.
-// Leading periods on the basename are ignored; splitext('.cshrc') returns ('', '.cshrc').
+// Leading periods on the basename are ignored; splitext('.cshrc') returns (”, '.cshrc').
 func FilepathSplitExt(filename string, slashInsensitive ...bool) (root, ext string) {
 	insensitive := false
 	if len(slashInsensitive) > 0 {
@@ -169,9 +170,12 @@ func FilepathSplitExt(filename string, slashInsensitive ...bool) (root, ext stri
 
 // FilepathStem returns the stem of filename.
 // Example:
-//  FilepathStem("/root/dir/sub/file.ext") // output "file"
+//
+//	FilepathStem("/root/dir/sub/file.ext") // output "file"
+//
 // NOTE:
-//  If slashInsensitive is empty, default is false.
+//
+//	If slashInsensitive is empty, default is false.
 func FilepathStem(filename string, slashInsensitive ...bool) string {
 	insensitive := false
 	if len(slashInsensitive) > 0 {
@@ -348,7 +352,8 @@ func MkdirAll(path string, perm ...os.FileMode) error {
 
 // WriteFile writes file, and automatically creates the directory if necessary.
 // NOTE:
-//  If perm is empty, automatically determine the file permissions based on extension.
+//
+//	If perm is empty, automatically determine the file permissions based on extension.
 func WriteFile(filename string, data []byte, perm ...os.FileMode) error {
 	filename = filepath.FromSlash(filename)
 	err := MkdirAll(filepath.Dir(filename))
@@ -434,4 +439,64 @@ func ReplaceFile(filename string, start, end int, newContent string) error {
 		}
 		return bytes.Replace(content, content[start:end], StringToBytes(newContent), 1), nil
 	})
+}
+
+// CopyFile copies a single file from src to dst
+func CopyFile(src, dst string) error {
+	var err error
+	var srcfd *os.File
+	var dstfd *os.File
+	var srcinfo os.FileInfo
+
+	if srcfd, err = os.Open(src); err != nil {
+		return err
+	}
+	defer srcfd.Close()
+
+	if dstfd, err = os.Create(dst); err != nil {
+		return err
+	}
+	defer dstfd.Close()
+
+	if _, err = io.Copy(dstfd, srcfd); err != nil {
+		return err
+	}
+	if srcinfo, err = os.Stat(src); err != nil {
+		return err
+	}
+	return os.Chmod(dst, srcinfo.Mode())
+}
+
+// CopyDir copies a whole directory recursively.
+func CopyDir(src string, dst string) error {
+	var err error
+	var fds []os.FileInfo
+	var srcinfo os.FileInfo
+
+	if srcinfo, err = os.Stat(src); err != nil {
+		return err
+	}
+
+	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
+		return err
+	}
+
+	if fds, err = ioutil.ReadDir(src); err != nil {
+		return err
+	}
+	for _, fd := range fds {
+		srcfp := path.Join(src, fd.Name())
+		dstfp := path.Join(dst, fd.Name())
+
+		if fd.IsDir() {
+			if err = CopyDir(srcfp, dstfp); err != nil {
+				return err
+			}
+		} else {
+			if err = CopyFile(srcfp, dstfp); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
