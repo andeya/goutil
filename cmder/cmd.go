@@ -24,15 +24,27 @@ func init() {
 	}
 }
 
-// Run exec cmd and catch the result.
-// Waits for the given command to finish with a timeout.
-// If the command times out, it attempts to kill the process.
-func Run(cmdLine string, timeout ...time.Duration) *Result {
-	cmd := exec.Command(cmdArg[0], cmdArg[1], cmdLine)
+type ShCmd struct {
+	cmd *exec.Cmd
+}
+
+func NewShCmd(cmdLine string) ShCmd {
+	return ShCmd{cmd: exec.Command(cmdArg[0], cmdArg[1], cmdLine)}
+}
+
+func (cmd ShCmd) SetEnv(env []string) ShCmd {
+	cmd.cmd.Env = env
+	return cmd
+}
+
+func (sh ShCmd) Run(timeout ...time.Duration) *Result {
+	var cmd = sh.cmd
 	var ret = new(Result)
 	cmd.Stdout = &ret.buf
 	cmd.Stderr = &ret.buf
-	cmd.Env = os.Environ()
+	if cmd.Env == nil {
+		cmd.Env = os.Environ()
+	}
 	ret.err = cmd.Start()
 	if ret.err != nil {
 		return ret
@@ -57,6 +69,13 @@ func Run(cmdLine string, timeout ...time.Duration) *Result {
 		}
 	}
 	return ret
+}
+
+// Run exec cmd and catch the result.
+// Waits for the given command to finish with a timeout.
+// If the command times out, it attempts to kill the process.
+func Run(cmdLine string, timeout ...time.Duration) *Result {
+	return NewShCmd(cmdLine).Run(timeout...)
 }
 
 // Result cmd exec result
